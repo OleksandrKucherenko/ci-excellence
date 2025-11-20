@@ -1,0 +1,9 @@
+# This directory stores private encryption keys
+# NEVER commit the actual key files to git!
+#
+# Files in this directory:
+# - mise-age.txt      - Private age key (NEVER COMMIT!)
+# - mise-age-pub.txt  - Public age key (safe to share)
+#
+# The .gitignore is configured to exclude all files in .secrets/
+# except this .gitkeep file.

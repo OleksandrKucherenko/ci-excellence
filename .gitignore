@@ -33,7 +33,7 @@ test-results/
 .env.secrets.json.tmp
 
 # Secrets directory (IMPORTANT: never commit private keys!)
-.secrets/
+.secrets/*
 !.secrets/.gitkeep
 
 # Mise/asdf cache
