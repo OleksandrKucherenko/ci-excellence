@@ -7,10 +7,10 @@ set -euo pipefail
 
 RELEASE_TYPE="${1:-patch}"
 
-echo "========================================="
-echo "Determining Version"
-echo "Release Type: $RELEASE_TYPE"
-echo "========================================="
+echo "=========================================" >&2
+echo "Determining Version" >&2
+echo "Release Type: $RELEASE_TYPE" >&2
+echo "=========================================" >&2
 
 # Example: Get version from package.json
 # if [ -f "package.json" ]; then
@@ -83,10 +83,10 @@ esac
 
 NEW_VERSION="$MAJOR.$MINOR.$PATCH"
 
-echo "Current version: $CURRENT_VERSION"
-echo "New version: $NEW_VERSION"
+echo "Current version: $CURRENT_VERSION" >&2
+echo "New version: $NEW_VERSION" >&2
 echo "$NEW_VERSION"
 
-echo "========================================="
-echo "Version Determined: $NEW_VERSION"
-echo "========================================="
+echo "=========================================" >&2
+echo "Version Determined: $NEW_VERSION" >&2
+echo "=========================================" >&2

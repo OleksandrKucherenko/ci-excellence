@@ -331,6 +331,7 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          APPRISE_URLS: ${{ secrets.APPRISE_URLS }}
           ENABLE_NOTIFICATIONS: ${{ vars.ENABLE_NOTIFICATIONS }}
         run: |
           chmod +x scripts/ci/notification/check-notifications-enabled.sh
@@ -339,16 +340,23 @@ jobs:
       - name: Determine pipeline status
         if: steps.check_notify.outputs.enabled == 'true'
         id: status
+        env:
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
         run: ./scripts/ci/notification/ci-02-determine-status.sh "${{ needs.summary.result }}"
 
       - name: Send notification
         if: steps.check_notify.outputs.enabled == 'true'
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          APPRISE_URLS: ${{ steps.check_notify.outputs.apprise_urls }}
         run: |
-          chmod +x scripts/ci/notification/ci-01-send-notification.sh
-          ./scripts/ci/notification/ci-01-send-notification.sh \
+          chmod +x scripts/setup/send-notification.sh
+          ./scripts/setup/send-notification.sh \
             "Pre-Release Pipeline" \
             "${{ steps.status.outputs.message }}" \
             "${{ steps.status.outputs.status }}"

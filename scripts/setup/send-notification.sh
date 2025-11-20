@@ -58,30 +58,33 @@ case "$NOTIFICATION_TYPE" in
         ;;
 esac
 
-# Build the full notification message
-FULL_MESSAGE="$TAG $NOTIFICATION_MESSAGE"
+# Build the full notification message with HTML formatting for Telegram
+# Note: Each HTML tag must open and close on the same line
+FULL_MESSAGE="$TAG <b>${NOTIFICATION_TITLE}</b>
+
+${NOTIFICATION_MESSAGE}"
 
 # Add repository and workflow information if available
 if [ -n "${GITHUB_REPOSITORY:-}" ]; then
-    FULL_MESSAGE="$FULL_MESSAGE
+    FULL_MESSAGE="${FULL_MESSAGE}
 
-Repository: $GITHUB_REPOSITORY"
+<b>Repository:</b> ${GITHUB_REPOSITORY}"
 fi
 
 if [ -n "${GITHUB_WORKFLOW:-}" ]; then
-    FULL_MESSAGE="$FULL_MESSAGE
-Workflow: $GITHUB_WORKFLOW"
+    FULL_MESSAGE="${FULL_MESSAGE}
+<b>Workflow:</b> ${GITHUB_WORKFLOW}"
 fi
 
 if [ -n "${GITHUB_RUN_ID:-}" ] && [ -n "${GITHUB_SERVER_URL:-}" ] && [ -n "${GITHUB_REPOSITORY:-}" ]; then
     RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-    FULL_MESSAGE="$FULL_MESSAGE
-Run: $RUN_URL"
+    FULL_MESSAGE="${FULL_MESSAGE}
+<b>Run:</b> <a href=\"${RUN_URL}\">View Logs</a>"
 fi
 
 if [ -n "${GITHUB_ACTOR:-}" ]; then
-    FULL_MESSAGE="$FULL_MESSAGE
-Triggered by: $GITHUB_ACTOR"
+    FULL_MESSAGE="${FULL_MESSAGE}
+<b>Triggered by:</b> ${GITHUB_ACTOR}"
 fi
 
 # Send notification using Apprise
@@ -100,6 +103,7 @@ done
 if apprise \
     --title="$NOTIFICATION_TITLE" \
     --body="$FULL_MESSAGE" \
+    --input-format=html \
     --tag="$NOTIFICATION_TYPE" \
     "${APPRISE_ARGS[@]}" 2>&1; then
     echo "✓ Notification sent successfully"

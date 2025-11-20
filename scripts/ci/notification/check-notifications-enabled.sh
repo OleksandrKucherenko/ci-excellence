@@ -5,11 +5,12 @@ set -euo pipefail
 # Purpose: Auto-detect if notification secrets are available and not explicitly disabled
 #
 # Logic:
-# 1. If TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are both available -> notifications can be enabled
-# 2. If ENABLE_NOTIFICATIONS is explicitly false (false, False, FALSE, no, No, NO, 0) -> force disable
-# 3. Otherwise, enable notifications if secrets are available
+# 1. If APPRISE_URLS is available -> use it directly
+# 2. If TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are available -> convert to Apprise format
+# 3. If ENABLE_NOTIFICATIONS is explicitly false -> force disable
+# 4. Otherwise, enable notifications if secrets are available
 #
-# Returns: "true" or "false" (as string for GitHub Actions)
+# Returns: "enabled" (true/false) and "apprise_urls" outputs for GitHub Actions
 
 # Function to check if a value is "false-like"
 is_false() {
@@ -27,15 +28,15 @@ is_false() {
     esac
 }
 
-# Check if required secrets are available
+# Check available notification credentials
+APPRISE_URLS="${APPRISE_URLS:-}"
 TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}"
 TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-}"
-
-# Check explicit enable/disable flag
 ENABLE_NOTIFICATIONS="${ENABLE_NOTIFICATIONS:-}"
 
 # Debug output (will appear in GitHub Actions logs)
 echo "Checking notification requirements..."
+echo "APPRISE_URLS: $([ -n "$APPRISE_URLS" ] && echo 'SET' || echo 'NOT SET')"
 echo "TELEGRAM_BOT_TOKEN: $([ -n "$TELEGRAM_BOT_TOKEN" ] && echo 'SET' || echo 'NOT SET')"
 echo "TELEGRAM_CHAT_ID: $([ -n "$TELEGRAM_CHAT_ID" ] && echo 'SET' || echo 'NOT SET')"
 echo "ENABLE_NOTIFICATIONS: ${ENABLE_NOTIFICATIONS:-'not set'}"
@@ -44,25 +45,33 @@ echo "ENABLE_NOTIFICATIONS: ${ENABLE_NOTIFICATIONS:-'not set'}"
 if [ -n "$ENABLE_NOTIFICATIONS" ] && is_false "$ENABLE_NOTIFICATIONS"; then
     echo "Notifications explicitly disabled via ENABLE_NOTIFICATIONS=$ENABLE_NOTIFICATIONS"
     echo "enabled=false" >> $GITHUB_OUTPUT
-    echo "false"
     exit 0
 fi
 
-# Check if secrets are available
-if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
-    echo "✓ Notification secrets available - notifications enabled"
+# Determine which notification URLs to use
+FINAL_URLS=""
+
+if [ -n "$APPRISE_URLS" ]; then
+    # Use Apprise URLs directly
+    FINAL_URLS="$APPRISE_URLS"
+    echo "✓ Using APPRISE_URLS for notifications"
+elif [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
+    # Convert Telegram credentials to Apprise format with HTML formatting
+    FINAL_URLS="tgram://${TELEGRAM_BOT_TOKEN}/${TELEGRAM_CHAT_ID}?format=html"
+    echo "✓ Converting Telegram credentials to Apprise format (HTML mode)"
+fi
+
+# Check if we have any notification URLs
+if [ -n "$FINAL_URLS" ]; then
+    echo "✓ Notifications enabled"
     echo "enabled=true" >> $GITHUB_OUTPUT
-    echo "true"
+    echo "apprise_urls=$FINAL_URLS" >> $GITHUB_OUTPUT
     exit 0
 else
-    echo "✗ Required secrets missing - notifications disabled"
-    if [ -z "$TELEGRAM_BOT_TOKEN" ]; then
-        echo "  Missing: TELEGRAM_BOT_TOKEN"
-    fi
-    if [ -z "$TELEGRAM_CHAT_ID" ]; then
-        echo "  Missing: TELEGRAM_CHAT_ID"
-    fi
+    echo "✗ No notification credentials available"
+    echo "  Set either:"
+    echo "    - APPRISE_URLS (supports 90+ services)"
+    echo "    - TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID (Telegram only)"
     echo "enabled=false" >> $GITHUB_OUTPUT
-    echo "false"
     exit 0
 fi
