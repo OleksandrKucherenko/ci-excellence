@@ -1,0 +1,117 @@
+# Gitleaks Configuration
+# Detect hardcoded secrets in git repository
+# Docs: https://github.com/gitleaks/gitleaks
+
+title = "Gitleaks Configuration for CI Excellence"
+
+[extend]
+# Use default gitleaks rules
+useDefault = true
+
+# Additional custom rules
+[[rules]]
+id = "github-token"
+description = "GitHub Personal Access Token"
+regex = '''ghp_[0-9a-zA-Z]{36}'''
+tags = ["key", "github"]
+
+[[rules]]
+id = "github-app-token"
+description = "GitHub App Token"
+regex = '''(ghu|ghs)_[0-9a-zA-Z]{36}'''
+tags = ["key", "github"]
+
+[[rules]]
+id = "github-refresh-token"
+description = "GitHub Refresh Token"
+regex = '''ghr_[0-9a-zA-Z]{36}'''
+tags = ["key", "github"]
+
+[[rules]]
+id = "slack-webhook"
+description = "Slack Webhook"
+regex = '''https://hooks\.slack\.com/services/[A-Za-z0-9+/]{44,46}'''
+tags = ["webhook", "slack"]
+
+[[rules]]
+id = "slack-bot-token"
+description = "Slack Bot Token"
+regex = '''xoxb-[0-9]{11}-[0-9]{11}-[a-zA-Z0-9]{24}'''
+tags = ["key", "slack"]
+
+[[rules]]
+id = "npm-token"
+description = "NPM Access Token"
+regex = '''npm_[a-zA-Z0-9]{36}'''
+tags = ["key", "npm"]
+
+[[rules]]
+id = "docker-hub-token"
+description = "Docker Hub Access Token"
+regex = '''dckr_pat_[a-zA-Z0-9_-]{35,50}'''
+tags = ["key", "docker"]
+
+[[rules]]
+id = "age-secret-key"
+description = "age secret key"
+regex = '''AGE-SECRET-KEY-1[A-Z0-9]{58}'''
+tags = ["key", "age", "encryption"]
+
+[[rules]]
+id = "generic-api-key"
+description = "Generic API Key"
+regex = '''(?i)(api[_-]?key|apikey)['":\s]*[a-zA-Z0-9]{20,}'''
+tags = ["key", "api"]
+
+# Allowlist - patterns to ignore
+[allowlist]
+description = "Allowlisted files and patterns"
+paths = [
+    # Config templates are safe (examples only)
+    '''config/.*\.template$''',
+    '''.*\.example$''',
+    '''\.env\.secrets\.json\.example$''',
+
+    # Documentation
+    '''docs/.*\.md$''',
+    '''README\.md$''',
+    '''CONTRIBUTING\.md$''',
+
+    # Test fixtures
+    '''tests?/fixtures/.*''',
+    '''tests?/.*\.test\.(js|ts|py)$''',
+
+    # CI workflows (using GitHub secrets)
+    '''\.github/workflows/.*\.yml$''',
+]
+
+regexes = [
+    # Placeholder patterns
+    '''your[-_]?[a-z]+[-_]?(token|key|secret|password)[-_]?here''',
+    '''(xxx|yyy|zzz|abc|def|123)''',
+    '''example\.(com|org|net)''',
+
+    # Documentation examples
+    '''ghp_[xX]{36}''',
+    '''npm_[xX]{36}''',
+
+    # SOPS encrypted files (already encrypted)
+    '''ENC\[AES256_GCM,data:.*,iv:.*,tag:.*\]''',
+]
+
+# Entropy settings - detect high entropy strings (potential secrets)
+[allowlist.commits]
+# Allow specific commits (if needed)
+# "commit-hash-here"
+
+[allowlist.stopwords]
+# Common words that trigger false positives
+stopwords = [
+    "example",
+    "sample",
+    "test",
+    "demo",
+    "placeholder",
+    "your_token_here",
+    "your_password_here",
+]

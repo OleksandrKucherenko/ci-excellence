@@ -1,0 +1,100 @@
+# Lefthook Configuration
+# Git hooks manager - runs security checks on commits and pushes
+# Docs: https://github.com/evilmartians/lefthook
+
+# Global settings
+min_version: 1.5.0
+colors: true
+no_tty: false
+
+# Pre-commit hook - fast checks before commit
+pre-commit:
+  parallel: true
+
+  commands:
+    # Check for secrets in staged files
+    gitleaks-staged:
+      tags: security
+      run: gitleaks protect --staged --redact --verbose
+      skip:
+        - merge
+        - rebase
+
+    # Scan staged files with trufflehog
+    trufflehog-git-staged:
+      tags: security
+      run: trufflehog git file://. --since-commit HEAD --only-verified --fail
+      skip:
+        - merge
+        - rebase
+
+    # Prevent committing to main/master directly
+    prevent-main-commit:
+      tags: branch-protection
+      run: |
+        branch=$(git rev-parse --abbrev-ref HEAD)
+        if [ "$branch" = "main" ] || [ "$branch" = "master" ]; then
+          echo "❌ Direct commits to main/master are not allowed!"
+          echo "   Create a feature branch instead:"
+          echo "   git checkout -b feature/your-feature-name"
+          exit 1
+        fi
+      skip:
+        - merge
+        - rebase
+
+# Pre-push hook - more thorough checks before push
+pre-push:
+  parallel: false
+
+  commands:
+    # Full gitleaks scan of commits being pushed
+    gitleaks-push:
+      tags: security
+      run: gitleaks protect --redact --verbose
+
+    # Full trufflehog scan
+    trufflehog-push:
+      tags: security
+      run: trufflehog git file://. --since-commit HEAD~10 --only-verified --fail
+
+# Commit-msg hook - enforce conventional commits (optional)
+# Uncomment to enforce commit message format
+# commit-msg:
+#   commands:
+#     conventional-commit:
+#       tags: commit-format
+#       run: |
+#         if ! grep -qE "^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .{1,}" "$1"; then
+#           echo "❌ Invalid commit message format!"
+#           echo "   Use conventional commits format:"
+#           echo "   feat: add new feature"
+#           echo "   fix: resolve bug"
+#           echo "   docs: update documentation"
+#           exit 1
+#         fi
+
+# Post-checkout hook - remind about mise
+post-checkout:
+  commands:
+    mise-reminder:
+      run: |
+        if [ ! -f ".secrets/mise-age.txt" ]; then
+          echo "💡 Tip: Run 'mise run generate-age-key' to set up secret management"
+        fi
+      skip:
+        - merge
+        - rebase
+
+# Skip hooks for specific scenarios
+skip_output:
+  - meta
+  - summary
+
+# Remote configuration (optional)
+# Allows sharing hooks via git
+# remotes:
+#   - git_url: https://github.com/your-org/shared-hooks.git
+#     ref: main
+#     configs:
+#       - lefthook.yml

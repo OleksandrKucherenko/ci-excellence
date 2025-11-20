@@ -11,6 +11,36 @@ echo "========================================="
 
 EXIT_CODE=0
 
+# Check if gitleaks is installed
+if command -v gitleaks &> /dev/null; then
+    echo "Running gitleaks secret detection..."
+    if gitleaks detect --redact --verbose --report-path gitleaks-report.json --report-format json; then
+        echo "✓ No secrets detected by gitleaks"
+    else
+        echo "⚠ Gitleaks found potential secrets!"
+        EXIT_CODE=1
+    fi
+else
+    echo "⚠ gitleaks not installed, skipping secret detection"
+fi
+
+echo ""
+
+# Check if trufflehog is installed
+if command -v trufflehog &> /dev/null; then
+    echo "Running trufflehog credential scan..."
+    if trufflehog git file://. --only-verified --fail --json > trufflehog-report.json 2>&1; then
+        echo "✓ No leaked credentials detected by trufflehog"
+    else
+        echo "⚠ Trufflehog found leaked credentials!"
+        EXIT_CODE=1
+    fi
+else
+    echo "⚠ trufflehog not installed, skipping credential scan"
+fi
+
+echo ""
+
 # Example: NPM audit
 # if [ -f "package.json" ]; then
 #     echo "Running npm audit..."
@@ -55,8 +85,9 @@ cat > security-results.sarif <<EOF
     {
       "tool": {
         "driver": {
-          "name": "Security Scan Stub",
-          "version": "1.0.0"
+          "name": "Security Scan",
+          "version": "1.0.0",
+          "informationUri": "https://github.com/your-org/ci-excellence"
         }
       },
       "results": []
@@ -69,6 +100,20 @@ if [ $EXIT_CODE -ne 0 ]; then
     echo "========================================="
     echo "⚠ Security issues found"
     echo "========================================="
+
+    # Show summary of findings
+    if [ -f "gitleaks-report.json" ]; then
+        echo ""
+        echo "Gitleaks findings:"
+        cat gitleaks-report.json | head -20
+    fi
+
+    if [ -f "trufflehog-report.json" ]; then
+        echo ""
+        echo "Trufflehog findings:"
+        cat trufflehog-report.json | head -20
+    fi
+
     # Don't exit with error code for now, just warn
     # exit $EXIT_CODE
 fi
