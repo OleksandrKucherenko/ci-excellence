@@ -90,3 +90,7 @@ desktop.ini
 # Encrypted secrets are OK to commit (encrypted with SOPS)
 # These require the private key to decrypt
 !.env.secrets.json
+
+# Reports
+gitleaks-report.json
+trufflehog-report.json
