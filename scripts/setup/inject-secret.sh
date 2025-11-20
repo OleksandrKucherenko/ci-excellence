@@ -57,20 +57,8 @@ if [ ! -f "$AGE_KEY_FILE" ]; then
     echo ""
 fi
 
-# Extract public key from private key for encryption
-# Age private keys contain the public key, we just need to extract it
-AGE_PUBLIC_KEY=$(grep "public key:" "$AGE_KEY_FILE" | awk '{print $NF}')
-
-if [ -z "$AGE_PUBLIC_KEY" ]; then
-    echo "❌ Failed to extract public key from $AGE_KEY_FILE"
-    echo "   The age key file may be corrupt or in wrong format"
-    echo ""
-    echo "Please regenerate the key:"
-    echo "   mise run generate-age-key"
-    exit 1
-fi
-
-echo "🔑 Using age public key: ${AGE_PUBLIC_KEY:0:20}..."
+# Note: SOPS will use SOPS_AGE_KEY_FILE environment variable set by mise
+# No need to extract or pass the public key explicitly
 
 # Check if secrets file exists
 if [ ! -f "$SECRETS_FILE" ]; then
@@ -80,9 +68,9 @@ if [ ! -f "$SECRETS_FILE" ]; then
     # Always start with empty JSON object
     echo '{}' > "$SECRETS_FILE"
 
-    # Encrypt the new file
+    # Encrypt the new file (SOPS uses SOPS_AGE_KEY_FILE from mise)
     echo "   Encrypting with age..."
-    sops --encrypt --input-type json --output-type json --age "$AGE_PUBLIC_KEY" "$SECRETS_FILE" > "${SECRETS_FILE}.tmp"
+    sops --encrypt --input-type json --output-type json "$SECRETS_FILE" > "${SECRETS_FILE}.tmp"
     mv "${SECRETS_FILE}.tmp" "$SECRETS_FILE"
     echo "✓ Created and encrypted $SECRETS_FILE"
     echo ""
@@ -128,9 +116,9 @@ if ! jq empty "$TEMP_FILE" 2>/dev/null; then
     exit 1
 fi
 
-# Encrypt and save
+# Encrypt and save (SOPS uses SOPS_AGE_KEY_FILE from mise)
 echo "🔐 Encrypting and saving..."
-if ! sops --encrypt --input-type json --output-type json --age "$AGE_PUBLIC_KEY" "$TEMP_FILE" > "${SECRETS_FILE}.tmp"; then
+if ! sops --encrypt --input-type json --output-type json "$TEMP_FILE" > "${SECRETS_FILE}.tmp"; then
     echo "❌ Failed to encrypt secrets file"
     rm -f "${SECRETS_FILE}.tmp"
     exit 1
