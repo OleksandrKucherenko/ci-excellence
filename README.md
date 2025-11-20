@@ -91,6 +91,8 @@ cat ~/.ssh/id_ed25519_ci_excellence.pub
 ```
 
 **4. Configure Git to use specific key:**
+
+**Option A: Using ~/.ssh/config (global approach)**
 ```bash
 # Add to ~/.ssh/config
 cat >> ~/.ssh/config <<EOF
@@ -101,12 +103,45 @@ Host github.com-ci-excellence
   IdentityFile ~/.ssh/id_ed25519_ci_excellence
   IdentitiesOnly yes
 EOF
-```
 
-**5. Clone using custom SSH config:**
-```bash
+# Clone using custom host
 git clone git@github.com-ci-excellence:YOUR-USERNAME/ci-excellence.git
 cd ci-excellence
+```
+
+**Option B: Using local git config (project-specific approach)**
+```bash
+# Clone repository first
+git clone git@github.com:YOUR-USERNAME/ci-excellence.git
+cd ci-excellence
+
+# Configure line endings
+git config --local core.autocrlf false
+git config --local core.eol lf
+
+# Configure user identity for this project
+git config --local user.name "Your Name"
+git config --local user.email "your.email@example.com"
+
+# Configure project-specific SSH key
+# Place your SSH key in .secrets/ directory
+cp ~/.ssh/id_ed25519_ci_excellence .secrets/github-ssh-key
+chmod 400 .secrets/github-ssh-key
+
+# Configure git to use this key (auto-detects project path)
+git config --local core.sshCommand "ssh -o IdentitiesOnly=yes -i $(printf "%q\n" "$(pwd)")/.secrets/github-ssh-key -F /dev/null"
+```
+
+**WSL-specific chmod workaround (if needed):**
+```bash
+# If WSL has chmod issues with files in project directory
+cp .secrets/github-ssh-key ~/
+rm .secrets/github-ssh-key
+chmod 400 ~/github-ssh-key
+ln --symbolic ~/github-ssh-key .secrets/github-ssh-key
+
+# Update git config to use symlink
+git config --local core.sshCommand "ssh -o IdentitiesOnly=yes -i $(printf "%q\n" "$(pwd)")/.secrets/github-ssh-key -F /dev/null"
 ```
 
 ## 🚀 Quick Start
