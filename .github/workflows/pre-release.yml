@@ -321,19 +321,33 @@ jobs:
     name: Send Notifications
     runs-on: ubuntu-latest
     needs: [summary]
-    if: always() && vars.ENABLE_NOTIFICATIONS == 'true'
+    if: always()
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Check if notifications enabled
+        id: check_notify
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          ENABLE_NOTIFICATIONS: ${{ vars.ENABLE_NOTIFICATIONS }}
+        run: |
+          chmod +x scripts/ci/notification/check-notifications-enabled.sh
+          ./scripts/ci/notification/check-notifications-enabled.sh
+
       - name: Determine pipeline status
+        if: steps.check_notify.outputs.enabled == 'true'
         id: status
         run: ./scripts/ci/notification/ci-02-determine-status.sh "${{ needs.summary.result }}"
 
       - name: Send notification
+        if: steps.check_notify.outputs.enabled == 'true'
         env:
-          APPRISE_URLS: ${{ secrets.APPRISE_URLS }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
+          chmod +x scripts/ci/notification/ci-01-send-notification.sh
           ./scripts/ci/notification/ci-01-send-notification.sh \
             "Pre-Release Pipeline" \
             "${{ steps.status.outputs.message }}" \
