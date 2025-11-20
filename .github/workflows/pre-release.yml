@@ -210,13 +210,28 @@ jobs:
     name: Security Vulnerability Scan
     runs-on: ubuntu-latest
     needs: setup
-    if: ${{ vars.ENABLE_SECURITY_SCAN == 'true' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for trufflehog to scan
+
+      - name: Setup mise and install tools
+        run: ./scripts/ci/setup/ci-01-install-tools.sh
 
       - name: Run vulnerability scan
         run: ./scripts/ci/build/ci-03-security-scan.sh
+
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-reports
+          path: |
+            gitleaks-report.json
+            trufflehog-report.json
+            security-results.sarif
+          retention-days: 30
 
   bundle:
     name: Bundle and Package

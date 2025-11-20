@@ -114,8 +114,8 @@ if [ $EXIT_CODE -ne 0 ]; then
         cat trufflehog-report.json | head -20
     fi
 
-    # Don't exit with error code for now, just warn
-    # exit $EXIT_CODE
+    # Exit with error code to fail the build
+    exit $EXIT_CODE
 fi
 
 echo "========================================="
