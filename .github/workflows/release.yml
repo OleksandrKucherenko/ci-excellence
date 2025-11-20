@@ -342,11 +342,21 @@ jobs:
           echo "| Documentation | ${{ needs.publish-documentation.result }} | ${{ vars.ENABLE_DOCUMENTATION || 'false' }} |" >> $GITHUB_STEP_SUMMARY
 
       - name: Checkout code
-        if: vars.ENABLE_NOTIFICATIONS == 'true'
         uses: actions/checkout@v4
 
+      - name: Check if notifications enabled
+        id: check_notify
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          APPRISE_URLS: ${{ secrets.APPRISE_URLS }}
+          ENABLE_NOTIFICATIONS: ${{ vars.ENABLE_NOTIFICATIONS }}
+        run: |
+          chmod +x scripts/ci/notification/check-notifications-enabled.sh
+          ./scripts/ci/notification/check-notifications-enabled.sh
+
       - name: Determine release status
-        if: vars.ENABLE_NOTIFICATIONS == 'true'
+        if: steps.check_notify.outputs.enabled == 'true'
         id: status
         run: |
           # Check if any critical job failed
@@ -362,9 +372,9 @@ jobs:
           fi
 
       - name: Send notification
-        if: vars.ENABLE_NOTIFICATIONS == 'true'
+        if: steps.check_notify.outputs.enabled == 'true'
         env:
-          APPRISE_URLS: ${{ secrets.APPRISE_URLS }}
+          APPRISE_URLS: ${{ steps.check_notify.outputs.apprise_urls }}
         run: |
           chmod +x scripts/setup/send-notification.sh
           ./scripts/setup/send-notification.sh \
