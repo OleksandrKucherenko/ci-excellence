@@ -44,21 +44,21 @@ else
     exit 1
 fi
 
-# Verify critical security tools are installed
+# Verify critical security tools are installed via mise
 echo ""
 echo "Verifying security tools installation..."
 
-if command -v gitleaks &> /dev/null; then
-    echo "✓ gitleaks: $(gitleaks version)"
+if mise x -- gitleaks version &> /dev/null; then
+    echo "✓ gitleaks: $(mise x -- gitleaks version)"
 else
-    echo "❌ gitleaks not found in PATH"
+    echo "❌ gitleaks not found in mise"
     exit 1
 fi
 
-if command -v trufflehog &> /dev/null; then
-    echo "✓ trufflehog: $(trufflehog --version)"
+if mise x -- trufflehog --version &> /dev/null; then
+    echo "✓ trufflehog: $(mise x -- trufflehog --version 2>&1 | head -1)"
 else
-    echo "❌ trufflehog not found in PATH"
+    echo "❌ trufflehog not found in mise"
     exit 1
 fi
 
