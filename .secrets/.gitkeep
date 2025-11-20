@@ -2,8 +2,11 @@
 # NEVER commit the actual key files to git!
 #
 # Files in this directory:
-# - mise-age.txt      - Private age key (NEVER COMMIT!)
-# - mise-age-pub.txt  - Public age key (safe to share)
+# - mise-age.txt      - Private age key (NEVER COMMIT! - contains public key too)
+# - mise-age-pub.txt  - Public age key (optional, auto-generated, safe to share)
+#
+# Note: The private key file contains both the private and public keys.
+# The public key can be extracted from it, so mise-age-pub.txt is optional.
 #
 # The .gitignore is configured to exclude all files in .secrets/
 # except this .gitkeep file.

@@ -11,32 +11,30 @@ echo "========================================="
 
 EXIT_CODE=0
 
-# Check if gitleaks is installed
-if command -v gitleaks &> /dev/null; then
-    echo "Running gitleaks secret detection..."
-    if gitleaks detect --redact --verbose --report-path gitleaks-report.json --report-format json; then
-        echo "✓ No secrets detected by gitleaks"
-    else
-        echo "⚠ Gitleaks found potential secrets!"
-        EXIT_CODE=1
-    fi
+# Ensure mise is available
+if ! command -v mise &> /dev/null; then
+    echo "❌ mise not found. Please run setup script first."
+    exit 1
+fi
+
+# Run gitleaks via mise
+echo "Running gitleaks secret detection..."
+if mise x -- gitleaks detect --redact --verbose --report-path gitleaks-report.json --report-format json; then
+    echo "✓ No secrets detected by gitleaks"
 else
-    echo "⚠ gitleaks not installed, skipping secret detection"
+    echo "⚠ Gitleaks found potential secrets!"
+    EXIT_CODE=1
 fi
 
 echo ""
 
-# Check if trufflehog is installed
-if command -v trufflehog &> /dev/null; then
-    echo "Running trufflehog credential scan..."
-    if trufflehog git file://. --only-verified --fail --json > trufflehog-report.json 2>&1; then
-        echo "✓ No leaked credentials detected by trufflehog"
-    else
-        echo "⚠ Trufflehog found leaked credentials!"
-        EXIT_CODE=1
-    fi
+# Run trufflehog via mise
+echo "Running trufflehog credential scan..."
+if mise x -- trufflehog git file://. --only-verified --fail --exclude-paths .trufflehog-exclude.txt --json > trufflehog-report.json 2>&1; then
+    echo "✓ No leaked credentials detected by trufflehog"
 else
-    echo "⚠ trufflehog not installed, skipping credential scan"
+    echo "⚠ Trufflehog found leaked credentials!"
+    EXIT_CODE=1
 fi
 
 echo ""
@@ -114,8 +112,8 @@ if [ $EXIT_CODE -ne 0 ]; then
         cat trufflehog-report.json | head -20
     fi
 
-    # Don't exit with error code for now, just warn
-    # exit $EXIT_CODE
+    # Exit with error code to fail the build
+    exit $EXIT_CODE
 fi
 
 echo "========================================="

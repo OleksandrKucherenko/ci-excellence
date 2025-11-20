@@ -34,7 +34,7 @@ run = ["trufflehog git file://. --only-verified"]
 
 [tasks.encrypt-secrets]
 description = "Encrypt secrets file with SOPS"
-run = ["sops --encrypt --age $(cat .secrets/mise-age-pub.txt) .env.secrets.json.example > .env.secrets.json"]
+run = ["sops --encrypt --input-type json --output-type json .env.secrets.json.example > .env.secrets.json"]
 
 [tasks.decrypt-secrets]
 description = "Decrypt secrets file with SOPS"
@@ -47,6 +47,14 @@ run = ["sops .env.secrets.json"]
 [tasks.generate-age-key]
 description = "Generate new age key pair for secrets encryption"
 run = ["./scripts/setup/generate-age-key.sh"]
+
+[tasks.inject-secret]
+description = "Inject or update a secret in .env.secrets.json (creates file if needed)"
+run = ["./scripts/setup/inject-secret.sh \"$@\""]
+
+[tasks.inject-gh-secret]
+description = "Inject secrets from .env.secrets.json into GitHub Actions"
+run = ["./scripts/setup/inject-gh-secret.sh \"$@\""]
 
 [tasks.validate-workflows]
 description = "Validate GitHub Actions workflows"
@@ -71,3 +79,7 @@ trufflehog = "latest"
 lefthook = "latest"
 # GitHub Actions validator
 action-validator = "latest"
+# Notification tool
+"pipx:apprise" = "latest"
+# TypeScript runtime
+bun = "latest"
