@@ -52,6 +52,10 @@ run = ["./scripts/setup/generate-age-key.sh"]
 description = "Inject or update a secret in .env.secrets.json (creates file if needed)"
 run = ["./scripts/setup/inject-secret.sh \"$@\""]
 
+[tasks.inject-gh-secret]
+description = "Inject secrets from .env.secrets.json into GitHub Actions"
+run = ["./scripts/setup/inject-gh-secret.sh \"$@\""]
+
 [tasks.validate-workflows]
 description = "Validate GitHub Actions workflows"
 run = [
