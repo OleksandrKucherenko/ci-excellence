@@ -1,0 +1,373 @@
+name: Release Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      release-type:
+        description: 'Release type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+          - premajor
+          - preminor
+          - prepatch
+          - prerelease
+      pre-release:
+        description: 'Is this a pre-release?'
+        required: false
+        type: boolean
+        default: false
+      dry-run:
+        description: 'Dry run (no actual release)'
+        required: false
+        type: boolean
+        default: false
+
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  # CI Feature Flags
+  ENABLE_COMPILE: ${{ vars.ENABLE_COMPILE || 'true' }}
+  ENABLE_TESTS: ${{ vars.ENABLE_TESTS || 'true' }}
+  ENABLE_NPM_PUBLISH: ${{ vars.ENABLE_NPM_PUBLISH || 'false' }}
+  ENABLE_GITHUB_RELEASE: ${{ vars.ENABLE_GITHUB_RELEASE || 'false' }}
+  ENABLE_DOCKER_PUBLISH: ${{ vars.ENABLE_DOCKER_PUBLISH || 'false' }}
+  ENABLE_DOCUMENTATION: ${{ vars.ENABLE_DOCUMENTATION || 'false' }}
+
+jobs:
+  prepare:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      is-prerelease: ${{ steps.version.outputs.is-prerelease }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup environment
+        run: |
+          chmod +x scripts/setup/*.sh
+          ./scripts/setup/install-tools.sh
+
+      - name: Install dependencies
+        run: ./scripts/setup/install-dependencies.sh
+
+      - name: Determine version
+        id: version
+        run: |
+          chmod +x scripts/release/*.sh
+          VERSION=$(./scripts/release/determine-version.sh "${{ github.event.inputs.release-type || 'patch' }}")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          IS_PRERELEASE="${{ github.event.inputs.pre-release || 'false' }}"
+          if [[ "$VERSION" == *"-"* ]]; then
+            IS_PRERELEASE="true"
+          fi
+          echo "is-prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
+
+      - name: Update version files
+        if: ${{ github.event.inputs.dry-run != 'true' }}
+        run: |
+          ./scripts/release/update-version.sh "${{ steps.version.outputs.version }}"
+
+      - name: Generate changelog
+        run: |
+          ./scripts/release/generate-changelog.sh "${{ steps.version.outputs.version }}"
+
+      - name: Commit version changes
+        if: ${{ github.event.inputs.dry-run != 'true' && github.event_name == 'workflow_dispatch' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "chore(release): bump version to ${{ steps.version.outputs.version }}" || echo "No changes to commit"
+          git push origin HEAD:main || echo "Nothing to push"
+
+  build:
+    name: Build Release Artifacts
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: ${{ vars.ENABLE_COMPILE == 'true' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        run: |
+          chmod +x scripts/setup/*.sh
+          ./scripts/setup/install-tools.sh
+
+      - name: Install dependencies
+        run: ./scripts/setup/install-dependencies.sh
+
+      - name: Build
+        run: |
+          chmod +x scripts/build/*.sh
+          ./scripts/build/compile.sh
+
+      - name: Bundle
+        run: ./scripts/build/bundle.sh
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-artifacts
+          path: |
+            dist/
+            build/
+            *.tgz
+            *.tar.gz
+          retention-days: 90
+
+  test:
+    name: Test Release Build
+    runs-on: ubuntu-latest
+    needs: build
+    if: ${{ vars.ENABLE_TESTS == 'true' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        run: |
+          chmod +x scripts/setup/*.sh
+          ./scripts/setup/install-tools.sh
+
+      - name: Install dependencies
+        run: ./scripts/setup/install-dependencies.sh
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: release-artifacts
+
+      - name: Run tests
+        run: |
+          chmod +x scripts/test/*.sh
+          ./scripts/test/unit.sh
+          ./scripts/test/integration.sh
+
+  publish-npm:
+    name: Publish to NPM
+    runs-on: ubuntu-latest
+    needs: [prepare, build, test]
+    if: |
+      always() &&
+      needs.prepare.result == 'success' &&
+      (needs.build.result == 'success' || needs.build.result == 'skipped') &&
+      (needs.test.result == 'success' || needs.test.result == 'skipped') &&
+      github.event.inputs.dry-run != 'true' &&
+      vars.ENABLE_NPM_PUBLISH == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Download build artifacts
+        if: ${{ vars.ENABLE_COMPILE == 'true' }}
+        uses: actions/download-artifact@v3
+        with:
+          name: release-artifacts
+
+      - name: Publish to NPM
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          chmod +x scripts/release/*.sh
+          if [ "${{ needs.prepare.outputs.is-prerelease }}" == "true" ]; then
+            ./scripts/release/publish-npm.sh --tag next
+          else
+            ./scripts/release/publish-npm.sh --tag latest
+          fi
+
+  publish-github:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [prepare, build, test]
+    if: |
+      always() &&
+      needs.prepare.result == 'success' &&
+      (needs.build.result == 'success' || needs.build.result == 'skipped') &&
+      (needs.test.result == 'success' || needs.test.result == 'skipped') &&
+      github.event.inputs.dry-run != 'true' &&
+      vars.ENABLE_GITHUB_RELEASE == 'true'
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download build artifacts
+        if: ${{ vars.ENABLE_COMPILE == 'true' }}
+        uses: actions/download-artifact@v3
+        with:
+          name: release-artifacts
+
+      - name: Create Git Tag
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${{ needs.prepare.outputs.version }}" -m "Release v${{ needs.prepare.outputs.version }}"
+          git push origin "v${{ needs.prepare.outputs.version }}"
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          chmod +x scripts/release/*.sh
+          NOTES=$(./scripts/release/generate-release-notes.sh "${{ needs.prepare.outputs.version }}")
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ needs.prepare.outputs.version }}
+          release_name: Release v${{ needs.prepare.outputs.version }}
+          body: ${{ steps.notes.outputs.notes }}
+          draft: false
+          prerelease: ${{ needs.prepare.outputs.is-prerelease }}
+
+      - name: Upload Release Assets
+        if: ${{ vars.ENABLE_COMPILE == 'true' }}
+        run: |
+          chmod +x scripts/release/*.sh
+          ./scripts/release/upload-assets.sh "v${{ needs.prepare.outputs.version }}"
+
+  publish-docker:
+    name: Publish Docker Image
+    runs-on: ubuntu-latest
+    needs: [prepare, build, test]
+    if: |
+      always() &&
+      needs.prepare.result == 'success' &&
+      (needs.build.result == 'success' || needs.build.result == 'skipped') &&
+      (needs.test.result == 'success' || needs.test.result == 'skipped') &&
+      github.event.inputs.dry-run != 'true' &&
+      vars.ENABLE_DOCKER_PUBLISH == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        run: |
+          chmod +x scripts/release/*.sh
+          ./scripts/release/publish-docker.sh "${{ needs.prepare.outputs.version }}" "${{ needs.prepare.outputs.is-prerelease }}"
+
+  publish-documentation:
+    name: Publish Documentation
+    runs-on: ubuntu-latest
+    needs: [prepare, publish-github]
+    if: |
+      always() &&
+      needs.prepare.result == 'success' &&
+      (needs.publish-github.result == 'success' || needs.publish-github.result == 'skipped') &&
+      github.event.inputs.dry-run != 'true' &&
+      vars.ENABLE_DOCUMENTATION == 'true'
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        run: |
+          chmod +x scripts/setup/*.sh
+          ./scripts/setup/install-tools.sh
+
+      - name: Build documentation
+        run: |
+          chmod +x scripts/release/*.sh
+          ./scripts/release/build-docs.sh "${{ needs.prepare.outputs.version }}"
+
+      - name: Publish documentation
+        run: ./scripts/release/publish-docs.sh
+
+  notify:
+    name: Notify Release
+    runs-on: ubuntu-latest
+    needs: [prepare, publish-npm, publish-github, publish-docker, publish-documentation]
+    if: always() && github.event.inputs.dry-run != 'true'
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ needs.prepare.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Pre-release:** ${{ needs.prepare.outputs.is-prerelease }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Target | Status | Enabled |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| NPM | ${{ needs.publish-npm.result }} | ${{ vars.ENABLE_NPM_PUBLISH || 'false' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| GitHub | ${{ needs.publish-github.result }} | ${{ vars.ENABLE_GITHUB_RELEASE || 'false' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker | ${{ needs.publish-docker.result }} | ${{ vars.ENABLE_DOCKER_PUBLISH || 'false' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Documentation | ${{ needs.publish-documentation.result }} | ${{ vars.ENABLE_DOCUMENTATION || 'false' }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Checkout code
+        if: vars.ENABLE_NOTIFICATIONS == 'true'
+        uses: actions/checkout@v4
+
+      - name: Determine release status
+        if: vars.ENABLE_NOTIFICATIONS == 'true'
+        id: status
+        run: |
+          # Check if any critical job failed
+          if [ "${{ needs.prepare.result }}" == "failure" ] || \
+             [ "${{ needs.publish-npm.result }}" == "failure" ] || \
+             [ "${{ needs.publish-github.result }}" == "failure" ] || \
+             [ "${{ needs.publish-docker.result }}" == "failure" ]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "message=Release ${{ needs.prepare.outputs.version }} Failed ❌" >> $GITHUB_OUTPUT
+          else
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "message=Release ${{ needs.prepare.outputs.version }} Published ✅" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send notification
+        if: vars.ENABLE_NOTIFICATIONS == 'true'
+        env:
+          APPRISE_URLS: ${{ secrets.APPRISE_URLS }}
+        run: |
+          chmod +x scripts/setup/send-notification.sh
+          ./scripts/setup/send-notification.sh \
+            "Release Pipeline" \
+            "${{ steps.status.outputs.message }}" \
+            "${{ steps.status.outputs.status }}"

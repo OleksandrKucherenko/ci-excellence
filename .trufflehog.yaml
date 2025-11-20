@@ -1,0 +1,95 @@
+# Trufflehog Configuration
+# Find leaked credentials in git history and filesystem
+# Docs: https://github.com/trufflesecurity/trufflehog
+
+# This is a YAML configuration for trufflehog v3
+# Place at .trufflehog.yaml or pass with --config flag
+
+# Detectors to enable/disable
+detectors:
+  # Enable all default detectors
+  - name: all
+    enabled: true
+
+# Verification - actually verify if credentials work
+verify: true
+
+# Only report verified secrets (reduces false positives)
+only-verified: true
+
+# Exclude patterns
+exclude-paths:
+  # Config templates
+  - "config/*.template"
+  - "*.example"
+  - ".env.secrets.json.example"
+
+  # Documentation
+  - "docs/**/*.md"
+  - "README.md"
+  - "CONTRIBUTING.md"
+  - "QUICKSTART.md"
+
+  # Test fixtures
+  - "tests/**/fixtures/**"
+  - "test/**/fixtures/**"
+  - "**/*.test.js"
+  - "**/*.test.ts"
+  - "**/*.test.py"
+
+  # CI workflows (managed secrets)
+  - ".github/workflows/*.yml"
+
+  # Dependencies
+  - "node_modules/**"
+  - "vendor/**"
+  - "venv/**"
+  - ".venv/**"
+
+  # Build outputs
+  - "dist/**"
+  - "build/**"
+  - "target/**"
+  - "out/**"
+
+  # Encrypted files (already encrypted with SOPS)
+  - ".env.secrets.json"
+
+# Exclude entropy patterns
+exclude-entropy-patterns:
+  - "ENC\\[AES256_GCM,data:.*,iv:.*,tag:.*\\]"  # SOPS encrypted
+  - "age1[a-z0-9]{58}"  # age public keys (public by design)
+  - "[xX]{20,}"  # Placeholder Xs
+  - "example\\.com"
+  - "your[-_]?(token|key|secret)"
+
+# Custom regex patterns to exclude
+exclude-regex:
+  - "your_.*_here"
+  - "(xxx|yyy|zzz|abc|def|123){3,}"
+  - "ghp_[xX]{36}"  # Placeholder GitHub tokens
+  - "npm_[xX]{36}"  # Placeholder NPM tokens
+
+# Concurrency - number of concurrent workers
+concurrency: 4
+
+# Output format: json, yaml, or text
+# format: json
+
+# Include metadata in output
+include-metadata: true
+
+# GitHub-specific settings (if scanning GitHub)
+# github:
+#   token: ${GITHUB_TOKEN}
+
+# Filesystem scanning settings
+filesystem:
+  # Max file size to scan (in bytes)
+  max-file-size: 10485760  # 10MB
+
+  # Include hidden files
+  include-hidden: false
+
+  # Follow symlinks
+  follow-symlinks: false
