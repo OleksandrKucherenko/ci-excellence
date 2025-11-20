@@ -56,9 +56,9 @@ if [ -n "$APPRISE_URLS" ]; then
     FINAL_URLS="$APPRISE_URLS"
     echo "✓ Using APPRISE_URLS for notifications"
 elif [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
-    # Convert Telegram credentials to Apprise format
-    FINAL_URLS="tgram://${TELEGRAM_BOT_TOKEN}/${TELEGRAM_CHAT_ID}"
-    echo "✓ Converting Telegram credentials to Apprise format"
+    # Convert Telegram credentials to Apprise format with HTML formatting
+    FINAL_URLS="tgram://${TELEGRAM_BOT_TOKEN}/${TELEGRAM_CHAT_ID}?format=html"
+    echo "✓ Converting Telegram credentials to Apprise format (HTML mode)"
 fi
 
 # Check if we have any notification URLs
