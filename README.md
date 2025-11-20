@@ -12,6 +12,7 @@ A production-ready, customizable CI/CD pipeline setup with stub implementations 
 
 ## 📋 Table of Contents
 
+- [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
 - [Local Development Setup (Mise)](#local-development-setup-mise)
 - [Architecture](#architecture)
@@ -22,16 +23,138 @@ A production-ready, customizable CI/CD pipeline setup with stub implementations 
 - [Best Practices](#best-practices)
 - [Troubleshooting](#troubleshooting)
 
-## 🚀 Quick Start
+## ✅ Prerequisites
 
-### 1. Clone or Copy This Setup
+**The ONLY requirement is [Mise](https://mise.jit.su)** - everything else installs automatically!
+
+### Install Mise
 
 ```bash
-# Copy the entire .github/workflows, scripts, and config directories to your project
-cp -r .github scripts config /path/to/your/project/
+# Linux/macOS
+curl https://mise.run | sh
+
+# Or using Homebrew
+brew install mise
+
+# Or using Cargo
+cargo install mise
 ```
 
-### 2. Configure GitHub Variables
+### Activate Mise in Your Shell
+
+Add to your shell configuration file:
+
+**Bash** (`~/.bashrc` or `~/.bash_profile`):
+```bash
+eval "$(mise activate bash)"
+```
+
+**Zsh** (`~/.zshrc`):
+```bash
+eval "$(mise activate zsh)"
+```
+
+**Fish** (`~/.config/fish/config.fish`):
+```fish
+mise activate fish | source
+```
+
+**PowerShell** (`$PROFILE`):
+```powershell
+Invoke-Expression "$(mise activate powershell)"
+```
+
+Reload your shell:
+```bash
+source ~/.bashrc  # or ~/.zshrc, etc.
+```
+
+### Configure Git with Custom SSH Key (Optional)
+
+If you use a custom SSH key for this repository:
+
+**1. Generate SSH key (if needed):**
+```bash
+ssh-keygen -t ed25519 -C "your_email@example.com" -f ~/.ssh/id_ed25519_ci_excellence
+```
+
+**2. Add SSH key to ssh-agent:**
+```bash
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519_ci_excellence
+```
+
+**3. Add public key to GitHub:**
+```bash
+cat ~/.ssh/id_ed25519_ci_excellence.pub
+# Copy output and add to: GitHub Settings > SSH and GPG keys > New SSH key
+```
+
+**4. Configure Git to use specific key:**
+```bash
+# Add to ~/.ssh/config
+cat >> ~/.ssh/config <<EOF
+
+Host github.com-ci-excellence
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/id_ed25519_ci_excellence
+  IdentitiesOnly yes
+EOF
+```
+
+**5. Clone using custom SSH config:**
+```bash
+git clone git@github.com-ci-excellence:YOUR-USERNAME/ci-excellence.git
+cd ci-excellence
+```
+
+## 🚀 Quick Start
+
+### 1. Clone the Repository
+
+```bash
+# Standard clone
+git clone git@github.com:YOUR-USERNAME/ci-excellence.git
+cd ci-excellence
+
+# Or with custom SSH key (see Prerequisites above)
+git clone git@github.com-ci-excellence:YOUR-USERNAME/ci-excellence.git
+cd ci-excellence
+```
+
+### 2. Let Mise Do Everything!
+
+When you enter the project directory, mise automatically:
+- ✅ **Installs all required tools** (gitleaks, trufflehog, lefthook, action-validator, age, sops)
+- ✅ **Configures git hooks** (secret detection, workflow validation)
+- ✅ **Sets up project folders** (.secrets, .codex, dist)
+- ✅ **Notifies about missing AGE key** (if secrets not configured)
+
+```bash
+cd ci-excellence
+# Mise runs automatically - just wait for setup to complete!
+```
+
+You'll see output like:
+```
+Setting up project folders...
+✓ Folders created
+Installing git hooks...
+✓ Git hooks installed
+⚠ Age encryption key not found
+  Run: mise run generate-age-key
+```
+
+### 3. Generate Age Encryption Key (First Time Only)
+
+```bash
+mise run generate-age-key
+```
+
+This creates encryption keys for secure secret management.
+
+### 4. Configure GitHub Repository Variables
 
 Go to your repository settings: **Settings > Secrets and variables > Actions**
 
@@ -42,19 +165,21 @@ ENABLE_COMPILE=true
 ENABLE_LINT=true
 ENABLE_UNIT_TESTS=true
 ENABLE_GITHUB_RELEASE=true
+ENABLE_NOTIFICATIONS=true
 ```
 
-### 3. Add Secrets (as needed)
+### 5. Add GitHub Secrets (as needed)
 
-Create these **Secrets**:
+Create these **Secrets** based on what you're using:
 
 ```
 NPM_TOKEN=your_npm_token_here          # If publishing to NPM
 DOCKER_USERNAME=your_username          # If publishing Docker images
 DOCKER_PASSWORD=your_password          # If publishing Docker images
+APPRISE_URLS=slack://token@channel     # For notifications (optional)
 ```
 
-### 4. Customize Scripts
+### 6. Customize Scripts for Your Stack
 
 Edit the script stubs in `scripts/` to match your project:
 
@@ -67,54 +192,75 @@ vim scripts/build/compile.sh
 # npx tsc
 ```
 
-### 5. Push and Watch It Work!
+### 7. Start Developing!
 
 ```bash
+# Make changes, commit, and push
 git add .
-git commit -m "chore: add CI/CD pipeline"
+git commit -m "feat: add new feature"
 git push
+
+# Git hooks automatically run:
+# - Secret detection (gitleaks)
+# - Credential scanning (trufflehog)
+# - Workflow validation (action-validator)
+# - Branch protection checks
 ```
+
+**That's it!** The CI/CD pipeline is now active and will run based on your configured variables.
 
 ## 💻 Local Development Setup (Mise)
 
-For local development, we provide [Mise](https://mise.jit.su) configuration for:
+**Already done?** If you followed the [Prerequisites](#prerequisites) section, mise is already set up and working!
+
+### What Mise Provides
+
+Our [Mise](https://mise.jit.su) configuration handles:
 - **Automatic tool installation** (age, sops, gitleaks, trufflehog, lefthook, action-validator)
 - **Secret management** with SOPS and age encryption
-- **Environment variables** loaded automatically
+- **Environment variables** loaded automatically from `.env` and `.env.secrets.json`
 - **Pre-configured tasks** for common operations
+- **Git hooks** installed automatically on folder enter
 
-### Quick Mise Setup
+### Automatic Setup on Folder Enter
 
-1. **Install mise:**
-   ```bash
-   curl https://mise.run | sh
-   # Or: brew install mise
-   ```
+Every time you `cd` into the project directory, mise runs:
 
-2. **Activate in your shell:**
-   ```bash
-   echo 'eval "$(mise activate bash)"' >> ~/.bashrc
-   source ~/.bashrc
-   ```
+1. **`mise run setup`** - Creates `.secrets`, `.codex`, `dist` directories
+2. **`mise run install-hooks`** - Installs git hooks with lefthook
+3. **Checks for age key** - Warns if `.secrets/mise-age.txt` is missing
 
-3. **Enter project directory:**
-   ```bash
-   cd ci-excellence
-   ```
-   Mise automatically installs tools and sets up directories!
+This is configured in `mise.toml`:
+```toml
+[hooks]
+enter = ["mise run setup", "mise run install-hooks"]
+```
 
-4. **Generate encryption key:**
-   ```bash
-   mise run generate-age-key
-   ```
+### Secret Management Workflow
 
-5. **Create encrypted secrets:**
-   ```bash
-   cp .env.secrets.json.example .env.secrets.json.tmp
-   vim .env.secrets.json.tmp  # Edit with your secrets
-   mise run encrypt-secrets
-   rm .env.secrets.json.tmp
-   ```
+**First time setup:**
+```bash
+# 1. Generate encryption key pair
+mise run generate-age-key
+
+# 2. Create encrypted secrets file
+cp .env.secrets.json.example .env.secrets.json.tmp
+vim .env.secrets.json.tmp  # Edit with your secrets
+mise run encrypt-secrets
+rm .env.secrets.json.tmp
+```
+
+**Editing secrets later:**
+```bash
+# Edit encrypted secrets directly (decrypts, opens editor, encrypts on save)
+mise run edit-secrets
+```
+
+**Decrypting secrets (read-only):**
+```bash
+# View decrypted secrets
+mise run decrypt-secrets
+```
 
 ### Available Tasks
 
