@@ -103,7 +103,7 @@ done
 if apprise \
     --title="$NOTIFICATION_TITLE" \
     --body="$FULL_MESSAGE" \
-    --body-format=html \
+    --input-format=html \
     --tag="$NOTIFICATION_TYPE" \
     "${APPRISE_ARGS[@]}" 2>&1; then
     echo "✓ Notification sent successfully"
