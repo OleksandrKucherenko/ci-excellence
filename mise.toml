@@ -1,0 +1,46 @@
+[settings]
+experimental = true
+verbose = false                             # enable if SOPS is failing or you need more debug details
+sops.age_key_file = ".secrets/mise-age.txt"
+sops.rops = false                           # use original SOPS binary not a rops library
+sops.strict = false                         # if age key is not provided do not raise an ERROR
+
+[[env]]
+MISE_SOPS_AGE_KEY_FILE = ".secrets/mise-age.txt"
+SOPS_AGE_KEY_FILE = "{{env.MISE_SOPS_AGE_KEY_FILE}}"
+CODEX_HOME = "{{env.PWD}}/.codex"
+
+[[env]]
+_.file = [".env.secrets.json", ".env"]
+
+[tasks.setup]
+description = "Pre-configure project folders"
+run = ["./scripts/setup/00-setup-folders.sh"]
+
+[tasks.encrypt-secrets]
+description = "Encrypt secrets file with SOPS"
+run = ["sops --encrypt --age $(cat .secrets/mise-age-pub.txt) .env.secrets.json.example > .env.secrets.json"]
+
+[tasks.decrypt-secrets]
+description = "Decrypt secrets file with SOPS"
+run = ["sops --decrypt .env.secrets.json"]
+
+[tasks.edit-secrets]
+description = "Edit encrypted secrets file"
+run = ["sops .env.secrets.json"]
+
+[tasks.generate-age-key]
+description = "Generate new age key pair for secrets encryption"
+run = ["./scripts/setup/generate-age-key.sh"]
+
+[hooks]
+enter = ["mise run setup"]
+
+[tools]
+age = "latest"
+sops = "latest"
+# Secret detection tools
+gitleaks = "latest"
+trufflehog = "latest"
+# Git hooks manager
+lefthook = "latest"

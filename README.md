@@ -13,10 +13,12 @@ A production-ready, customizable CI/CD pipeline setup with stub implementations 
 ## 📋 Table of Contents
 
 - [Quick Start](#quick-start)
+- [Local Development Setup (Mise)](#local-development-setup-mise)
 - [Architecture](#architecture)
 - [Workflows](#workflows)
 - [Configuration](#configuration)
 - [Customization Guide](#customization-guide)
+- [Notifications](#notifications)
 - [Best Practices](#best-practices)
 - [Troubleshooting](#troubleshooting)
 
@@ -72,6 +74,68 @@ git add .
 git commit -m "chore: add CI/CD pipeline"
 git push
 ```
+
+## 💻 Local Development Setup (Mise)
+
+For local development, we provide [Mise](https://mise.jit.su) configuration for:
+- **Automatic tool installation** (age, sops, gitleaks, trufflehog, lefthook)
+- **Secret management** with SOPS and age encryption
+- **Environment variables** loaded automatically
+- **Pre-configured tasks** for common operations
+
+### Quick Mise Setup
+
+1. **Install mise:**
+   ```bash
+   curl https://mise.run | sh
+   # Or: brew install mise
+   ```
+
+2. **Activate in your shell:**
+   ```bash
+   echo 'eval "$(mise activate bash)"' >> ~/.bashrc
+   source ~/.bashrc
+   ```
+
+3. **Enter project directory:**
+   ```bash
+   cd ci-excellence
+   ```
+   Mise automatically installs tools and sets up directories!
+
+4. **Generate encryption key:**
+   ```bash
+   mise run generate-age-key
+   ```
+
+5. **Create encrypted secrets:**
+   ```bash
+   cp .env.secrets.json.example .env.secrets.json.tmp
+   vim .env.secrets.json.tmp  # Edit with your secrets
+   mise run encrypt-secrets
+   rm .env.secrets.json.tmp
+   ```
+
+### Available Tasks
+
+```bash
+mise tasks                    # List all tasks
+mise run setup               # Setup project folders
+mise run generate-age-key    # Generate encryption key
+mise run encrypt-secrets     # Encrypt secrets file
+mise run decrypt-secrets     # Decrypt secrets file
+mise run edit-secrets        # Edit encrypted secrets
+```
+
+### Why Mise?
+
+- ✅ **Consistent environment** across team members
+- ✅ **Encrypted secrets** safe to commit to git
+- ✅ **Auto-installs tools** (no manual setup)
+- ✅ **Secret detection** with gitleaks/trufflehog
+- ✅ **Git hooks** managed by lefthook
+
+**Full documentation:** [docs/MISE-SETUP.md](docs/MISE-SETUP.md)
 
 ## 🏗️ Architecture
 
