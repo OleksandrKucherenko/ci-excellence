@@ -300,7 +300,7 @@ jobs:
     needs: [cleanup, sync-files, deprecate-old-versions, security-audit, dependency-update]
     if: always()
     steps:
-      - name: Send notification
+      - name: Generate summary
         run: |
           echo "## Maintenance Pipeline Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -311,3 +311,37 @@ jobs:
           echo "| Deprecate Old Versions | ${{ needs.deprecate-old-versions.result }} | ${{ vars.ENABLE_DEPRECATION || 'false' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Security Audit | ${{ needs.security-audit.result }} | ${{ vars.ENABLE_SECURITY_AUDIT || 'false' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Dependency Update | ${{ needs.dependency-update.result }} | ${{ vars.ENABLE_DEPENDENCY_UPDATE || 'false' }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Checkout code
+        if: vars.ENABLE_NOTIFICATIONS == 'true'
+        uses: actions/checkout@v4
+
+      - name: Determine maintenance status
+        if: vars.ENABLE_NOTIFICATIONS == 'true'
+        id: status
+        run: |
+          # Check if any maintenance task failed
+          if [ "${{ needs.security-audit.result }}" == "failure" ]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "message=Maintenance: Security Audit Failed ❌" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.dependency-update.result }}" == "success" ]; then
+            echo "status=warning" >> $GITHUB_OUTPUT
+            echo "message=Maintenance: Dependencies Updated ⚠️" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.sync-files.result }}" == "success" ]; then
+            echo "status=warning" >> $GITHUB_OUTPUT
+            echo "message=Maintenance: Files Synced ⚠️" >> $GITHUB_OUTPUT
+          else
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "message=Maintenance Completed ✅" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send notification
+        if: vars.ENABLE_NOTIFICATIONS == 'true'
+        env:
+          APPRISE_URLS: ${{ secrets.APPRISE_URLS }}
+        run: |
+          chmod +x scripts/setup/send-notification.sh
+          ./scripts/setup/send-notification.sh \
+            "Maintenance Pipeline" \
+            "${{ steps.status.outputs.message }}" \
+            "${{ steps.status.outputs.status }}"

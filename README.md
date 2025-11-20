@@ -328,6 +328,7 @@ Set in: **Repository Settings > Secrets and variables > Actions > Variables**
 | `ENABLE_DEPRECATION` | `false` | Enable version deprecation |
 | `ENABLE_SECURITY_AUDIT` | `false` | Enable security audits |
 | `ENABLE_DEPENDENCY_UPDATE` | `false` | Enable dependency updates |
+| `ENABLE_NOTIFICATIONS` | `false` | Enable pipeline notifications (Slack, Teams, etc.) |
 
 ### GitHub Secrets
 
@@ -338,6 +339,7 @@ Set in: **Repository Settings > Secrets and variables > Actions > Secrets**
 | `NPM_TOKEN` | NPM Publishing | NPM access token |
 | `DOCKER_USERNAME` | Docker Publishing | Docker Hub username |
 | `DOCKER_PASSWORD` | Docker Publishing | Docker Hub password/token |
+| `APPRISE_URLS` | Notifications | Space-separated notification URLs (see [NOTIFICATIONS.md](docs/NOTIFICATIONS.md)) |
 | `GITHUB_TOKEN` | All workflows | Auto-provided by GitHub |
 
 ## 🔧 Customization Guide
@@ -450,6 +452,50 @@ mkdocs build
 npx gh-pages -d docs/_build/html
 ```
 
+## 📬 Notifications
+
+Get real-time pipeline notifications in Slack, Teams, Discord, Telegram, Email, and 90+ other services!
+
+### Quick Setup
+
+1. **Enable notifications** (GitHub Variables):
+   ```
+   ENABLE_NOTIFICATIONS=true
+   ```
+
+2. **Add notification URL** (GitHub Secrets):
+   ```
+   APPRISE_URLS=slack://your/webhook/url
+   ```
+
+3. **Done!** You'll receive notifications for all pipeline events.
+
+### Supported Services
+
+- **Slack** - `slack://token_a/token_b/token_c`
+- **Microsoft Teams** - `msteams://webhook_url`
+- **Discord** - `discord://webhook_id/webhook_token`
+- **Telegram** - `tgram://bot_token/chat_id`
+- **Email** - `mailto://user:pass@domain.com`
+- **90+ more services** - See [NOTIFICATIONS.md](docs/NOTIFICATIONS.md)
+
+### Multiple Services
+
+Send to multiple services by separating URLs with spaces:
+
+```bash
+APPRISE_URLS=slack://T00/B00/XXX msteams://webhook/url discord://123/abc
+```
+
+### What Gets Notified
+
+- ✅ **Pre-Release**: Build/test pass/fail status
+- 🚀 **Release**: New version published
+- 🔄 **Post-Release**: Deployment verification, rollbacks
+- 🔧 **Maintenance**: Security audits, dependency updates
+
+**Full documentation**: [NOTIFICATIONS.md](docs/NOTIFICATIONS.md)
+
 ## 📚 Best Practices
 
 ### 1. Start Minimal, Scale Up
@@ -472,6 +518,9 @@ ENABLE_NPM_PUBLISH=true
 # Month 2: Add maintenance
 ENABLE_CLEANUP=true
 ENABLE_SECURITY_AUDIT=true
+
+# Month 3: Add notifications
+ENABLE_NOTIFICATIONS=true
 ```
 
 ### 2. Use Branch Protection Rules

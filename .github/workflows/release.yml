@@ -327,7 +327,7 @@ jobs:
     needs: [prepare, publish-npm, publish-github, publish-docker, publish-documentation]
     if: always() && github.event.inputs.dry-run != 'true'
     steps:
-      - name: Send notification
+      - name: Generate summary
         run: |
           echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -340,3 +340,34 @@ jobs:
           echo "| GitHub | ${{ needs.publish-github.result }} | ${{ vars.ENABLE_GITHUB_RELEASE || 'false' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Docker | ${{ needs.publish-docker.result }} | ${{ vars.ENABLE_DOCKER_PUBLISH || 'false' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Documentation | ${{ needs.publish-documentation.result }} | ${{ vars.ENABLE_DOCUMENTATION || 'false' }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Checkout code
+        if: vars.ENABLE_NOTIFICATIONS == 'true'
+        uses: actions/checkout@v4
+
+      - name: Determine release status
+        if: vars.ENABLE_NOTIFICATIONS == 'true'
+        id: status
+        run: |
+          # Check if any critical job failed
+          if [ "${{ needs.prepare.result }}" == "failure" ] || \
+             [ "${{ needs.publish-npm.result }}" == "failure" ] || \
+             [ "${{ needs.publish-github.result }}" == "failure" ] || \
+             [ "${{ needs.publish-docker.result }}" == "failure" ]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "message=Release ${{ needs.prepare.outputs.version }} Failed ❌" >> $GITHUB_OUTPUT
+          else
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "message=Release ${{ needs.prepare.outputs.version }} Published ✅" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send notification
+        if: vars.ENABLE_NOTIFICATIONS == 'true'
+        env:
+          APPRISE_URLS: ${{ secrets.APPRISE_URLS }}
+        run: |
+          chmod +x scripts/setup/send-notification.sh
+          ./scripts/setup/send-notification.sh \
+            "Release Pipeline" \
+            "${{ steps.status.outputs.message }}" \
+            "${{ steps.status.outputs.status }}"

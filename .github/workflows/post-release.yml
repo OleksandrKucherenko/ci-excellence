@@ -178,7 +178,7 @@ jobs:
           ./scripts/release/rollback-github.sh "${{ github.event.inputs.version }}"
 
       - name: Tag Docker images as deprecated
-        if: ${{ vars.ENABLE_DOCKER_PUBLISH == 'true' || secrets.ENABLE_DOCKER_PUBLISH == 'true' }}
+        if: vars.ENABLE_DOCKER_PUBLISH == 'true'
         run: |
           ./scripts/release/rollback-docker.sh "${{ github.event.inputs.version }}"
 
@@ -196,7 +196,7 @@ jobs:
     needs: [verify-deployment, tag-stable, tag-unstable, rollback]
     if: always()
     steps:
-      - name: Send notification
+      - name: Generate summary
         run: |
           echo "## Post-Release Actions Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -206,3 +206,40 @@ jobs:
           echo "| Tag Stable | ${{ needs.tag-stable.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Tag Unstable | ${{ needs.tag-unstable.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Rollback | ${{ needs.rollback.result }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Checkout code
+        if: vars.ENABLE_NOTIFICATIONS == 'true'
+        uses: actions/checkout@v4
+
+      - name: Determine action type and status
+        if: vars.ENABLE_NOTIFICATIONS == 'true'
+        id: status
+        run: |
+          # Determine which action was performed
+          if [ "${{ needs.rollback.result }}" == "success" ]; then
+            echo "status=warning" >> $GITHUB_OUTPUT
+            echo "message=Rollback Completed ⚠️" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.tag-stable.result }}" == "success" ]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "message=Version Tagged as Stable ✅" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.verify-deployment.result }}" == "success" ]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "message=Deployment Verified ✅" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.rollback.result }}" == "failure" ]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "message=Rollback Failed ❌" >> $GITHUB_OUTPUT
+          else
+            echo "status=info" >> $GITHUB_OUTPUT
+            echo "message=Post-Release Actions Completed ℹ️" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send notification
+        if: vars.ENABLE_NOTIFICATIONS == 'true'
+        env:
+          APPRISE_URLS: ${{ secrets.APPRISE_URLS }}
+        run: |
+          chmod +x scripts/setup/send-notification.sh
+          ./scripts/setup/send-notification.sh \
+            "Post-Release Pipeline" \
+            "${{ steps.status.outputs.message }}" \
+            "${{ steps.status.outputs.status }}"
