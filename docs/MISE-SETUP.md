@@ -53,7 +53,7 @@ cd ci-excellence
 
 Mise will automatically:
 - Install required tools (age, sops, gitleaks, trufflehog, lefthook)
-- Create necessary directories (`.secrets`, `.codex`, `dist`)
+- Create necessary directories (`.secrets`, `dist`)
 - Run setup scripts
 
 ### 3. Generate Age Encryption Key
@@ -218,7 +218,6 @@ mise upgrade
 │   ├── .gitkeep               # Keeps directory in git
 │   ├── mise-age.txt           # Private key (NEVER COMMIT!)
 │   └── mise-age-pub.txt       # Public key (safe to share)
-├── .codex/                     # Mise cache directory
 └── scripts/setup/
     ├── 00-setup-folders.sh    # Auto-run setup script
     └── generate-age-key.sh    # Key generation script

@@ -36,9 +36,6 @@ test-results/
 .secrets/*
 !.secrets/.gitkeep
 
-# Mise/asdf cache
-.codex/
-
 # IDE files
 .vscode/
 .idea/

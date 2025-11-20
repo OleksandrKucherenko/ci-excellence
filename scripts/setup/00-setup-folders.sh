@@ -20,13 +20,6 @@ if [ ! -d ".secrets" ]; then
     echo "✓ Created .secrets directory (mode: 700)"
 fi
 
-# Create codex home directory if it doesn't exist
-if [ ! -d ".codex" ]; then
-    echo "Creating .codex directory..."
-    mkdir -p .codex
-    echo "✓ Created .codex directory"
-fi
-
 # Create dist/build directories if they don't exist
 if [ ! -d "dist" ]; then
     echo "Creating dist directory..."

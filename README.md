@@ -128,7 +128,7 @@ cd ci-excellence
 When you enter the project directory, mise automatically:
 - ✅ **Installs all required tools** (gitleaks, trufflehog, lefthook, action-validator, age, sops)
 - ✅ **Configures git hooks** (secret detection, workflow validation)
-- ✅ **Sets up project folders** (.secrets, .codex, dist)
+- ✅ **Sets up project folders** (.secrets, dist)
 - ✅ **Notifies about missing AGE key** (if secrets not configured)
 
 ```bash
@@ -226,7 +226,7 @@ Our [Mise](https://mise.jit.su) configuration handles:
 
 Every time you `cd` into the project directory, mise runs:
 
-1. **`mise run setup`** - Creates `.secrets`, `.codex`, `dist` directories
+1. **`mise run setup`** - Creates `.secrets`, `dist` directories
 2. **`mise run install-hooks`** - Installs git hooks with lefthook
 3. **Checks for age key** - Warns if `.secrets/mise-age.txt` is missing
 
