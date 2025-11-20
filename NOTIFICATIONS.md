@@ -5,6 +5,10 @@ This guide covers setting up notifications using [Apprise](https://github.com/ca
 ## Table of Contents
 
 - [Quick Start](#quick-start)
+- [Thread Conversations (Recommended)](#thread-conversations-recommended)
+  - [TypeScript/Bun Utility](#typescriptbun-utility)
+  - [Shell Script Wrapper](#shell-script-wrapper)
+  - [Thread Conversation Examples](#thread-conversation-examples)
 - [Service Setup](#service-setup)
   - [Telegram (Recommended)](#telegram-recommended)
   - [Discord](#discord)
@@ -24,6 +28,192 @@ mise install
 # Verify installation
 apprise --version
 ```
+
+## Thread Conversations (Recommended)
+
+For CI/CD pipelines, **thread-based conversations** provide the best user experience. Instead of sending isolated messages, you can create a conversation that tracks a build from start to finish.
+
+This project includes a **TypeScript/Bun notification utility** that supports:
+
+- ✅ Thread-based conversations (messages reply to each other)
+- ✅ Automatic thread context persistence
+- ✅ Rich Markdown formatting
+- ✅ Notification types with emojis (info, success, warning, failure)
+- ✅ Zero Python dependencies
+- ✅ Fast execution with Bun
+- ✅ Easy shell script integration
+
+### TypeScript/Bun Utility
+
+The notification utility is located at `scripts/notify/telegram.ts`.
+
+**Basic Usage:**
+
+```bash
+# Set your credentials (one time)
+export TELEGRAM_BOT_TOKEN="123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
+export TELEGRAM_CHAT_ID="987654321"
+
+# Start a new thread
+bun scripts/notify/telegram.ts \
+  --new-thread \
+  --title "Build #123 Started" \
+  --body "Starting CI pipeline..." \
+  --type info
+
+# Continue the thread with updates (automatically replies to previous message)
+bun scripts/notify/telegram.ts \
+  --body "Running tests..." \
+  --thread
+
+bun scripts/notify/telegram.ts \
+  --body "Tests passed: 150/150 ✅" \
+  --type success \
+  --thread
+
+# Final message in thread
+bun scripts/notify/telegram.ts \
+  --title "Build #123 Complete" \
+  --body "All stages completed successfully!" \
+  --type success \
+  --thread
+```
+
+**CLI Options:**
+
+```
+--token <token>           Telegram bot token (or use TELEGRAM_BOT_TOKEN env)
+--chat-id <id>            Chat ID (or use TELEGRAM_CHAT_ID env)
+--title <text>            Message title (optional)
+--body <text>             Message body (required)
+--type <type>             Notification type: info|success|warning|failure
+--thread                  Continue previous thread (reply to last message)
+--new-thread              Start a new thread (clears previous context)
+--parse-mode <mode>       Parse mode: Markdown|HTML|MarkdownV2
+--help                    Show help
+```
+
+### Shell Script Wrapper
+
+For easier integration with shell-based CI systems, use the provided wrapper:
+
+```bash
+# Source the helper functions
+source scripts/notify/ci-notify.sh
+
+# Start a build notification thread
+notify_start "Build #123 Started" "Compiling and testing..."
+
+# Send updates (automatically continues thread)
+notify_info "Running unit tests..."
+notify_info "Running integration tests..."
+
+# Send success/warning/failure
+notify_success "All tests passed!"
+notify_warning "Code coverage below target"
+
+# End the thread
+notify_end "Build completed in 5m 32s"
+```
+
+**Or use directly:**
+
+```bash
+./scripts/notify/ci-notify.sh start "Build #123" "Starting..."
+./scripts/notify/ci-notify.sh info "Running tests..."
+./scripts/notify/ci-notify.sh success "Tests passed!"
+./scripts/notify/ci-notify.sh end "Build complete"
+```
+
+### Thread Conversation Examples
+
+**Example 1: Simple Build Pipeline**
+
+```bash
+#!/bin/bash
+source scripts/notify/ci-notify.sh
+
+BUILD_NUM="123"
+
+# Start thread
+notify_start "Build #${BUILD_NUM}" "Starting CI pipeline"
+
+# Build stage
+notify_info "Compiling TypeScript..."
+npm run build || {
+  notify_failure "Build failed"
+  exit 1
+}
+
+# Test stage
+notify_info "Running tests..."
+npm test || {
+  notify_failure "Tests failed"
+  exit 1
+}
+
+# Success
+notify_end "Build completed successfully"
+```
+
+**Example 2: Detailed Progress Updates**
+
+```bash
+#!/bin/bash
+source scripts/notify/ci-notify.sh
+
+notify_start "Deployment #42" "Deploying to production"
+
+# Multiple stages with detailed updates
+notify_info "**Stage 1/4**: Building Docker image"
+docker build -t myapp:latest .
+
+notify_info "**Stage 2/4**: Running security scans"
+trivy image myapp:latest
+
+notify_info "**Stage 3/4**: Pushing to registry"
+docker push myapp:latest
+
+notify_info "**Stage 4/4**: Updating Kubernetes deployment"
+kubectl set image deployment/myapp myapp=myapp:latest
+
+notify_success "Deployment completed successfully!"
+```
+
+**Example 3: TypeScript Pipeline (Programmatic)**
+
+See `scripts/notify/example-ci-pipeline.ts` for a complete example:
+
+```bash
+# Run the example (sends a simulated pipeline thread)
+export TELEGRAM_BOT_TOKEN="your_token"
+export TELEGRAM_CHAT_ID="your_chat_id"
+bun scripts/notify/example-ci-pipeline.ts
+```
+
+This will send a series of messages showing:
+1. Build started
+2. Test progress (unit → integration → e2e)
+3. Test completion with statistics
+4. Build artifacts generation
+5. Final success summary
+
+All messages appear as a **conversation thread** in Telegram!
+
+### How Thread Persistence Works
+
+The utility stores the last message ID in `~/.cache/ci-notify/thread-context.json`:
+
+```json
+{
+  "lastMessageId": 12345,
+  "threadId": null
+}
+```
+
+When you use `--thread`, it automatically replies to the last message, creating a visual thread in Telegram.
+
+Use `--new-thread` to start fresh (clears the context).
 
 ## Service Setup
 

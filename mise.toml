@@ -73,3 +73,5 @@ lefthook = "latest"
 action-validator = "latest"
 # Notification tool
 "uv:apprise" = "latest"
+# TypeScript runtime
+bun = "latest"
