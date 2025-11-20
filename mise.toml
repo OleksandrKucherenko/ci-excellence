@@ -71,3 +71,5 @@ trufflehog = "latest"
 lefthook = "latest"
 # GitHub Actions validator
 action-validator = "latest"
+# Notification tool
+"pipx:apprise" = "latest"
