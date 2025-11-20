@@ -20,11 +20,11 @@ on:
           - all
 
 env:
-  ENABLE_CLEANUP: ${{ vars.ENABLE_CLEANUP || secrets.ENABLE_CLEANUP || 'false' }}
-  ENABLE_FILE_SYNC: ${{ vars.ENABLE_FILE_SYNC || secrets.ENABLE_FILE_SYNC || 'false' }}
-  ENABLE_DEPRECATION: ${{ vars.ENABLE_DEPRECATION || secrets.ENABLE_DEPRECATION || 'false' }}
-  ENABLE_SECURITY_AUDIT: ${{ vars.ENABLE_SECURITY_AUDIT || secrets.ENABLE_SECURITY_AUDIT || 'false' }}
-  ENABLE_DEPENDENCY_UPDATE: ${{ vars.ENABLE_DEPENDENCY_UPDATE || secrets.ENABLE_DEPENDENCY_UPDATE || 'false' }}
+  ENABLE_CLEANUP: ${{ vars.ENABLE_CLEANUP || 'false' }}
+  ENABLE_FILE_SYNC: ${{ vars.ENABLE_FILE_SYNC || 'false' }}
+  ENABLE_DEPRECATION: ${{ vars.ENABLE_DEPRECATION || 'false' }}
+  ENABLE_SECURITY_AUDIT: ${{ vars.ENABLE_SECURITY_AUDIT || 'false' }}
+  ENABLE_DEPENDENCY_UPDATE: ${{ vars.ENABLE_DEPENDENCY_UPDATE || 'false' }}
 
 jobs:
   cleanup:
@@ -47,18 +47,18 @@ jobs:
           ./scripts/setup/install-tools.sh
 
       - name: Cleanup old workflow runs
-        if: ${{ vars.ENABLE_CLEANUP == 'true' || secrets.ENABLE_CLEANUP == 'true' }}
+        if: ${{ vars.ENABLE_CLEANUP == 'true' }}
         run: |
           chmod +x scripts/maintenance/*.sh
           ./scripts/maintenance/cleanup-workflow-runs.sh
 
       - name: Cleanup old artifacts
-        if: ${{ vars.ENABLE_CLEANUP == 'true' || secrets.ENABLE_CLEANUP == 'true' }}
+        if: ${{ vars.ENABLE_CLEANUP == 'true' }}
         run: |
           ./scripts/maintenance/cleanup-artifacts.sh
 
       - name: Cleanup old caches
-        if: ${{ vars.ENABLE_CLEANUP == 'true' || secrets.ENABLE_CLEANUP == 'true' }}
+        if: ${{ vars.ENABLE_CLEANUP == 'true' }}
         run: |
           ./scripts/maintenance/cleanup-caches.sh
 
@@ -92,7 +92,7 @@ jobs:
           ./scripts/setup/install-tools.sh
 
       - name: Sync package.json and changelog
-        if: ${{ vars.ENABLE_FILE_SYNC == 'true' || secrets.ENABLE_FILE_SYNC == 'true' }}
+        if: ${{ vars.ENABLE_FILE_SYNC == 'true' }}
         run: |
           chmod +x scripts/maintenance/*.sh
           ./scripts/maintenance/sync-version-files.sh
@@ -147,7 +147,7 @@ jobs:
           ./scripts/setup/install-tools.sh
 
       - name: Identify versions to deprecate
-        if: ${{ vars.ENABLE_DEPRECATION == 'true' || secrets.ENABLE_DEPRECATION == 'true' }}
+        if: ${{ vars.ENABLE_DEPRECATION == 'true' }}
         run: |
           chmod +x scripts/maintenance/*.sh
           ./scripts/maintenance/identify-deprecated-versions.sh
@@ -155,7 +155,7 @@ jobs:
       - name: Deprecate NPM versions
         if: |
           vars.ENABLE_DEPRECATION == 'true' &&
-          (vars.ENABLE_NPM_PUBLISH == 'true' || secrets.ENABLE_NPM_PUBLISH == 'true')
+          vars.ENABLE_NPM_PUBLISH == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
@@ -164,7 +164,7 @@ jobs:
       - name: Update GitHub releases
         if: |
           vars.ENABLE_DEPRECATION == 'true' &&
-          (vars.ENABLE_GITHUB_RELEASE == 'true' || secrets.ENABLE_GITHUB_RELEASE == 'true')
+          vars.ENABLE_GITHUB_RELEASE == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -199,13 +199,13 @@ jobs:
         run: ./scripts/setup/install-dependencies.sh
 
       - name: Run dependency audit
-        if: ${{ vars.ENABLE_SECURITY_AUDIT == 'true' || secrets.ENABLE_SECURITY_AUDIT == 'true' }}
+        if: ${{ vars.ENABLE_SECURITY_AUDIT == 'true' }}
         run: |
           chmod +x scripts/maintenance/*.sh
           ./scripts/maintenance/security-audit.sh
 
       - name: Run vulnerability scan
-        if: ${{ vars.ENABLE_SECURITY_AUDIT == 'true' || secrets.ENABLE_SECURITY_AUDIT == 'true' }}
+        if: ${{ vars.ENABLE_SECURITY_AUDIT == 'true' }}
         run: |
           chmod +x scripts/build/*.sh
           ./scripts/build/security-scan.sh
@@ -247,13 +247,13 @@ jobs:
           ./scripts/setup/install-tools.sh
 
       - name: Update dependencies
-        if: ${{ vars.ENABLE_DEPENDENCY_UPDATE == 'true' || secrets.ENABLE_DEPENDENCY_UPDATE == 'true' }}
+        if: ${{ vars.ENABLE_DEPENDENCY_UPDATE == 'true' }}
         run: |
           chmod +x scripts/maintenance/*.sh
           ./scripts/maintenance/update-dependencies.sh
 
       - name: Run tests
-        if: ${{ vars.ENABLE_DEPENDENCY_UPDATE == 'true' || secrets.ENABLE_DEPENDENCY_UPDATE == 'true' }}
+        if: ${{ vars.ENABLE_DEPENDENCY_UPDATE == 'true' }}
         run: |
           chmod +x scripts/test/*.sh
           ./scripts/test/unit.sh || echo "Tests failed, will be noted in PR"
@@ -306,8 +306,8 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Task | Status | Enabled |" >> $GITHUB_STEP_SUMMARY
           echo "|------|--------|---------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Cleanup | ${{ needs.cleanup.result }} | ${{ vars.ENABLE_CLEANUP || secrets.ENABLE_CLEANUP || 'false' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| File Sync | ${{ needs.sync-files.result }} | ${{ vars.ENABLE_FILE_SYNC || secrets.ENABLE_FILE_SYNC || 'false' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Deprecate Old Versions | ${{ needs.deprecate-old-versions.result }} | ${{ vars.ENABLE_DEPRECATION || secrets.ENABLE_DEPRECATION || 'false' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Security Audit | ${{ needs.security-audit.result }} | ${{ vars.ENABLE_SECURITY_AUDIT || secrets.ENABLE_SECURITY_AUDIT || 'false' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Dependency Update | ${{ needs.dependency-update.result }} | ${{ vars.ENABLE_DEPENDENCY_UPDATE || secrets.ENABLE_DEPENDENCY_UPDATE || 'false' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Cleanup | ${{ needs.cleanup.result }} | ${{ vars.ENABLE_CLEANUP || 'false' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| File Sync | ${{ needs.sync-files.result }} | ${{ vars.ENABLE_FILE_SYNC || 'false' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deprecate Old Versions | ${{ needs.deprecate-old-versions.result }} | ${{ vars.ENABLE_DEPRECATION || 'false' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Audit | ${{ needs.security-audit.result }} | ${{ vars.ENABLE_SECURITY_AUDIT || 'false' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency Update | ${{ needs.dependency-update.result }} | ${{ vars.ENABLE_DEPENDENCY_UPDATE || 'false' }} |" >> $GITHUB_STEP_SUMMARY

@@ -21,9 +21,9 @@ on:
     types: [published]
 
 env:
-  ENABLE_ROLLBACK: ${{ vars.ENABLE_ROLLBACK || secrets.ENABLE_ROLLBACK || 'false' }}
-  ENABLE_DEPLOYMENT_VERIFICATION: ${{ vars.ENABLE_DEPLOYMENT_VERIFICATION || secrets.ENABLE_DEPLOYMENT_VERIFICATION || 'false' }}
-  ENABLE_STABILITY_TAGGING: ${{ vars.ENABLE_STABILITY_TAGGING || secrets.ENABLE_STABILITY_TAGGING || 'false' }}
+  ENABLE_ROLLBACK: ${{ vars.ENABLE_ROLLBACK || 'false' }}
+  ENABLE_DEPLOYMENT_VERIFICATION: ${{ vars.ENABLE_DEPLOYMENT_VERIFICATION || 'false' }}
+  ENABLE_STABILITY_TAGGING: ${{ vars.ENABLE_STABILITY_TAGGING || 'false' }}
 
 jobs:
   verify-deployment:
@@ -86,7 +86,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event.inputs.action == 'tag-stable' &&
-      (vars.ENABLE_STABILITY_TAGGING == 'true' || secrets.ENABLE_STABILITY_TAGGING == 'true')
+      vars.ENABLE_STABILITY_TAGGING == 'true'
     permissions:
       contents: write
     steps:
@@ -113,7 +113,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event.inputs.action == 'tag-unstable' &&
-      (vars.ENABLE_STABILITY_TAGGING == 'true' || secrets.ENABLE_STABILITY_TAGGING == 'true')
+      vars.ENABLE_STABILITY_TAGGING == 'true'
     permissions:
       contents: write
     steps:
@@ -140,7 +140,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event.inputs.action == 'rollback' &&
-      (vars.ENABLE_ROLLBACK == 'true' || secrets.ENABLE_ROLLBACK == 'true')
+      vars.ENABLE_ROLLBACK == 'true'
     permissions:
       contents: write
     steps:
