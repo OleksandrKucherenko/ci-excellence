@@ -31,12 +31,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup environment
-        run: |
-          chmod +x scripts/setup/*.sh
-          ./scripts/setup/install-tools.sh
+        run: ./scripts/ci/setup/ci-01-install-tools.sh
 
       - name: Install dependencies
-        run: ./scripts/setup/install-dependencies.sh
+        run: ./scripts/ci/setup/ci-02-install-dependencies.sh
 
       - name: Cache dependencies
         uses: actions/cache@v3
@@ -68,9 +66,7 @@ jobs:
           key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
 
       - name: Run compile
-        run: |
-          chmod +x scripts/build/*.sh
-          ./scripts/build/compile.sh
+        run: ./scripts/ci/build/ci-01-compile.sh
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3
@@ -101,9 +97,7 @@ jobs:
           key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
 
       - name: Run linter
-        run: |
-          chmod +x scripts/build/*.sh
-          ./scripts/build/lint.sh
+        run: ./scripts/ci/build/ci-02-lint.sh
 
   unit-tests:
     name: Unit Tests
@@ -124,9 +118,7 @@ jobs:
           key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
 
       - name: Run unit tests
-        run: |
-          chmod +x scripts/test/*.sh
-          ./scripts/test/unit.sh
+        run: ./scripts/ci/test/ci-01-unit-tests.sh
 
       - name: Upload test results
         if: always()
@@ -163,9 +155,7 @@ jobs:
           name: build-output
 
       - name: Run integration tests
-        run: |
-          chmod +x scripts/test/*.sh
-          ./scripts/test/integration.sh
+        run: ./scripts/ci/test/ci-02-integration-tests.sh
 
       - name: Upload test results
         if: always()
@@ -202,9 +192,7 @@ jobs:
           name: build-output
 
       - name: Run E2E tests
-        run: |
-          chmod +x scripts/test/*.sh
-          ./scripts/test/e2e.sh
+        run: ./scripts/ci/test/ci-03-e2e-tests.sh
 
       - name: Upload test results
         if: always()
@@ -228,9 +216,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run vulnerability scan
-        run: |
-          chmod +x scripts/build/*.sh
-          ./scripts/build/security-scan.sh
+        run: ./scripts/ci/build/ci-03-security-scan.sh
 
   bundle:
     name: Bundle and Package
@@ -262,9 +248,7 @@ jobs:
           name: build-output
 
       - name: Create bundle/package
-        run: |
-          chmod +x scripts/build/*.sh
-          ./scripts/build/bundle.sh
+        run: ./scripts/ci/build/ci-04-bundle.sh
 
       - name: Upload bundle artifacts
         uses: actions/upload-artifact@v3
@@ -283,34 +267,40 @@ jobs:
     needs: [setup, compile, lint, unit-tests, integration-tests, e2e-tests, security-scan, bundle]
     if: always()
     steps:
-      - name: Check all job statuses
-        run: |
-          echo "## Pre-Release Pipeline Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Job | Status | Enabled |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----|--------|---------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Setup | ${{ needs.setup.result }} | Always |" >> $GITHUB_STEP_SUMMARY
-          echo "| Compile | ${{ needs.compile.result }} | ${{ vars.ENABLE_COMPILE || 'false' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Lint | ${{ needs.lint.result }} | ${{ vars.ENABLE_LINT || 'false' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Unit Tests | ${{ needs.unit-tests.result }} | ${{ vars.ENABLE_UNIT_TESTS || 'false' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Integration Tests | ${{ needs.integration-tests.result }} | ${{ vars.ENABLE_INTEGRATION_TESTS || 'false' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| E2E Tests | ${{ needs.e2e-tests.result }} | ${{ vars.ENABLE_E2E_TESTS || 'false' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Security Scan | ${{ needs.security-scan.result }} | ${{ vars.ENABLE_SECURITY_SCAN || 'false' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Bundle | ${{ needs.bundle.result }} | ${{ vars.ENABLE_BUNDLE || 'false' }} |" >> $GITHUB_STEP_SUMMARY
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Report failure
-        if: |
-          needs.setup.result == 'failure' ||
-          needs.compile.result == 'failure' ||
-          needs.lint.result == 'failure' ||
-          needs.unit-tests.result == 'failure' ||
-          needs.integration-tests.result == 'failure' ||
-          needs.e2e-tests.result == 'failure' ||
-          needs.security-scan.result == 'failure' ||
-          needs.bundle.result == 'failure'
+      - name: Generate summary
+        env:
+          ENABLE_COMPILE: ${{ vars.ENABLE_COMPILE || 'false' }}
+          ENABLE_LINT: ${{ vars.ENABLE_LINT || 'false' }}
+          ENABLE_UNIT_TESTS: ${{ vars.ENABLE_UNIT_TESTS || 'false' }}
+          ENABLE_INTEGRATION_TESTS: ${{ vars.ENABLE_INTEGRATION_TESTS || 'false' }}
+          ENABLE_E2E_TESTS: ${{ vars.ENABLE_E2E_TESTS || 'false' }}
+          ENABLE_SECURITY_SCAN: ${{ vars.ENABLE_SECURITY_SCAN || 'false' }}
+          ENABLE_BUNDLE: ${{ vars.ENABLE_BUNDLE || 'false' }}
         run: |
-          echo "::error::One or more pipeline jobs failed"
-          exit 1
+          ./scripts/ci/build/ci-05-summary-pre-release.sh \
+            "${{ needs.setup.result }}" \
+            "${{ needs.compile.result }}" \
+            "${{ needs.lint.result }}" \
+            "${{ needs.unit-tests.result }}" \
+            "${{ needs.integration-tests.result }}" \
+            "${{ needs.e2e-tests.result }}" \
+            "${{ needs.security-scan.result }}" \
+            "${{ needs.bundle.result }}"
+
+      - name: Check for failures
+        run: |
+          ./scripts/ci/build/ci-06-check-failures.sh \
+            "${{ needs.setup.result }}" \
+            "${{ needs.compile.result }}" \
+            "${{ needs.lint.result }}" \
+            "${{ needs.unit-tests.result }}" \
+            "${{ needs.integration-tests.result }}" \
+            "${{ needs.e2e-tests.result }}" \
+            "${{ needs.security-scan.result }}" \
+            "${{ needs.bundle.result }}"
 
   notify:
     name: Send Notifications
@@ -323,24 +313,13 @@ jobs:
 
       - name: Determine pipeline status
         id: status
-        run: |
-          if [ "${{ needs.summary.result }}" == "failure" ]; then
-            echo "status=failure" >> $GITHUB_OUTPUT
-            echo "message=Pre-Release Pipeline Failed ❌" >> $GITHUB_OUTPUT
-          elif [ "${{ needs.summary.result }}" == "success" ]; then
-            echo "status=success" >> $GITHUB_OUTPUT
-            echo "message=Pre-Release Pipeline Passed ✅" >> $GITHUB_OUTPUT
-          else
-            echo "status=warning" >> $GITHUB_OUTPUT
-            echo "message=Pre-Release Pipeline Completed with Issues ⚠️" >> $GITHUB_OUTPUT
-          fi
+        run: ./scripts/ci/notification/ci-02-determine-status.sh "${{ needs.summary.result }}"
 
       - name: Send notification
         env:
           APPRISE_URLS: ${{ secrets.APPRISE_URLS }}
         run: |
-          chmod +x scripts/setup/send-notification.sh
-          ./scripts/setup/send-notification.sh \
+          ./scripts/ci/notification/ci-01-send-notification.sh \
             "Pre-Release Pipeline" \
             "${{ steps.status.outputs.message }}" \
             "${{ steps.status.outputs.status }}"

@@ -8,7 +8,7 @@ vendor/
 
 # Build outputs
 dist/
-build/
+/build/
 out/
 target/
 *.egg-info/
