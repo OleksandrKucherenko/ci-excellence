@@ -1,0 +1,23 @@
+# Lint Failure Scenario
+# Linting fails early in the pipeline
+
+name: Lint Failure
+description: Simulate linting errors that fail the build early
+
+# Global settings
+MOCK_ENABLED: true
+MOCK_MODE: ok
+MOCK_DELAY: 1
+MOCK_VERBOSE: true
+
+# Specific job overrides
+MOCK_MODE_LINT: failed
+MOCK_EXIT_CODE: 2
+MOCK_DELAY_LINT: 5
+
+# Feature flags
+ENABLE_COMPILE: true
+ENABLE_LINT: true
+ENABLE_UNIT_TESTS: true
+ENABLE_INTEGRATION_TESTS: false
+ENABLE_E2E_TESTS: false
