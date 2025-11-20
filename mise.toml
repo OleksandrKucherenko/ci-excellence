@@ -76,6 +76,6 @@ lefthook = "latest"
 # GitHub Actions validator
 action-validator = "latest"
 # Notification tool
-"uv:apprise" = "latest"
+"pipx:apprise" = "latest"
 # TypeScript runtime
 bun = "latest"
