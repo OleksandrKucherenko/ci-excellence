@@ -16,7 +16,6 @@ set -euo pipefail
 SECRETS_FILE=".env.secrets.json"
 SECRETS_EXAMPLE=".env.secrets.json.example"
 AGE_KEY_FILE=".secrets/mise-age.txt"
-AGE_PUB_FILE=".secrets/mise-age-pub.txt"
 
 # Check if key and value are provided
 if [ $# -lt 2 ]; then
@@ -40,36 +39,38 @@ echo "Value: ${VALUE:0:10}..." # Show only first 10 chars
 echo ""
 
 # Check if age key exists
-if [ ! -f "$AGE_KEY_FILE" ] || [ ! -f "$AGE_PUB_FILE" ]; then
-    echo "⚠️  Age key pair not found"
-    echo "   Private key: $AGE_KEY_FILE"
-    echo "   Public key: $AGE_PUB_FILE"
-    echo ""
-    echo "   Generating new age key pair..."
+if [ ! -f "$AGE_KEY_FILE" ]; then
+    echo "⚠️  Age key not found at $AGE_KEY_FILE"
+    echo "   Generating new age key..."
     ./scripts/setup/generate-age-key.sh
 
-    # Verify keys were created
+    # Verify key was created
     if [ ! -f "$AGE_KEY_FILE" ]; then
-        echo "❌ Failed to create private key at $AGE_KEY_FILE"
-        exit 1
-    fi
-
-    if [ ! -f "$AGE_PUB_FILE" ]; then
-        echo "❌ Failed to create public key at $AGE_PUB_FILE"
-        echo "   This file should be automatically created by generate-age-key.sh"
+        echo "❌ Failed to create age key at $AGE_KEY_FILE"
         echo ""
         echo "Please run manually:"
         echo "   mise run generate-age-key"
-        echo ""
-        echo "This will create both:"
-        echo "   - $AGE_KEY_FILE (private key for decryption)"
-        echo "   - $AGE_PUB_FILE (public key for encryption)"
         exit 1
     fi
 
-    echo "✓ Age key pair created successfully"
+    echo "✓ Age key created successfully"
     echo ""
 fi
+
+# Extract public key from private key for encryption
+# Age private keys contain the public key, we just need to extract it
+AGE_PUBLIC_KEY=$(grep "public key:" "$AGE_KEY_FILE" | awk '{print $NF}')
+
+if [ -z "$AGE_PUBLIC_KEY" ]; then
+    echo "❌ Failed to extract public key from $AGE_KEY_FILE"
+    echo "   The age key file may be corrupt or in wrong format"
+    echo ""
+    echo "Please regenerate the key:"
+    echo "   mise run generate-age-key"
+    exit 1
+fi
+
+echo "🔑 Using age public key: ${AGE_PUBLIC_KEY:0:20}..."
 
 # Check if secrets file exists
 if [ ! -f "$SECRETS_FILE" ]; then
@@ -81,7 +82,7 @@ if [ ! -f "$SECRETS_FILE" ]; then
 
     # Encrypt the new file
     echo "   Encrypting with age..."
-    sops --encrypt --age "$(cat $AGE_PUB_FILE)" "$SECRETS_FILE" > "${SECRETS_FILE}.tmp"
+    sops --encrypt --age "$AGE_PUBLIC_KEY" "$SECRETS_FILE" > "${SECRETS_FILE}.tmp"
     mv "${SECRETS_FILE}.tmp" "$SECRETS_FILE"
     echo "✓ Created and encrypted $SECRETS_FILE"
     echo ""
@@ -128,7 +129,7 @@ fi
 
 # Encrypt and save
 echo "🔐 Encrypting and saving..."
-if ! sops --encrypt --age "$(cat $AGE_PUB_FILE)" "$TEMP_FILE" > "${SECRETS_FILE}.tmp"; then
+if ! sops --encrypt --age "$AGE_PUBLIC_KEY" "$TEMP_FILE" > "${SECRETS_FILE}.tmp"; then
     echo "❌ Failed to encrypt secrets file"
     rm -f "${SECRETS_FILE}.tmp"
     exit 1
