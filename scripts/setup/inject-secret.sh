@@ -40,10 +40,34 @@ echo "Value: ${VALUE:0:10}..." # Show only first 10 chars
 echo ""
 
 # Check if age key exists
-if [ ! -f "$AGE_KEY_FILE" ]; then
-    echo "⚠️  Age key not found at $AGE_KEY_FILE"
+if [ ! -f "$AGE_KEY_FILE" ] || [ ! -f "$AGE_PUB_FILE" ]; then
+    echo "⚠️  Age key pair not found"
+    echo "   Private key: $AGE_KEY_FILE"
+    echo "   Public key: $AGE_PUB_FILE"
+    echo ""
     echo "   Generating new age key pair..."
     ./scripts/setup/generate-age-key.sh
+
+    # Verify keys were created
+    if [ ! -f "$AGE_KEY_FILE" ]; then
+        echo "❌ Failed to create private key at $AGE_KEY_FILE"
+        exit 1
+    fi
+
+    if [ ! -f "$AGE_PUB_FILE" ]; then
+        echo "❌ Failed to create public key at $AGE_PUB_FILE"
+        echo "   This file should be automatically created by generate-age-key.sh"
+        echo ""
+        echo "Please run manually:"
+        echo "   mise run generate-age-key"
+        echo ""
+        echo "This will create both:"
+        echo "   - $AGE_KEY_FILE (private key for decryption)"
+        echo "   - $AGE_PUB_FILE (public key for encryption)"
+        exit 1
+    fi
+
+    echo "✓ Age key pair created successfully"
     echo ""
 fi
 
