@@ -77,9 +77,10 @@ paths = [
     '''README\.md$''',
     '''CONTRIBUTING\.md$''',
 
-    # Test fixtures
+    # Test fixtures and scripts (may contain test credentials)
     '''tests?/fixtures/.*''',
     '''tests?/.*\.test\.(js|ts|py)$''',
+    '''scripts/notify/test-.*\.sh$''',
 
     # CI workflows (using GitHub secrets)
     '''\.github/workflows/.*\.yml$''',
