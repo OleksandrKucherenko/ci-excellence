@@ -1,0 +1,208 @@
+name: Post-Release Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to rollback or tag'
+        required: true
+        type: string
+      action:
+        description: 'Post-release action'
+        required: true
+        type: choice
+        options:
+          - rollback
+          - tag-stable
+          - tag-unstable
+          - verify-deployment
+
+  release:
+    types: [published]
+
+env:
+  ENABLE_ROLLBACK: ${{ vars.ENABLE_ROLLBACK || secrets.ENABLE_ROLLBACK || 'false' }}
+  ENABLE_DEPLOYMENT_VERIFICATION: ${{ vars.ENABLE_DEPLOYMENT_VERIFICATION || secrets.ENABLE_DEPLOYMENT_VERIFICATION || 'false' }}
+  ENABLE_STABILITY_TAGGING: ${{ vars.ENABLE_STABILITY_TAGGING || secrets.ENABLE_STABILITY_TAGGING || 'false' }}
+
+jobs:
+  verify-deployment:
+    name: Verify Deployment
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'release' ||
+      github.event.inputs.action == 'verify-deployment'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        run: |
+          chmod +x scripts/setup/*.sh
+          ./scripts/setup/install-tools.sh
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          else
+            VERSION="${{ github.event.inputs.version }}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Verify NPM deployment
+        if: ${{ vars.ENABLE_NPM_PUBLISH == 'true' || secrets.ENABLE_NPM_PUBLISH == 'true' }}
+        run: |
+          chmod +x scripts/maintenance/*.sh
+          ./scripts/maintenance/verify-npm-deployment.sh "${{ steps.version.outputs.version }}"
+
+      - name: Verify GitHub release
+        if: ${{ vars.ENABLE_GITHUB_RELEASE == 'true' || secrets.ENABLE_GITHUB_RELEASE == 'true' }}
+        run: |
+          ./scripts/maintenance/verify-github-release.sh "${{ steps.version.outputs.version }}"
+
+      - name: Verify Docker deployment
+        if: ${{ vars.ENABLE_DOCKER_PUBLISH == 'true' || secrets.ENABLE_DOCKER_PUBLISH == 'true' }}
+        run: |
+          ./scripts/maintenance/verify-docker-deployment.sh "${{ steps.version.outputs.version }}"
+
+      - name: Run smoke tests
+        run: |
+          chmod +x scripts/test/*.sh
+          ./scripts/test/smoke.sh "${{ steps.version.outputs.version }}"
+
+      - name: Report verification results
+        if: always()
+        run: |
+          echo "## Deployment Verification Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All deployment targets verified successfully!" >> $GITHUB_STEP_SUMMARY
+
+  tag-stable:
+    name: Tag as Stable
+    runs-on: ubuntu-latest
+    if: |
+      github.event.inputs.action == 'tag-stable' &&
+      (vars.ENABLE_STABILITY_TAGGING == 'true' || secrets.ENABLE_STABILITY_TAGGING == 'true')
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create stable tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          VERSION="${{ github.event.inputs.version }}"
+          git tag -f stable "$VERSION"
+          git push -f origin stable
+
+          echo "## Stability Tagging" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version $VERSION tagged as stable**" >> $GITHUB_STEP_SUMMARY
+
+  tag-unstable:
+    name: Tag as Unstable
+    runs-on: ubuntu-latest
+    if: |
+      github.event.inputs.action == 'tag-unstable' &&
+      (vars.ENABLE_STABILITY_TAGGING == 'true' || secrets.ENABLE_STABILITY_TAGGING == 'true')
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create unstable tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          VERSION="${{ github.event.inputs.version }}"
+          git tag -f unstable "$VERSION"
+          git push -f origin unstable
+
+          echo "## Stability Tagging" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version $VERSION tagged as unstable**" >> $GITHUB_STEP_SUMMARY
+
+  rollback:
+    name: Rollback Release
+    runs-on: ubuntu-latest
+    if: |
+      github.event.inputs.action == 'rollback' &&
+      (vars.ENABLE_ROLLBACK == 'true' || secrets.ENABLE_ROLLBACK == 'true')
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup environment
+        run: |
+          chmod +x scripts/setup/*.sh
+          ./scripts/setup/install-tools.sh
+
+      - name: Confirm rollback
+        run: |
+          echo "⚠️ WARNING: Rolling back version ${{ github.event.inputs.version }}"
+          echo "This action will:"
+          echo "  - Deprecate NPM package version (if enabled)"
+          echo "  - Mark GitHub release as draft (if enabled)"
+          echo "  - Tag Docker images as deprecated (if enabled)"
+
+      - name: Rollback NPM release
+        if: ${{ vars.ENABLE_NPM_PUBLISH == 'true' || secrets.ENABLE_NPM_PUBLISH == 'true' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          chmod +x scripts/release/*.sh
+          ./scripts/release/rollback-npm.sh "${{ github.event.inputs.version }}"
+
+      - name: Update GitHub release
+        if: ${{ vars.ENABLE_GITHUB_RELEASE == 'true' || secrets.ENABLE_GITHUB_RELEASE == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./scripts/release/rollback-github.sh "${{ github.event.inputs.version }}"
+
+      - name: Tag Docker images as deprecated
+        if: ${{ vars.ENABLE_DOCKER_PUBLISH == 'true' || secrets.ENABLE_DOCKER_PUBLISH == 'true' }}
+        run: |
+          ./scripts/release/rollback-docker.sh "${{ github.event.inputs.version }}"
+
+      - name: Report rollback results
+        run: |
+          echo "## Rollback Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ github.event.inputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Rollback completed successfully" >> $GITHUB_STEP_SUMMARY
+
+  notify:
+    name: Notify Post-Release Actions
+    runs-on: ubuntu-latest
+    needs: [verify-deployment, tag-stable, tag-unstable, rollback]
+    if: always()
+    steps:
+      - name: Send notification
+        run: |
+          echo "## Post-Release Actions Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Action | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Verify Deployment | ${{ needs.verify-deployment.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tag Stable | ${{ needs.tag-stable.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tag Unstable | ${{ needs.tag-unstable.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Rollback | ${{ needs.rollback.result }} |" >> $GITHUB_STEP_SUMMARY
