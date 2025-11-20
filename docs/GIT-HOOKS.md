@@ -2,7 +2,7 @@
 
 This project uses automated git hooks and secret detection tools to prevent accidental commits of sensitive information.
 
-## 🔒 Security Tools
+## 🔒 Security and Validation Tools
 
 ### Lefthook
 Git hooks manager that runs security checks automatically.
@@ -12,6 +12,9 @@ Detects hardcoded secrets, passwords, and API keys in your code.
 
 ### Trufflehog
 Finds leaked credentials and verifies if they're still active.
+
+### Action Validator
+Validates GitHub Actions workflow files against JSON schemas and checks glob patterns.
 
 ## 🚀 Quick Setup
 
@@ -31,10 +34,12 @@ lefthook install
 - ✅ **Secret detection** on staged files (gitleaks)
 - ✅ **Credential scanning** on staged files (trufflehog)
 - ✅ **Branch protection** (prevents direct commits to main/master)
+- ✅ **Workflow validation** on staged workflow files (action-validator)
 
 ### Pre-Push (Before Each Push)
 - ✅ **Full secret scan** of commits being pushed (gitleaks)
 - ✅ **Full credential scan** (trufflehog)
+- ✅ **All workflows validation** (action-validator)
 
 ### CI Pipeline
 - ✅ **Repository-wide secret scan**
@@ -73,6 +78,22 @@ git commit -m "feat: add feature"
 git checkout -b feature/my-feature
 git commit -m "feat: add feature"
 ```
+
+### Blocked Commit - Invalid Workflow
+
+```bash
+git commit -m "ci: update workflow"
+
+❌ Workflow validation failed!
+   File: .github/workflows/build.yml
+   Error: Invalid workflow syntax on line 15
+```
+
+**Solution:**
+1. Check the workflow file syntax
+2. Validate manually: `mise run validate-workflows`
+3. Fix the syntax errors
+4. Commit again
 
 ### Accidentally Committed a Secret
 
@@ -157,6 +178,18 @@ trufflehog git file://. --only-verified
 mise run scan-history
 ```
 
+### Validate GitHub Actions Workflows
+```bash
+# Validate all workflows
+action-validator .github/workflows/*.yml .github/workflows/*.yaml
+
+# Validate specific workflow
+action-validator .github/workflows/build.yml
+
+# Using mise
+mise run validate-workflows
+```
+
 ### Skip Hooks (Use Carefully!)
 ```bash
 # Skip pre-commit hook
@@ -191,6 +224,19 @@ mise install gitleaks
 
 # Or manually
 brew install gitleaks  # macOS
+```
+
+### "action-validator: command not found"
+
+**Solution:**
+```bash
+# Using mise (recommended)
+mise install action-validator
+
+# Or manually
+cargo install action-validator  # Rust
+npm install -g @action-validator/cli  # NPM
+# Or download from: https://github.com/mpalmer/action-validator/releases
 ```
 
 ### Hooks Not Running
@@ -264,10 +310,11 @@ pre-commit:
 ### Local Hooks (Lefthook)
 
 1. **You commit** → Pre-commit hook runs
-2. **Gitleaks scans** staged files
-3. **Trufflehog scans** staged files
-4. **If secrets found** → Commit blocked
-5. **If clean** → Commit proceeds
+2. **Gitleaks scans** staged files for secrets
+3. **Trufflehog scans** staged files for credentials
+4. **Action-validator checks** staged workflow files
+5. **If issues found** → Commit blocked
+6. **If clean** → Commit proceeds
 
 ### CI Pipeline
 
@@ -282,6 +329,7 @@ pre-commit:
 - **Lefthook**: https://github.com/evilmartians/lefthook
 - **Gitleaks**: https://github.com/gitleaks/gitleaks
 - **Trufflehog**: https://github.com/trufflesecurity/trufflehog
+- **Action Validator**: https://github.com/mpalmer/action-validator
 - **Git Hooks**: https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks
 
 ## 🆘 Getting Help

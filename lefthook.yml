@@ -43,11 +43,45 @@ pre-commit:
         - merge
         - rebase
 
+    # Validate GitHub Actions workflows
+    validate-workflows:
+      tags: validation
+      glob: ".github/workflows/*.{yml,yaml}"
+      run: |
+        if command -v action-validator &> /dev/null; then
+          echo "Validating GitHub Actions workflows..."
+          WORKFLOWS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.github/workflows/.*\.ya?ml$' || true)
+          if [ -n "$WORKFLOWS" ]; then
+            echo "$WORKFLOWS" | xargs action-validator
+          else
+            echo "✓ No workflow files to validate"
+          fi
+        else
+          echo "⚠ action-validator not installed, skipping workflow validation"
+          echo "  Install with: mise install action-validator"
+        fi
+      skip:
+        - merge
+        - rebase
+
 # Pre-push hook - more thorough checks before push
 pre-push:
   parallel: false
 
   commands:
+    # Validate all GitHub Actions workflows
+    validate-all-workflows:
+      tags: validation
+      run: |
+        if command -v action-validator &> /dev/null; then
+          if [ -d .github/workflows ]; then
+            echo "Validating all GitHub Actions workflows..."
+            action-validator .github/workflows/*.yml .github/workflows/*.yaml 2>/dev/null || true
+          fi
+        else
+          echo "⚠ action-validator not installed, skipping workflow validation"
+        fi
+
     # Full gitleaks scan of commits being pushed
     gitleaks-push:
       tags: security

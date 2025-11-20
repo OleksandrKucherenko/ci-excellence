@@ -78,7 +78,7 @@ git push
 ## 💻 Local Development Setup (Mise)
 
 For local development, we provide [Mise](https://mise.jit.su) configuration for:
-- **Automatic tool installation** (age, sops, gitleaks, trufflehog, lefthook)
+- **Automatic tool installation** (age, sops, gitleaks, trufflehog, lefthook, action-validator)
 - **Secret management** with SOPS and age encryption
 - **Environment variables** loaded automatically
 - **Pre-configured tasks** for common operations
@@ -125,6 +125,10 @@ mise run generate-age-key    # Generate encryption key
 mise run encrypt-secrets     # Encrypt secrets file
 mise run decrypt-secrets     # Decrypt secrets file
 mise run edit-secrets        # Edit encrypted secrets
+mise run install-hooks       # Install git hooks
+mise run scan-secrets        # Scan for secrets
+mise run scan-history        # Scan git history
+mise run validate-workflows  # Validate GitHub Actions workflows
 ```
 
 ### Why Mise?
@@ -134,8 +138,9 @@ mise run edit-secrets        # Edit encrypted secrets
 - ✅ **Auto-installs tools** (no manual setup)
 - ✅ **Secret detection** with gitleaks/trufflehog
 - ✅ **Git hooks** managed by lefthook
+- ✅ **Workflow validation** with action-validator
 
-**Full documentation:** [docs/MISE-SETUP.md](docs/MISE-SETUP.md)
+**Full documentation:** [docs/MISE-SETUP.md](docs/MISE-SETUP.md) | [docs/GIT-HOOKS.md](docs/GIT-HOOKS.md)
 
 ## 🏗️ Architecture
 
