@@ -18,38 +18,44 @@ RUN_URL="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-repo}/act
 
 if [ "$SUMMARY_RESULT" == "failure" ]; then
   echo "status=failure" >> $GITHUB_OUTPUT
-  cat >> $GITHUB_OUTPUT <<EOF
-message=❌ Pre-Release Pipeline Failed
-
-**Build:** #${RUN_NUMBER}
-**Branch:** \`${REF_NAME}\`
-**Commit:** \`${COMMIT_SHORT}\`
-**Triggered by:** ${ACTOR}
-
-[View Logs](${RUN_URL})
-EOF
+  {
+    echo "message<<EOF_MESSAGE"
+    echo "❌ Pre-Release Pipeline Failed"
+    echo ""
+    echo "**Build:** #${RUN_NUMBER}"
+    echo "**Branch:** \`${REF_NAME}\`"
+    echo "**Commit:** \`${COMMIT_SHORT}\`"
+    echo "**Triggered by:** ${ACTOR}"
+    echo ""
+    echo "[View Logs](${RUN_URL})"
+    echo "EOF_MESSAGE"
+  } >> $GITHUB_OUTPUT
 elif [ "$SUMMARY_RESULT" == "success" ]; then
   echo "status=success" >> $GITHUB_OUTPUT
-  cat >> $GITHUB_OUTPUT <<EOF
-message=✅ Pre-Release Pipeline Passed
-
-**Build:** #${RUN_NUMBER}
-**Branch:** \`${REF_NAME}\`
-**Commit:** \`${COMMIT_SHORT}\`
-**Triggered by:** ${ACTOR}
-
-[View Logs](${RUN_URL})
-EOF
+  {
+    echo "message<<EOF_MESSAGE"
+    echo "✅ Pre-Release Pipeline Passed"
+    echo ""
+    echo "**Build:** #${RUN_NUMBER}"
+    echo "**Branch:** \`${REF_NAME}\`"
+    echo "**Commit:** \`${COMMIT_SHORT}\`"
+    echo "**Triggered by:** ${ACTOR}"
+    echo ""
+    echo "[View Logs](${RUN_URL})"
+    echo "EOF_MESSAGE"
+  } >> $GITHUB_OUTPUT
 else
   echo "status=warning" >> $GITHUB_OUTPUT
-  cat >> $GITHUB_OUTPUT <<EOF
-message=⚠️ Pre-Release Pipeline Completed with Issues
-
-**Build:** #${RUN_NUMBER}
-**Branch:** \`${REF_NAME}\`
-**Commit:** \`${COMMIT_SHORT}\`
-**Triggered by:** ${ACTOR}
-
-[View Logs](${RUN_URL})
-EOF
+  {
+    echo "message<<EOF_MESSAGE"
+    echo "⚠️ Pre-Release Pipeline Completed with Issues"
+    echo ""
+    echo "**Build:** #${RUN_NUMBER}"
+    echo "**Branch:** \`${REF_NAME}\`"
+    echo "**Commit:** \`${COMMIT_SHORT}\`"
+    echo "**Triggered by:** ${ACTOR}"
+    echo ""
+    echo "[View Logs](${RUN_URL})"
+    echo "EOF_MESSAGE"
+  } >> $GITHUB_OUTPUT
 fi
