@@ -52,18 +52,18 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Verify NPM deployment
-        if: ${{ vars.ENABLE_NPM_PUBLISH == 'true' || secrets.ENABLE_NPM_PUBLISH == 'true' }}
+        if: vars.ENABLE_NPM_PUBLISH == 'true'
         run: |
           chmod +x scripts/maintenance/*.sh
           ./scripts/maintenance/verify-npm-deployment.sh "${{ steps.version.outputs.version }}"
 
       - name: Verify GitHub release
-        if: ${{ vars.ENABLE_GITHUB_RELEASE == 'true' || secrets.ENABLE_GITHUB_RELEASE == 'true' }}
+        if: vars.ENABLE_GITHUB_RELEASE == 'true'
         run: |
           ./scripts/maintenance/verify-github-release.sh "${{ steps.version.outputs.version }}"
 
       - name: Verify Docker deployment
-        if: ${{ vars.ENABLE_DOCKER_PUBLISH == 'true' || secrets.ENABLE_DOCKER_PUBLISH == 'true' }}
+        if: vars.ENABLE_DOCKER_PUBLISH == 'true'
         run: |
           ./scripts/maintenance/verify-docker-deployment.sh "${{ steps.version.outputs.version }}"
 
@@ -163,7 +163,7 @@ jobs:
           echo "  - Tag Docker images as deprecated (if enabled)"
 
       - name: Rollback NPM release
-        if: ${{ vars.ENABLE_NPM_PUBLISH == 'true' || secrets.ENABLE_NPM_PUBLISH == 'true' }}
+        if: vars.ENABLE_NPM_PUBLISH == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
@@ -171,7 +171,7 @@ jobs:
           ./scripts/release/rollback-npm.sh "${{ github.event.inputs.version }}"
 
       - name: Update GitHub release
-        if: ${{ vars.ENABLE_GITHUB_RELEASE == 'true' || secrets.ENABLE_GITHUB_RELEASE == 'true' }}
+        if: vars.ENABLE_GITHUB_RELEASE == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
