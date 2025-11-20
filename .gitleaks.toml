@@ -99,12 +99,6 @@ regexes = [
     '''ENC\[AES256_GCM,data:.*,iv:.*,tag:.*\]''',
 ]
 
-# Entropy settings - detect high entropy strings (potential secrets)
-[allowlist.commits]
-# Allow specific commits (if needed)
-# "commit-hash-here"
-
-[allowlist.stopwords]
 # Common words that trigger false positives
 stopwords = [
     "example",
@@ -115,3 +109,8 @@ stopwords = [
     "your_token_here",
     "your_password_here",
 ]
+
+# Entropy settings - detect high entropy strings (potential secrets)
+[allowlist.commits]
+# Allow specific commits (if needed)
+# "commit-hash-here"
