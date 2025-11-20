@@ -69,6 +69,25 @@ export class TelegramNotifier {
         body: JSON.stringify(payload),
       });
 
+      // Check if response is OK
+      if (!response.ok) {
+        const text = await response.text();
+        console.error(
+          `HTTP error ${response.status}: ${response.statusText}\nResponse: ${text}`
+        );
+        return null;
+      }
+
+      // Try to parse JSON
+      const contentType = response.headers.get("content-type");
+      if (!contentType?.includes("application/json")) {
+        const text = await response.text();
+        console.error(
+          `Unexpected content type: ${contentType}\nResponse: ${text}`
+        );
+        return null;
+      }
+
       const data = (await response.json()) as TelegramResponse;
 
       if (!data.ok) {
