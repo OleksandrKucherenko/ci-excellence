@@ -68,7 +68,7 @@ if [ ! -f ".env.secrets.json" ]; then
         echo "     vim .env.secrets.json.tmp"
         echo ""
         echo "  3. Encrypt it:"
-        echo "     sops --encrypt --age \$(grep 'public key:' .secrets/mise-age.txt | awk '{print \$NF}') .env.secrets.json.tmp > .env.secrets.json"
+        echo "     sops --encrypt --input-type json --output-type json --age \$(grep 'public key:' .secrets/mise-age.txt | awk '{print \$NF}') .env.secrets.json.tmp > .env.secrets.json"
         echo ""
         echo "  4. Remove the temporary file:"
         echo "     rm .env.secrets.json.tmp"

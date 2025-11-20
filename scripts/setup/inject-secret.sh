@@ -82,14 +82,15 @@ if [ ! -f "$SECRETS_FILE" ]; then
 
     # Encrypt the new file
     echo "   Encrypting with age..."
-    sops --encrypt --age "$AGE_PUBLIC_KEY" "$SECRETS_FILE" > "${SECRETS_FILE}.tmp"
+    sops --encrypt --input-type json --output-type json --age "$AGE_PUBLIC_KEY" "$SECRETS_FILE" > "${SECRETS_FILE}.tmp"
     mv "${SECRETS_FILE}.tmp" "$SECRETS_FILE"
     echo "✓ Created and encrypted $SECRETS_FILE"
     echo ""
 fi
 
 # Decrypt the file to a temporary location
-TEMP_FILE=$(mktemp)
+# Use .json suffix so SOPS knows the format
+TEMP_FILE=$(mktemp --suffix=.json)
 trap "rm -f $TEMP_FILE" EXIT
 
 echo "🔓 Decrypting secrets file..."
@@ -129,7 +130,7 @@ fi
 
 # Encrypt and save
 echo "🔐 Encrypting and saving..."
-if ! sops --encrypt --age "$AGE_PUBLIC_KEY" "$TEMP_FILE" > "${SECRETS_FILE}.tmp"; then
+if ! sops --encrypt --input-type json --output-type json --age "$AGE_PUBLIC_KEY" "$TEMP_FILE" > "${SECRETS_FILE}.tmp"; then
     echo "❌ Failed to encrypt secrets file"
     rm -f "${SECRETS_FILE}.tmp"
     exit 1
