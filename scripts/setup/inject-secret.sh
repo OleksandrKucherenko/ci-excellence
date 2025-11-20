@@ -47,30 +47,13 @@ if [ ! -f "$AGE_KEY_FILE" ]; then
     echo ""
 fi
 
-# Function to create initial secrets file
-create_initial_file() {
-    local file="$1"
-    echo "Creating initial secrets file: $file"
-    cat > "$file" <<EOF
-{
-  "EXAMPLE_SECRET": "change-me",
-  "EXAMPLE_API_KEY": "your-api-key-here"
-}
-EOF
-}
-
 # Check if secrets file exists
 if [ ! -f "$SECRETS_FILE" ]; then
-    echo "📝 Secrets file not found, creating new file..."
+    echo "📝 Secrets file not found, creating new empty file..."
+    echo "   Starting with empty JSON object: {}"
 
-    # Check if example file exists
-    if [ -f "$SECRETS_EXAMPLE" ]; then
-        echo "   Copying from $SECRETS_EXAMPLE..."
-        cp "$SECRETS_EXAMPLE" "$SECRETS_FILE"
-    else
-        echo "   Creating initial secrets file..."
-        create_initial_file "$SECRETS_FILE"
-    fi
+    # Always start with empty JSON object
+    echo '{}' > "$SECRETS_FILE"
 
     # Encrypt the new file
     echo "   Encrypting with age..."
