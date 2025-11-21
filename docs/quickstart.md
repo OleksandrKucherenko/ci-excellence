@@ -64,7 +64,7 @@ mise run validate-workflows
 mise run test
 
 # Run tests with coverage
-mise run test:coverage
+mise run test-coverage
 
 # Run specific test suites
 mise run test:unit
@@ -106,7 +106,7 @@ mise profile show
 
 ```bash
 # Run local CI test
-mise run test:local-ci
+mise run test-local-ci
 
 # Run security scan
 mise run scan-secrets

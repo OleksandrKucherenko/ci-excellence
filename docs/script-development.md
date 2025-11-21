@@ -383,7 +383,7 @@ test_nodejs() {
 
     local test_cmd="npm test"
     if [[ "$COVERAGE" == "true" ]]; then
-        test_cmd="npm run test:coverage"
+        test_cmd="npm run test-coverage"
     fi
 
     if [[ "$DRY_RUN" != "true" ]]; then

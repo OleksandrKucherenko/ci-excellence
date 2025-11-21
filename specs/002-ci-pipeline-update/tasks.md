@@ -69,8 +69,8 @@ description: "Task list for CI Pipeline Comprehensive Update feature implementat
 - [ ] T027 Add MISE tasks in mise.toml for profile switching, secret management, and tool verification
 - [ ] T028 [P] Add MISE task for setup (install hooks, generate keys, create environment folders)
 - [ ] T029 [P] Add MISE task for edit-secrets (wrapper for SOPS edit command)
-- [ ] T030 [P] Add MISE tasks for testing (test, test:watch, test:coverage, lint, format, format:check)
-- [ ] T031 [P] Add MISE task for test:local-ci to run workflows with act in DRY_RUN mode
+- [ ] T030 [P] Add MISE tasks for testing (test, test-watch, test-coverage, lint, format, format-check)
+- [ ] T031 [P] Add MISE task for test-local-ci to run workflows with act in DRY_RUN mode
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 

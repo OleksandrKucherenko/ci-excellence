@@ -83,7 +83,7 @@ git add .
 git commit -m "feat: implement your feature"
 
 # Run local CI
-mise run test:local-ci
+mise run test-local-ci
 ```
 
 ### 3. Testing Before Pushing
@@ -93,7 +93,7 @@ mise run test:local-ci
 mise run test
 
 # Run with coverage
-mise run test:coverage
+mise run test-coverage
 
 # Run security scan
 mise run scan-secrets
@@ -203,7 +203,7 @@ mise install shellspec
 mise run test
 
 # Run with coverage
-mise run test:coverage
+mise run test-coverage
 
 # Run specific test file
 shellspec spec/scripts/your-script_spec.sh

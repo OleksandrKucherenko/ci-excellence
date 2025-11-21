@@ -58,8 +58,8 @@ environments/            - Environment-specific configuration
 - [ ] T020 [P] Create spec/spec_helper.sh with shellspec test utilities and common test functions
 - [ ] T021 [P] Create .shfmt.toml configuration (indent=2, binary-next-line, case-indent, space-redirects)
 - [ ] T022 [P] Create .shellcheckrc configuration with SC2086, SC2155 rules and bash dialect settings
-- [ ] T023 [P] Add MISE tasks for testing (test, test:watch, test:coverage, lint, format, format:check)
-- [ ] T024 [P] Add MISE task for test:local-ci to run workflows with act in DRY_RUN mode
+- [ ] T023 [P] Add MISE tasks for testing (test, test-watch, test-coverage, lint, format, format-check)
+- [ ] T024 [P] Add MISE task for test-local-ci to run workflows with act in DRY_RUN mode
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 

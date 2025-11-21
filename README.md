@@ -711,7 +711,7 @@ PIPELINE_SCRIPT_COMPILE_BEHAVIOR=EXECUTE ./scripts/build/compile.sh
 mise run test
 
 # Run tests with coverage
-mise run test:coverage
+mise run test-coverage
 
 # Test specific file
 shellspec tests/scripts/build/compile_spec.sh

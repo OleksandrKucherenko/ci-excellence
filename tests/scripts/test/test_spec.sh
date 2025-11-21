@@ -140,7 +140,7 @@ func BenchmarkHello(b *testing.B) {
 EOF
 
   # Create Rust test files
-  cat > rust-project/src/lib.rs << 'EOF`
+  cat > rust-project/src/lib.rs << 'EOF'
 pub mod greeter;
 
 #[cfg(test)]
@@ -154,7 +154,7 @@ mod tests {
 }
 EOF
 
-  cat > rust-project/tests/integration_tests.rs << 'EOF`
+  cat > rust-project/tests/integration_tests.rs << 'EOF'
 use test_rust_project::greeter;
 
 #[test]
@@ -244,7 +244,7 @@ mock_test_tools() {
             echo "Running integration tests..."
             echo "✅ Integration tests passed"
             ;;
-          "test:coverage")
+          "test-coverage")
             echo "Running tests with coverage..."
             echo "Coverage report generated"
             echo "Coverage: 85.42%"

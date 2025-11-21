@@ -166,7 +166,7 @@ mise run test-integration
 mise run test-e2e
 
 # Test with coverage
-mise run test:coverage
+mise run test-coverage
 ```
 
 #### Lint and Format
@@ -178,7 +178,7 @@ mise run lint
 mise run format
 
 # Check formatting without changing files
-mise run format:check
+mise run format-check
 ```
 
 #### Security Scanning

@@ -78,30 +78,27 @@ description = "Show current profile status"
 run = ["./scripts/profile/show-profile.sh"]
 
 # Environment management tasks
-[tasks.env]
-description = "Environment management commands"
-
-[tasks.env.list]
+[tasks.env-list]
 description = "List available environments"
 run = ["./scripts/profile/env-list.sh \"$@\""]
 
-[tasks.env.show]
+[tasks.env-show]
 description = "Show detailed environment information"
 run = ["./scripts/profile/env-show.sh \"$@\""]
 
-[tasks.env.create]
+[tasks.env-create]
 description = "Create new environment with inheritance"
 run = ["./scripts/profile/env-create.sh \"$@\""]
 
-[tasks.env.delete]
+[tasks.env-delete]
 description = "Delete environment (custom environments only)"
 run = ["./scripts/profile/env-delete.sh \"$@\""]
 
-[tasks.env.validate]
+[tasks.env-validate]
 description = "Validate environment configuration"
 run = ["./scripts/profile/env-validate.sh \"$@\""]
 
-[tasks.env.migrate-secrets]
+[tasks.env-migrate-secrets]
 description = "Migrate .enc secrets to JSON format"
 run = ["./scripts/profile/env-migrate-secrets.sh \"$@\""]
 
@@ -110,11 +107,11 @@ run = ["./scripts/profile/env-migrate-secrets.sh \"$@\""]
 description = "Run all tests with ShellSpec"
 run = ["shellspec"]
 
-[tasks."test:watch"]
+[tasks.test-watch]
 description = "Run tests in watch mode"
 run = ["shellspec --watch"]
 
-[tasks."test:coverage"]
+[tasks.test-coverage]
 description = "Run tests with coverage"
 run = ["shellspec --format documentation --coverage"]
 
@@ -126,7 +123,7 @@ run = ["shellcheck **/*.sh"]
 description = "Format all bash scripts with shfmt"
 run = ["shfmt -l -w ."]
 
-[tasks."format:check"]
+[tasks.format-check]
 description = "Check formatting without changing files"
 run = ["shfmt -l ."]
 
@@ -134,7 +131,7 @@ run = ["shfmt -l ."]
 description = "Verify all required tools are installed"
 run = ["./scripts/tools/verify-tools.sh"]
 
-[tasks."test:local-ci"]
+[tasks.test-local-ci]
 description = "Run workflows locally with act in DRY_RUN mode"
 run = ["act --dry-run"]
 
