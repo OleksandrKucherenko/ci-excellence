@@ -30,7 +30,7 @@ echo ""
 
 # Run trufflehog via mise
 echo "Running trufflehog credential scan..."
-if mise x -- trufflehog git file://. --only-verified --fail --exclude-paths .trufflehog-exclude.txt --json > trufflehog-report.json 2>&1; then
+if mise x -- trufflehog git file://. --only-verified --fail --exclude-paths .trufflehogignore --json > trufflehog-report.json 2>&1; then
     echo "✓ No leaked credentials detected by trufflehog"
 else
     echo "⚠ Trufflehog found leaked credentials!"

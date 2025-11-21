@@ -1,0 +1,533 @@
+# Production Environment - EU West Region Configuration
+# Regional settings for EU-West production deployment
+
+region:
+  name: eu-west
+  code: euw1
+  description: EU West (Ireland) region - Secondary production region
+  country: IE
+  timezone: "Europe/Dublin"
+
+# Cloud provider regional settings
+cloud:
+  provider: aws
+  region: eu-west-1
+  region_code: euw1
+
+  # AWS regional configuration
+  aws:
+    # Regional S3 buckets
+    s3_buckets:
+      artifacts: "production-artifacts-eu-west-1"
+      logs: "production-logs-eu-west-1"
+      backups: "production-backups-eu-west-1"
+      static_assets: "production-static-eu-west-1"
+      media: "production-media-eu-west-1"
+
+    # Regional DynamoDB tables (replicas)
+    dynamodb_tables:
+      users: "production-users-euw1"
+      sessions: "production-sessions-euw1"
+      audit_logs: "production-audit-logs-euw1"
+      metrics: "production-metrics-euw1"
+      transactions: "production-transactions-euw1"
+
+    # Regional VPC configuration
+    vpc:
+      cidr: "10.10.0.0/16"  # Secondary production VPC
+      availability_zones: 3
+      subnets:
+        # Public subnets
+        public-1a: "10.10.0.0/24"
+        public-1b: "10.10.1.0/24"
+        public-1c: "10.10.2.0/24"
+        # Private subnets
+        private-1a: "10.10.3.0/24"
+        private-1b: "10.10.4.0/24"
+        private-1c: "10.10.5.0/24"
+        # Database subnets
+        db-1a: "10.10.6.0/24"
+        db-1b: "10.10.7.0/24"
+        db-1c: "10.10.8.0/24"
+        # Reserved subnets
+        reserved-1a: "10.10.9.0/24"
+        reserved-1b: "10.10.10.0/24"
+
+    # Regional security groups
+    security_groups:
+      web-sg: "production-web-euw1-sg"
+      api-sg: "production-api-euw1-sg"
+      db-sg: "production-db-euw1-sg"
+      cache-sg: "production-cache-euw1-sg"
+      alb-sg: "production-alb-euw1-sg"
+      nat-sg: "production-nat-euw1-sg"
+      bastion-sg: "production-bastion-euw1-sg"
+
+    # Regional networking
+    networking:
+      internet_gateway: "production-igw-euw1"
+      nat_gateways:
+        - "production-nat-1a-euw1"
+        - "production-nat-1b-euw1"
+        - "production-nat-1c-euw1"
+
+      route_tables:
+        public: "production-rt-public-euw1"
+        private-1a: "production-rt-private-1a-euw1"
+        private-1b: "production-rt-private-1b-euw1"
+        private-1c: "production-rt-private-1c-euw1"
+
+      # Direct Connect
+      direct_connect:
+        enabled: true
+        connection_id: "${PROD_DIRECT_CONNECT_EU_ID}"
+        bgp_asn: 64512
+
+    # Regional load balancing
+    load_balancer:
+      type: "application"
+      name: "production-alb-euw1"
+      scheme: "internet-facing"
+      ip_address_type: "dualstack"  # IPv4 + IPv6
+      security_groups: ["production-alb-euw1-sg"]
+
+      # ALB configuration
+      algorithm: "round_robin"
+      slow_start: "true"
+      stickiness:
+        type: "lb_cookie"
+        duration: 3600
+
+      # Cross-zone load balancing
+      cross_zone_load_balancing: "enabled"
+      idle_timeout: 60
+
+    # Regional endpoints
+    endpoints:
+      database_endpoint: "production-db-euw1.cluster-xxxxx.eu-west-1.rds.amazonaws.com"
+      cache_endpoint: "production-cache-euw1.xxxxxx.euw1.cache.amazonaws.com"
+      read_replicas:
+        - "production-db-read-1a-euw1.cluster-xxxxx.eu-west-1.rds.amazonaws.com"
+        - "production-db-read-1b-euw1.cluster-xxxxx.eu-west-1.rds.amazonaws.com"
+
+# Regional service configuration
+services:
+  web:
+    replicas: 2
+    availability_zones: 2
+    subnets: ["private-1a", "private-1b"]
+    load_balancer: "production-alb-euw1"
+    cpu_limit: "800m"
+    memory_limit: "1Gi"
+
+  api:
+    replicas: 3
+    availability_zones: 2
+    subnets: ["private-1a", "private-1b"]
+    load_balancer: "production-alb-euw1"
+    cpu_limit: "1600m"
+    memory_limit: "2Gi"
+
+  worker:
+    replicas: 1
+    availability_zones: 1
+    subnets: ["private-1a"]
+    cpu_limit: "800m"
+    memory_limit: "1Gi"
+
+  database:
+    engine: "postgresql"
+    version: "14"
+    instance_class: "db.r6g.medium"
+    multi_az: true
+    availability_zones: ["eu-west-1a", "eu-west-1b"]
+    subnets: ["db-1a", "db-1b"]
+    read_replicas: 1
+    enhanced_monitoring: true
+
+  cache:
+    engine: "redis"
+    version: "6.2"
+    node_type: "cache.r6g.medium"
+    cluster_mode: false
+    automatic_failover: true
+    multi_az: true
+    availability_zones: ["eu-west-1a", "eu-west-1b"]
+
+# Regional monitoring and observability
+monitoring:
+  cloudwatch:
+    log_groups:
+      - "production-app-euw1"
+      - "production-api-euw1"
+      "production-worker-euw1"
+      - "production-lb-euw1"
+      "production-security-euw1"
+
+    metrics:
+      collection_interval: 30
+      namespace: "production/euw1"
+      detailed_metrics: true
+
+    # CloudWatch Dashboards
+    dashboards:
+      - "production-overview-euw1"
+      "application-performance-euw1"
+      "infrastructure-health-euw1"
+      "business-metrics-euw1"
+      "security-events-euw1"
+      "compliance-euw1"
+
+  # Regional endpoints for monitoring
+  endpoints:
+    cloudwatch: "https://monitoring.eu-west-1.amazonaws.com"
+    logs: "https://logs.eu-west-1.amazonaws.com"
+    events: "https://events.eu-west-1.amazonaws.com"
+
+  # Additional monitoring services
+  external_monitoring:
+    datadog:
+      api_key: "${PROD_DATADOG_API_KEY_EU}"
+      site: "prod-eu-west-1"
+
+# Regional security configuration
+security:
+  # Regional SSL certificates
+  ssl:
+    certificate_arn: "${PRODUCTION_SSL_CERT_ARN_EU_WEST}"
+    certificate_name: "production-ssl-eu-west-1"
+    auto_renewal: true
+
+  # Web Application Firewall (WAF)
+  waf:
+    enabled: true
+    name: "production-waf-euw1"
+    rules:
+      - name: "AWSManagedRules-CommonRuleSet"
+        priority: 1
+        override_action: "none"
+      - name: "AWSManagedRules-AmazonIPReputationList"
+        priority: 2
+        override_action: "none"
+
+  # Regional security groups
+  security_groups:
+    inbound_rules:
+      web:
+        - protocol: "tcp"
+          port: 80
+          source: "0.0.0.0/0"
+        - protocol: "tcp"
+          port: 443
+          source: "0.0.0.0/0"
+
+      api:
+        - protocol: "tcp"
+          port: 3000
+          source: "0.0.0.0/0"
+
+      bastion:
+        - protocol: "tcp"
+          port: 22
+          source: "10.0.0.0/8"
+
+    outbound_rules:
+      all:
+        - protocol: "-1"
+          port: "0-65535"
+          destination: "0.0.0.0/0"
+
+  # DDoS protection
+  ddos_protection:
+    enabled: true
+    shield_advanced: "${PROD_SHIELD_ADVANCED_EU_WEST}"
+    network_acl: "production-nacl-euw1"
+
+  # GDPR compliance
+  gdpr:
+    data_residency: true
+    data_locality: true
+    encryption: true
+    audit_logging: true
+
+# Regional cost optimization
+cost:
+  # Regional pricing information
+  pricing:
+    database:
+      on_demand_per_hour: 0.150  # db.r6g.medium
+      reserved_1_year: 0.105
+      reserved_3_year: 0.075
+      multi_az_surcharge: 0.05
+
+    cache:
+      on_demand_per_hour: 0.120  # cache.r6g.medium
+      reserved_1_year: 0.084
+      reserved_3_year: 0.060
+      multi_az_surcharge: 0.05
+
+    compute:
+      on_demand_per_hour:
+        t3_small: 0.024    # 2 vCPU, 2GB (slightly higher than US)
+        t3_medium: 0.048   # 2 vCPU, 4GB
+        t3_large: 0.096    # 2 vCPU, 8GB
+        r6g_medium: 0.100  # 2 vCPU, 8GB
+
+  # Regional cost optimization strategies
+  optimization:
+    instance_types: ["r6g"]  # Use Graviton2 instances
+    reserved_capacity: true   # Use reserved instances
+    spot_instances: false      # No spot instances for production
+    auto_scaling: true         # Enable auto-scaling
+    rightsizing: true          # Enable automated rightsizing
+
+  # Cost allocation tags
+  allocation_tags:
+    Environment: "production"
+    Team: "platform"
+    Application: "ci-excellence"
+    Region: "eu-west-1"
+    CostCenter: "engineering"
+    GDPR: "true"
+
+# Regional compliance and data residency
+compliance:
+  data_residency:
+    location: "Ireland (EU)"
+    regulations: ["SOC2", "GDPR", "PCI-DSS", "SOX"]
+
+  backup_requirements:
+    cross_region_backup: true
+    cross_region_backup_regions: ["us-east-1", "us-west-2"]
+    point_in_time_recovery: true
+    backup_retention_days: 30
+    archive_after_days: 90
+    archive_storage_class: "GLACIER"
+
+  # Regional compliance certificates
+  certifications:
+    - "ISO 27001"
+    - "SOC 2 Type II"
+    "PCI DSS Level 1"
+    "GDPR"
+    "FedRAMP"
+
+  # GDPR-specific compliance
+  gdpr:
+    data_protection:
+      encryption_at_rest: true
+      encryption_in_transit: true
+      data_minimization: true
+      anonymization: true
+
+    user_rights:
+      data_portability: true
+      right_to_be_forgotten: true
+      consent_management: true
+      access_logs: true
+
+    # Regional GDPR requirements
+    regional_compliance:
+      eu_data_residency: true
+      cross_border_transfer: true
+      data_processing_agreement: true
+      dpo_contact: "dpo@example.com"
+
+# Regional deployment configuration
+deployment:
+  strategy: "rolling_update"
+  max_unavailable: 1
+  max_surge: 1
+
+  # Regional deployment settings
+  deployment_regions:
+    - name: "us-east-1"
+      primary: true
+      weight: 100
+    - name: "eu-west-1"
+      primary: false
+      weight: 0
+    - name: "us-west-2"
+      primary: false
+      weight: 0
+
+  health_check:
+    path: "/health"
+    interval: 15
+    timeout: 10
+    retries: 3
+    success_threshold: 2
+    grace_period: 120
+
+  # Deployment gates
+  deployment_gates:
+    - name: "security_scan"
+      enabled: true
+      threshold: 0
+    - name: "performance_test"
+      enabled: true
+      threshold: 90
+    - name: "functional_test"
+      enabled: true
+      threshold: 100
+    - name: "gdpr_check"
+      enabled: true
+      threshold: 100
+
+# Regional infrastructure as code
+infrastructure:
+  terraform:
+    state_bucket: "production-terraform-state-eu-west-1"
+    state_key: "production/eu-west/terraform.tfstate"
+    state_lock_table: "production-terraform-lock-euw1"
+
+    # Terraform workspaces
+    workspaces:
+      network: "production-network-euw1"
+      security: "production-security-euw1"
+      applications: "production-apps-euw1"
+      databases: "production-databases-euw1"
+
+  # Regional infrastructure modules
+  modules:
+    - "vpc"
+    - "security-groups"
+    - "load-balancer"
+    - "ecs-cluster"
+    - "rds"
+    - "elasticache"
+    - "s3"
+    - "cloudwatch"
+    - "waf"
+
+# Regional DR configuration
+disaster_recovery:
+  # Regional recovery settings
+  recovery_point_objective: "15m"  # 15 minutes (secondary region)
+  recovery_time_objective: "30m"  # 30 minutes (secondary region)
+  backup_frequency: "hourly"
+  backup_retention_days: 30
+  archive_after_days: 90
+  archive_storage_class: "GLACIER"
+
+  # Regional failover settings
+  failover:
+    enabled: true
+    automatic: false  # Manual failover for secondary region
+    health_check_interval: 60
+    failover_timeout: 600
+    rollback_on_failure: true
+
+  # Regional DR testing
+  testing:
+    quarterly_drills: true
+    failover_tests: true
+    chaos_engineering: false
+
+  # Cross-region replication
+  replication:
+    database:
+      source_region: "us-east-1"
+      target_regions: ["eu-west-1"]
+      replication_frequency: "continuous"
+      point_in_time_recovery: true
+
+    s3:
+      cross_region_replication: true
+      target_regions: ["us-east-1", "us-west-2"]
+      replication_frequency: "continuous"
+
+# Regional integration endpoints
+integrations:
+  # Regional service endpoints
+  service_endpoints:
+    database: "production-db-euw1.cluster-xxxxx.eu-west-1.rds.amazonaws.com:5432"
+    database_read_1a: "production-db-read-1a-euw1.cluster-xxxxx.eu-west-1.rds.amazonaws.com:5432"
+    cache: "production-cache-euw1.xxxxxx.euw1.cache.amazonaws.com:6379"
+    api: "https://api-eu.example.com"
+    web: "https://eu.example.com"
+
+  # Regional notification endpoints
+  notifications:
+    slack_webhook: "${PRODUCTION_SLACK_WEBHOOK_EU_WEST}"
+    pagerduty_service_key: "${PROD_PAGERDUTY_SERVICE_KEY_EU}"
+    email_endpoint: "arn:aws:sns:eu-west-1:123456789012:production-notifications"
+
+    # High-priority alerts
+    critical_alerts:
+      - "arn:aws:sns:eu-west-1:123456789012:production-critical-alerts"
+
+# Regional environment variables
+environment_variables:
+  # Regional AWS settings
+  AWS_REGION: "eu-west-1"
+  AWS_DEFAULT_REGION: "eu-west-1"
+
+  # Regional service endpoints
+  DATABASE_HOST: "production-db-euw1.cluster-xxxxx.eu-west-1.rds.amazonaws.com"
+  DATABASE_READ_HOST_1A: "production-db-read-1a-euw1.cluster-xxxxx.eu-west-1.rds.amazonaws.com:5432"
+  REDIS_HOST: "production-cache-euw1.xxxxxx.euw1.cache.amazonaws.com"
+
+  # Regional URLs
+  API_BASE_URL: "https://api-eu.example.com"
+  WEB_BASE_URL: "https://eu.example.com"
+
+  # Regional monitoring
+  LOG_GROUP: "/aws/ec2/production/eu-west-1"
+  METRICS_NAMESPACE: "production/eu-west-1"
+
+  # Performance optimization
+  ENABLE_COMPRESSION: "true"
+  ENABLE_CACHING: "true"
+  CACHE_TTL: "7200"
+
+  # GDPR compliance
+  GDPR_COMPLIANCE: "true"
+  GDPR_DATA_RESIDENCY: "true"
+
+# Regional performance optimization
+performance:
+  cdn:
+    enabled: true
+    provider: "cloudfront"
+    distribution_name: "production-cdn-euw1"
+    cache_ttl:
+      static: 31536000  # 1 year
+      api: 3600        # 1 hour
+      html: 86400       # 1 day
+
+  caching:
+    browser_cache: true
+    edge_cache: true
+    database_cache: true
+    redis_cache: true
+
+  # Performance thresholds (slightly higher due to EU latency)
+  thresholds:
+    response_time_p50: 250   # 250ms
+    response_time_p95: 1200  # 1.2s
+    response_time_p99: 2500  # 2.5s
+    throughput: 4000        # requests/minute
+
+# Regional CDN configuration
+cdn:
+  # CloudFront distribution for EU region
+  distribution_name: "production-cdn-euw1"
+  origin: "production-alb-euw1"
+  alternate_domain_names:
+    - "eu.example.com"
+    - "api-eu.example.com"
+
+  # Geo restrictions
+  geo_restrictions:
+    default: "allow"
+    restrictions: []
+    blacklisted_countries: []
+    whitelisted_countries: []
+
+  # Cache behavior
+  cache_behavior:
+    default_ttl: 3600
+    min_ttl: 0
+    max_ttl: 31536000
+    compress: true

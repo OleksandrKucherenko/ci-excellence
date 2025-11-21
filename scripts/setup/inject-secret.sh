@@ -14,7 +14,7 @@ set -euo pipefail
 #
 
 SECRETS_FILE=".env.secrets.json"
-SECRETS_EXAMPLE=".env.secrets.json.example"
+SECRETS_EXAMPLE="config/.env.secrets.json.example"
 AGE_KEY_FILE=".secrets/mise-age.txt"
 
 # Check if key and value are provided

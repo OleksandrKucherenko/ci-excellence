@@ -1,0 +1,197 @@
+name: Rollback Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to rollback from'
+        required: true
+        type: string
+      environment:
+        description: 'Target environment for rollback'
+        required: true
+        type: choice
+        options:
+          - production
+          - staging
+          - development
+          - testing
+          - uat
+      reason:
+        description: 'Reason for rollback'
+        required: true
+        type: string
+      confirm:
+        description: 'Type "ROLLBACK" to confirm'
+        required: true
+        type: string
+
+env:
+  ROLLBACK_MODE: ${{ vars.ROLLBACK_MODE || 'safe' }}
+  ENABLE_ROLLBACK_NOTIFICATIONS: ${{ vars.ENABLE_ROLLBACK_NOTIFICATIONS || 'true' }}
+
+jobs:
+  validate-rollback:
+    name: Validate Rollback Request
+    runs-on: ubuntu-latest
+    outputs:
+      rollback_approved: ${{ steps.validate.outputs.approved }}
+      rollback_reason: ${{ steps.validate.outputs.reason }}
+      environment_url: ${{ steps.validate.outputs.environment_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate rollback confirmation
+        id: validate
+        run: |
+          if [[ "${{ github.event.inputs.confirm }}" != "ROLLBACK" ]]; then
+            echo "❌ Rollback confirmation required. Type 'ROLLBACK' to proceed."
+            exit 1
+          fi
+
+          echo "approved=true" >> $GITHUB_OUTPUT
+          echo "reason=${{ github.event.inputs.reason }}" >> $GITHUB_OUTPUT
+
+          case "${{ github.event.inputs.environment }}" in
+            "production")
+              echo "environment_url=https://production.example.com" >> $GITHUB_OUTPUT
+              ;;
+            "staging")
+              echo "environment_url=https://staging.example.com" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "environment_url=https://${{ github.event.inputs.environment }}.example.com" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+      - name: Validate version exists
+        run: |
+          if ! git show-ref --verify --quiet "refs/tags/${{ github.event.inputs.version }}" 2>/dev/null; then
+            echo "❌ Version tag ${{ github.event.inputs.version }} does not exist"
+            exit 1
+          fi
+
+      - name: Setup environment
+        run: mise run verify-tools
+
+      - name: Create rollback point
+        env:
+          VERSION: "${{ github.event.inputs.version }}"
+          ENVIRONMENT: "${{ github.event.inputs.environment }}"
+          REASON: "${{ github.event.inputs.reason }}"
+        run: |
+          TIMESTAMP=$(date +%s)
+          ROLLBACK_TAG="rollback-${TIMESTAMP}-${ENVIRONMENT}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Use framework script for rollback operations
+          ./scripts/deployment/40-ci-atomic-tag-movement.sh create-state "$ROLLBACK_TAG" "$(git rev-list -n 1 $VERSION)" "$ENVIRONMENT" "rollback-$TIMESTAMP"
+
+          echo "rollback_tag=$ROLLBACK_TAG" >> $GITHUB_OUTPUT
+
+  execute-rollback:
+    name: Execute Rollback
+    runs-on: ubuntu-latest
+    needs: validate-rollback
+    if: needs.validate-rollback.outputs.rollback_approved == 'true'
+    environment:
+      name: Rollback to ${{ needs.validate-rollback.outputs.environment }}
+      url: ${{ needs.validate-rollback.outputs.environment_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup environment
+        run: mise run verify-tools
+
+      - name: Execute rollback using framework scripts
+        env:
+          VERSION: "${{ github.event.inputs.version }}"
+          ENVIRONMENT: "${{ github.event.inputs.environment }}"
+          ROLLBACK_REASON: "${{ needs.validate-rollback.outputs.rollback_reason }}"
+          ROLLBACK_TAG: "${{ needs.validate-rollback.outputs.rollback_tag }}"
+          CI_TEST_MODE: "EXECUTE"
+        run: |
+          echo "🔄 Executing rollback operations..."
+          echo "Version: $VERSION"
+          echo "Environment: $ENVIRONMENT"
+          echo "Rollback Reason: $ROLLBACK_REASON"
+          echo "Rollback Tag: $ROLLBACK_TAG"
+
+          # Use framework scripts for rollback operations
+
+          # Mark current version as problematic
+          PROBLEMATIC_TAG="${VERSION}-problematic-$(date +%Y%m%d)"
+          ./scripts/deployment/40-ci-atomic-tag-movement.sh create-state "$PROBLEMATIC_TAG" "$(git rev-list -n 1 $VERSION)" "$ENVIRONMENT" "problematic"
+
+          # Find and rollback to previous stable version
+          PREVIOUS_TAG=$(git tag --sort=-version:refname "$ENVIRONMENT" | grep -v "rollback-" | grep -v "problematic-" | head -1 || echo "")
+
+          if [[ -n "$PREVIOUS_TAG" && "$PREVIOUS_TAG" != "" ]]; then
+            echo "Rolling back to previous version: $PREVIOUS_TAG"
+            ./scripts/deployment/40-ci-atomic-tag-movement.sh move-environment "$ENVIRONMENT" "$(git rev-list -n 1 $PREVIOUS_TAG)" "rollback-$TIMESTAMP"
+          else
+            echo "⚠️ No previous stable version found for $ENVIRONMENT"
+          fi
+
+          echo "✅ Rollback operations completed"
+
+  verify-rollback:
+    name: Verify Rollback
+    runs-on: ubuntu-latest
+    needs: [validate-rollback, execute-rollback]
+    if: always() && needs.validate-rollback.outputs.rollback_approved == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup environment
+        run: mise run verify-tools
+
+      - name: Verify rollback success
+        if: needs.execute-rollback.result == 'success'
+        env:
+          ENVIRONMENT: "${{ needs.validate-rollback.outputs.environment }}"
+        run: |
+          echo "✅ Rollback completed successfully"
+          echo "Environment: $ENVIRONMENT"
+          echo "Environment URL: ${{ needs.validate-rollback.outputs.environment_url }}"
+
+          # Verify current environment tag points to correct version
+          CURRENT_TAG=$(git describe --tags "$ENVIRONMENT" 2>/dev/null || echo "unknown")
+          echo "Current environment tag: $CURRENT_TAG"
+
+      - name: Handle rollback failure
+        if: needs.execute-rollback.result == 'failure'
+        run: |
+          echo "❌ Rollback failed - manual intervention required"
+          echo "Environment: ${{ needs.validate-rollback.outputs.environment }}"
+          echo "Check deployment logs and contact infrastructure team"
+          exit 1
+
+  notify-rollback:
+    name: Notify Rollback
+    runs-on: ubuntu-latest
+    needs: [validate-rollback, execute-rollback, verify-rollback]
+    if: always() && needs.validate-rollback.outputs.rollback_approved == 'true'
+    steps:
+      - name: Generate rollback summary
+        run: |
+          ./scripts/ci/reporting/34-ci-determine-post-release-status.sh
+
+      - name: Send rollback notification
+        if: vars.ENABLE_ROLLBACK_NOTIFICATIONS == 'true'
+        run: |
+          ./scripts/setup/send-notification.sh \
+            "Rollback Pipeline" \
+            "Rollback ${{ needs.validate-rollback.outputs.environment }} completed with status: ${{ needs.execute-rollback.result }}" \
+            "${{ needs.execute-rollback.result }}"

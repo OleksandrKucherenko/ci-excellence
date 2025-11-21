@@ -1,0 +1,308 @@
+# Staging Environment - EU West Region Configuration
+# Regional settings for EU-West deployment
+
+region:
+  name: eu-west
+  code: euw1
+  description: EU West (Ireland) region
+  country: IE
+  timezone: "Europe/Dublin"
+
+# Cloud provider regional settings
+cloud:
+  provider: aws
+  region: eu-west-1
+  region_code: euw1
+
+  # AWS regional configuration
+  aws:
+    # Regional S3 buckets
+    s3_buckets:
+      artifacts: "staging-artifacts-eu-west-1"
+      logs: "staging-logs-eu-west-1"
+      backups: "staging-backups-eu-west-1"
+      static_assets: "staging-static-eu-west-1"
+
+    # Regional DynamoDB tables
+    dynamodb_tables:
+      users: "staging-users-euw1"
+      sessions: "staging-sessions-euw1"
+      audit_logs: "staging-audit-logs-euw1"
+      metrics: "staging-metrics-euw1"
+
+    # Regional VPC configuration
+    vpc:
+      cidr: "10.0.11.0/20"  # Subnet of staging VPC
+      availability_zones: 3
+      subnets:
+        # Public subnets
+        public-1a: "10.0.11.0/24"
+        public-1b: "10.0.12.0/24"
+        public-1c: "10.0.13.0/24"
+        # Private subnets
+        private-1a: "10.0.14.0/24"
+        private-1b: "10.0.15.0/24"
+        private-1c: "10.0.16.0/24"
+        # Database subnets
+        db-1a: "10.0.17.0/24"
+        db-1b: "10.0.18.0/24"
+        db-1c: "10.0.19.0/24"
+
+    # Regional security groups
+    security_groups:
+      web-sg: "staging-web-euw1-sg"
+      api-sg: "staging-api-euw1-sg"
+      db-sg: "staging-db-euw1-sg"
+      cache-sg: "staging-cache-euw1-sg"
+      alb-sg: "staging-alb-euw1-sg"
+      nat-sg: "staging-nat-euw1-sg"
+
+    # Regional networking
+    networking:
+      internet_gateway: "staging-igw-euw1"
+      nat_gateways:
+        - "staging-nat-1a-euw1"
+        - "staging-nat-1b-euw1"
+        - "staging-nat-1c-euw1"
+
+      route_tables:
+        public: "staging-rt-public-euw1"
+        private-1a: "staging-rt-private-1a-euw1"
+        private-1b: "staging-rt-private-1b-euw1"
+        private-1c: "staging-rt-private-1c-euw1"
+
+    # Regional load balancing
+    load_balancer:
+      type: "application"
+      name: "staging-alb-euw1"
+      scheme: "internet-facing"
+      ip_address_type: "ipv4"
+      security_groups: ["staging-alb-euw1-sg"]
+
+    # Regional endpoints
+    endpoints:
+      database_endpoint: "staging-db-euw1.cluster-xxxxx.eu-west-1.rds.amazonaws.com"
+      cache_endpoint: "staging-cache-euw1.xxxxxx.euw1.cache.amazonaws.com"
+
+# Regional service configuration
+services:
+  web:
+    replicas: 2
+    availability_zones: 2
+    subnets: ["private-1a", "private-1b"]
+    load_balancer: "staging-alb-euw1"
+
+  api:
+    replicas: 2
+    availability_zones: 2
+    subnets: ["private-1a", "private-1b"]
+    load_balancer: "staging-alb-euw1"
+
+  worker:
+    replicas: 1
+    availability_zones: 1
+    subnets: ["private-1a"]
+
+  database:
+    engine: "postgresql"
+    version: "13"
+    instance_class: "db.t3.micro"
+    multi_az: false
+    availability_zones: ["eu-west-1a"]
+    subnets: ["db-1a"]
+
+  cache:
+    engine: "redis"
+    version: "6.2"
+    node_type: "cache.t3.micro"
+    cluster_mode: false
+    availability_zones: ["eu-west-1a"]
+    subnets: ["private-1a"]
+
+# Regional monitoring and observability
+monitoring:
+  cloudwatch:
+    log_groups:
+      - "staging-app-euw1"
+      - "staging-api-euw1"
+      - "staging-worker-euw1"
+      - "staging-lb-euw1"
+
+    metrics:
+      collection_interval: 60
+      namespace: "staging/euw1"
+
+  # Regional endpoints for monitoring
+  endpoints:
+    cloudwatch: "https://monitoring.eu-west-1.amazonaws.com"
+    logs: "https://logs.eu-west-1.amazonaws.com"
+    events: "https://events.eu-west-1.amazonaws.com"
+
+# Regional security configuration
+security:
+  # Regional SSL certificates
+  ssl:
+    certificate_arn: "${STAGING_SSL_CERT_ARN_EU_WEST}"
+    certificate_name: "staging-ssl-eu-west-1"
+
+  # Regional security policies
+  security_groups:
+    inbound_rules:
+      web:
+        - protocol: "tcp"
+          port: 80
+          source: "0.0.0.0/0"
+        - protocol: "tcp"
+          port: 443
+          source: "0.0.0.0/0"
+
+      api:
+        - protocol: "tcp"
+          port: 3000
+          source: "0.0.0.0/0"
+
+    outbound_rules:
+      all:
+        - protocol: "-1"
+          port: "0-65535"
+          destination: "0.0.0.0/0"
+
+# Regional cost optimization
+cost:
+  # Regional pricing information
+  pricing:
+    database:
+      on_demand_per_hour: 0.017  # db.t3.micro
+      reserved_1_year: 0.012
+      reserved_3_year: 0.008
+
+    cache:
+      on_demand_per_hour: 0.020  # cache.t3.micro
+      reserved_1_year: 0.015
+      reserved_3_year: 0.010
+
+    compute:
+      on_demand_per_hour:
+        t3_small: 0.023    # 2 vCPU, 2GB (slightly higher than US-East)
+        t3_medium: 0.046   # 2 vCPU, 4GB
+        t3_large: 0.092    # 2 vCPU, 8GB
+
+  # Regional cost optimization strategies
+  optimization:
+    instance_types: ["t3"]  # Use t3 burstable instances
+    reserved_capacity: false  # No reserved instances for staging
+    spot_instances: true      # Use spot instances for non-critical workloads
+    auto_scaling: true        # Enable auto-scaling
+
+# Regional compliance and data residency
+compliance:
+  data_residency:
+    location: "Ireland (EU)"
+    regulations: ["SOC2", "GDPR", "PCI-DSS"]
+
+  backup_requirements:
+    cross_region_backup: false  # No cross-region backup for staging
+    point_in_time_recovery: true
+    backup_retention_days: 7
+
+# Regional deployment configuration
+deployment:
+  strategy: "rolling_update"
+  max_unavailable: 1
+  max_surge: 1
+
+  # Regional deployment settings
+  deployment_regions:
+    - name: "eu-west-1"
+      primary: false  # Secondary region
+      weight: 100
+
+  health_check:
+    path: "/health"
+    interval: 30
+    timeout: 10
+    retries: 3
+    success_threshold: 2
+    grace_period: 60
+
+# Regional infrastructure as code
+infrastructure:
+  terraform:
+    state_bucket: "staging-terraform-state-eu-west-1"
+    state_key: "staging/eu-west/terraform.tfstate"
+    state_lock_table: "staging-terraform-lock-euw1"
+
+  # Regional infrastructure modules
+  modules:
+    - "vpc"
+    - "security-groups"
+    - "load-balancer"
+    - "ecs-cluster"
+    - "rds"
+    - "elasticache"
+    - "s3"
+    - "cloudwatch"
+
+# Regional DR configuration
+disaster_recovery:
+  # Regional recovery settings
+  recovery_point_objective: "1h"
+  recovery_time_objective: "2h"
+  backup_frequency: "daily"
+  backup_retention_days: 7
+
+  # Regional failover settings
+  failover:
+    enabled: false  # No automatic failover for staging
+    manual_failover: true
+    health_check_interval: 60
+
+# Regional integration endpoints
+integrations:
+  # Regional service endpoints
+  service_endpoints:
+    database: "staging-db-euw1.cluster-xxxxx.eu-west-1.rds.amazonaws.com:5432"
+    cache: "staging-cache-euw1.xxxxxx.euw1.cache.amazonaws.com:6379"
+    api: "https://api-staging-euw1.example.com"
+    web: "https://staging-euw1.example.com"
+
+  # Regional notification endpoints
+  notifications:
+    slack_webhook: "${STAGING_SLACK_WEBHOOK_EU_WEST}"
+    email_endpoint: "arn:aws:sns:eu-west-1:123456789012:staging-notifications"
+
+# Regional environment variables
+environment_variables:
+  # Regional AWS settings
+  AWS_REGION: "eu-west-1"
+  AWS_DEFAULT_REGION: "eu-west-1"
+
+  # Regional service endpoints
+  DATABASE_HOST: "staging-db-euw1.cluster-xxxxx.eu-west-1.rds.amazonaws.com"
+  REDIS_HOST: "staging-cache-euw1.xxxxxx.euw1.cache.amazonaws.com"
+
+  # Regional URLs
+  API_BASE_URL: "https://api-staging-euw1.example.com"
+  WEB_BASE_URL: "https://staging-euw1.example.com"
+
+  # Regional monitoring
+  LOG_GROUP: "/aws/ec2/staging/eu-west-1"
+  METRICS_NAMESPACE: "staging/eu-west-1"
+
+# Regional GDPR compliance
+gdpr:
+  data_protection:
+    encryption_at_rest: true
+    encryption_in_transit: true
+    data_minimization: true
+
+  user_rights:
+    data_portability: true
+    right_to_be_forgotten: true
+    consent_management: true
+
+  # Regional GDPR requirements
+  regional_compliance:
+    eu_data_residency: true
+    cross_border_transfer: false
+    data_processing_agreement: true

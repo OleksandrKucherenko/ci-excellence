@@ -70,7 +70,7 @@ paths = [
     # Config templates are safe (examples only)
     '''config/.*\.template$''',
     '''.*\.example$''',
-    '''\.env\.secrets\.json\.example$''',
+    '''config/\.env\.secrets\.json\.example$''',
 
     # Documentation
     '''docs/.*\.md$''',

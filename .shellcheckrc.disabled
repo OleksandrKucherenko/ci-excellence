@@ -1,0 +1,38 @@
+# ShellCheck configuration for CI/CD pipeline scripts
+
+# Disable specific warnings that are common in CI scripts
+disable = SC2086,SC2155
+
+# Enable all other checks by default
+enable = all
+
+# Shell dialect to use
+shell = bash
+
+# Source directories
+source = "scripts/"
+
+# Exclude directories
+exclude = ".git,.secrets,node_modules"
+
+# Severity level (error, warning, info, style)
+severity = style
+
+# Color output
+color = auto
+
+# Check sourced files
+check-sourced = true
+
+# Follow sourced files
+external-sources = true
+
+# Require double brackets for [[ ]]
+require-double-brackets = true
+
+# Add specific rules for CI/CD scripts
+# SC2086: Double quote to prevent globbing and word splitting
+# (Disabled for CI scripts where variable expansion is intentional)
+
+# SC2155: Declare and assign separately to avoid masking return values
+# (Disabled for CI scripts where compact assignment is preferred)

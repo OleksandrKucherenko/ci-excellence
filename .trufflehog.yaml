@@ -15,14 +15,14 @@ detectors:
 verify: true
 
 # Only report verified secrets (reduces false positives)
-only-verified: true
+only_verified: true
 
 # Exclude patterns
 exclude-paths:
   # Config templates
   - "config/*.template"
   - "*.example"
-  - ".env.secrets.json.example"
+  - "config/.env.secrets.json.example"
 
   # Documentation
   - "docs/**/*.md"
@@ -77,7 +77,7 @@ concurrency: 4
 # format: json
 
 # Include metadata in output
-include-metadata: true
+include_metadata: true
 
 # GitHub-specific settings (if scanning GitHub)
 # github:
@@ -86,10 +86,10 @@ include-metadata: true
 # Filesystem scanning settings
 filesystem:
   # Max file size to scan (in bytes)
-  max-file-size: 10485760  # 10MB
+  max_file_size: 10485760  # 10MB
 
   # Include hidden files
-  include-hidden: false
+  include_hidden: false
 
   # Follow symlinks
-  follow-symlinks: false
+  follow_symlinks: false

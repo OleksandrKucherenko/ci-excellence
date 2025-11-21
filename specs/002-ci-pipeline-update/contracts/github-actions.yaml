@@ -1,0 +1,460 @@
+# GitHub Actions Workflow Contracts
+
+# API Contract for GitHub Actions Workflows
+# Version: 1.0.0
+# Format: YAML-based workflow definitions with standardized interfaces
+
+## Workflow Input Contracts
+
+### Tag Assignment Workflow
+```yaml
+name: Tag Assignment
+on:
+  workflow_dispatch:
+    inputs:
+      tag_type:
+        type: choice
+        description: Type of tag to assign
+        required: true
+        options:
+          - environment
+          - state
+      subproject:
+        type: string
+        description: Subproject path (empty for root)
+        required: false
+      version:
+        type: string
+        description: Version tag (for environment assignment)
+        required: false
+        pattern: '^(.+/)?v\d+\.\d+\.\d+(-[\w.-]+)?$'
+      environment:
+        type: choice
+        description: Target environment
+        required: true
+        options:
+          - production
+          - staging
+          - canary
+          - sandbox
+          - performance
+      state:
+        type: choice
+        description: State assignment
+        required: false
+        options:
+          - stable
+          - unstable
+          - deprecated
+      commit_sha:
+        type: string
+        description: Target commit SHA
+        required: false
+        pattern: '^[a-f0-9]{40}$'
+      force_move:
+        type: boolean
+        description: Force move existing tag
+        required: false
+        default: false
+```
+
+### Deployment Workflow
+```yaml
+name: Environment Deployment
+on:
+  workflow_dispatch:
+    inputs:
+      subproject:
+        type: string
+        description: Subproject path (empty for root)
+        required: false
+      environment:
+        type: choice
+        description: Target environment
+        required: true
+        options:
+          - staging
+          - production
+          - canary
+          - sandbox
+          - performance
+      version_tag:
+        type: string
+        description: Version tag to deploy
+        required: true
+        pattern: '^(.+/)?v\d+\.\d+\.\d+(-[\w.-]+)?$'
+      region:
+        type: string
+        description: Target region
+        required: false
+      deployment_strategy:
+        type: choice
+        description: Deployment strategy
+        required: false
+        default: rolling
+        options:
+          - rolling
+          - blue-green
+          - canary
+```
+
+### Rollback Workflow
+```yaml
+name: Rollback Deployment
+on:
+  workflow_dispatch:
+    inputs:
+      subproject:
+        type: string
+        description: Subproject path (empty for root)
+        required: false
+      environment:
+        type: choice
+        description: Environment to rollback
+        required: true
+        options:
+          - production
+          - staging
+          - canary
+          - sandbox
+      current_version:
+        type: string
+        description: Current version being rolled back
+        required: true
+      target_version:
+        type: string
+        description: Target rollback version (auto-detected if not provided)
+        required: false
+      rollback_strategy:
+        type: choice
+        description: Rollback strategy
+        required: false
+        default: blue-green
+        options:
+          - blue-green
+          - rolling
+          - instant
+```
+
+### Maintenance Workflow
+```yaml
+name: Maintenance Tasks
+on:
+  workflow_dispatch:
+    inputs:
+      maintenance_mode:
+        type: choice
+        description: Maintenance mode
+        required: true
+        options:
+          - cleanup
+          - sync-files
+          - deprecate-old-versions
+          - security-audit
+          - dependency-update
+          - all
+      scope:
+        type: choice
+        description: Maintenance scope
+        required: false
+        default: all
+        options:
+          - all
+          - security-only
+          - dependencies-only
+      dry_run:
+        type: boolean
+        description: Perform dry run only
+        required: false
+        default: false
+```
+
+### Self-Healing Workflow
+```yaml
+name: Self-Healing Pipeline
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        type: string
+        description: Branch to fix
+        required: false
+        default: ${{ github.ref_name }}
+      scope:
+        type: choice
+        description: Scope of fixes
+        required: false
+        default: formatting
+        options:
+          - formatting
+          - linting
+          - dependencies
+          - all
+      auto_commit:
+        type: boolean
+        description: Auto-commit fixes
+        required: false
+        default: true
+```
+
+## Environment Variable Contracts
+
+### Hierarchical Testability Variables
+```yaml
+# Global testability (applies to all scripts)
+CI_TEST_MODE:
+  type: string
+  enum: [PASS, FAIL, SKIP, TIMEOUT, DRY_RUN, EXECUTE]
+  default: EXECUTE
+  description: Global testability mode for all CI scripts
+
+# Script-specific testability
+CI_COMPILE_BEHAVIOR:
+  type: string
+  enum: [PASS, FAIL, SKIP, TIMEOUT, DRY_RUN, EXECUTE]
+  description: Testability for compile scripts
+
+CI_TEST_BEHAVIOR:
+  type: string
+  enum: [PASS, FAIL, SKIP, TIMEOUT, DRY_RUN, EXECUTE]
+  description: Testability for test scripts
+
+# Pipeline-specific overrides
+PIPELINE_SCRIPT_COMPILE_BEHAVIOR:
+  type: string
+  enum: [PASS, FAIL, SKIP, TIMEOUT, DRY_RUN, EXECUTE]
+  description: Pipeline-level override for compile script behavior
+```
+
+### Deployment Environment Variables
+```yaml
+# Environment context
+DEPLOYMENT_PROFILE:
+  type: string
+  enum: [local, staging, production, sandbox, canary, performance]
+  default: local
+  description: Active deployment profile
+
+DEPLOYMENT_REGION:
+  type: string
+  pattern: '^[a-z]+-[a-z]+$'
+  description: Cloud-agnostic region name (e.g., us-east, eu-west)
+
+ENVIRONMENT_CONTEXT:
+  type: string
+  enum: [development, staging, production]
+  default: development
+  description: Environment context for tooling
+
+# Override capabilities
+CI_JOB_TIMEOUT_MINUTES:
+  type: integer
+  minimum: 1
+  maximum: 360
+  default: 30
+  description: Per-job timeout override
+
+ALLOW_PROTECTED_TAG_PUSH:
+  type: boolean
+  default: false
+  description: Allow pushing protected environment tags (CI only)
+```
+
+## Output Contracts
+
+### Pipeline Report Output
+```yaml
+# GitHub Actions job summary output
+pipeline_summary:
+  type: object
+  properties:
+    pipeline_type:
+      type: string
+      enum: [PRE_RELEASE, RELEASE, POST_RELEASE, MAINTENANCE, SELF_HEALING]
+    status:
+      type: string
+      enum: [SUCCESS, FAILURE, CANCELLED, TIMEOUT]
+    duration:
+      type: integer
+      description: Pipeline duration in seconds
+    version:
+      type: string
+      description: Associated version tag
+    subproject:
+      type: string
+      description: Affected subproject (if applicable)
+    action_links:
+      type: array
+      items:
+        type: object
+        properties:
+          title:
+            type: string
+          url:
+            type: string
+            format: uri
+          description:
+            type: string
+```
+
+### Tag Operation Output
+```yaml
+# Tag assignment workflow output
+tag_operation:
+  type: object
+  properties:
+    tag_name:
+      type: string
+    tag_type:
+      type: string
+      enum: [VERSION, ENVIRONMENT, STATE]
+    previous_commit:
+      type: string
+      description: Previous commit SHA (for moved environment tags)
+    new_commit:
+      type: string
+      description: New commit SHA
+    operation:
+      type: string
+      enum: [CREATED, MOVED]
+```
+
+## Secret Management Contracts
+
+### SOPS Encrypted File Structure
+```yaml
+# Environment secrets format
+secrets_file:
+  type: object
+  properties:
+    database_url:
+      type: string
+      format: uri
+      redacted: true
+    api_tokens:
+      type: object
+      additionalProperties:
+        type: string
+        redacted: true
+    encryption_keys:
+      type: object
+      redacted: true
+    webhook_secrets:
+      type: object
+      redacted: true
+  required: []
+```
+
+### GitHub Secrets Integration
+```yaml
+# Required GitHub Secrets
+github_secrets:
+  type: object
+  properties:
+    SOPS_AGE_KEY:
+      type: string
+      description: Age private key for SOPS decryption
+    WEBHOOK_BASIC_AUTH:
+      type: string
+      description: Basic auth credentials for webhook access
+    ADMIN_GPG_KEYS:
+      type: string
+      description: Admin GPG public keys for signed commits
+    RELEASE_MANAGERS:
+      type: string
+      description: Comma-separated list of authorized release managers
+  required: [SOPS_AGE_KEY]
+```
+
+## Concurrency Group Contracts
+
+### Deployment Concurrency
+```yaml
+# Concurrency group naming patterns
+concurrency_groups:
+  deployment: "deploy-{subproject}-{environment}"
+  tag_assignment: "tag-assignment-{subproject}"
+  maintenance: "maintenance-{mode}"
+  self_healing: "self-healing-{scope}"
+
+# Concurrency behavior
+concurrency_config:
+  cancel_in_progress:
+    deployment: false
+    tag_assignment: false
+    maintenance: true
+    self_healing: true
+```
+
+## Integration Point Contracts
+
+### MISE Task Interface
+```yaml
+# Standard MISE task interface
+mise_task:
+  type: object
+  properties:
+    description:
+      type: string
+    depends:
+      type: array
+      items:
+        type: string
+    env:
+      type: object
+      additionalProperties:
+        oneOf:
+          - type: string
+          - type: object
+            properties:
+              value:
+                type: string
+              required:
+                type: boolean
+              redact:
+                type: boolean
+    run:
+      type: array
+      items:
+        type: string
+```
+
+### Git Hooks Interface
+```yaml
+# Lefthook configuration interface
+lefthook_config:
+  type: object
+  properties:
+    pre-commit:
+      type: object
+      properties:
+        commands:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              run:
+                type: string
+              glob:
+                type: string
+              tags:
+                type: array
+                items:
+                  type: string
+    pre-push:
+      type: object
+      properties:
+        commands:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              run:
+                type: string
+              tags:
+                type: array
+                items:
+                  type: string
+```
+
+These contracts provide standardized interfaces for all GitHub Actions workflows and integrations in the CI/CD pipeline system.

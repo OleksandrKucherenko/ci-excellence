@@ -34,7 +34,9 @@ run = ["trufflehog git file://. --only-verified"]
 
 [tasks.encrypt-secrets]
 description = "Encrypt secrets file with SOPS"
-run = ["sops --encrypt --input-type json --output-type json .env.secrets.json.example > .env.secrets.json"]
+run = [
+  "sops --encrypt --input-type json --output-type json config/.env.secrets.json.example > .env.secrets.json",
+]
 
 [tasks.decrypt-secrets]
 description = "Decrypt secrets file with SOPS"
@@ -63,23 +65,186 @@ run = [
   "  action-validator .github/workflows/*.yml .github/workflows/*.yaml 2>/dev/null || true",
   "else",
   "  echo 'No workflows found in .github/workflows'",
-  "fi"
+  "fi",
 ]
+
+# Profile management tasks
+[tasks.switch-profile]
+description = "Switch MISE profile for environment context"
+run = ["./scripts/profile/switch-profile.sh \"$@\""]
+
+[tasks.profile-status]
+description = "Show current profile status"
+run = ["./scripts/profile/show-profile.sh"]
+
+# Environment management tasks
+[tasks.env-list]
+description = "List available environments"
+run = ["./scripts/profile/env-list.sh \"$@\""]
+
+[tasks.env-show]
+description = "Show detailed environment information"
+run = ["./scripts/profile/env-show.sh \"$@\""]
+
+[tasks.env-create]
+description = "Create new environment with inheritance"
+run = ["./scripts/profile/env-create.sh \"$@\""]
+
+[tasks.env-delete]
+description = "Delete environment (custom environments only)"
+run = ["./scripts/profile/env-delete.sh \"$@\""]
+
+[tasks.env-validate]
+description = "Validate environment configuration"
+run = ["./scripts/profile/env-validate.sh \"$@\""]
+
+[tasks.env-migrate-secrets]
+description = "Migrate .enc secrets to JSON format"
+run = ["./scripts/profile/env-migrate-secrets.sh \"$@\""]
+
+# Testing tasks
+[tasks.test]
+description = "Run all tests with ShellSpec"
+run = ["shellspec"]
+
+[tasks.test-watch]
+description = "Run tests in watch mode"
+run = ["shellspec --watch"]
+
+[tasks.test-coverage]
+description = "Run tests with coverage"
+run = ["shellspec --format documentation --coverage"]
+
+[tasks.lint]
+description = "Lint all bash scripts with ShellCheck"
+run = ["shellcheck **/*.sh"]
+
+[tasks.format]
+description = "Format all bash scripts with shfmt"
+run = ["shfmt -l -w ."]
+
+[tasks.format-check]
+description = "Check formatting without changing files"
+run = ["shfmt -l ."]
+
+[tasks.verify-tools]
+description = "Verify all required tools are installed"
+run = ["./scripts/tools/verify-tools.sh"]
+
+[tasks.test-local-ci]
+description = "Run workflows locally with act in DRY_RUN mode"
+run = ["act --dry-run"]
+
+# Secret management tasks
+[tasks.secrets-init]
+description = "Initialize encrypted secrets for environment"
+run = ["./scripts/secrets/init-secrets.sh \"$@\""]
+
+[tasks.secrets-rotate]
+description = "Rotate encryption keys"
+run = ["./scripts/secrets/rotate-keys.sh"]
+
+[tasks.decrypt-staging]
+description = "Decrypt staging environment secrets"
+run = ["sops --decrypt environments/staging/secrets.enc"]
+
+[tasks.decrypt-production]
+description = "Decrypt production environment secrets"
+run = ["sops --decrypt environments/production/secrets.enc"]
+
+[tasks.decrypt-global]
+description = "Decrypt global secrets"
+run = ["sops --decrypt environments/global/secrets.enc"]
+
+[tasks.encrypt-staging]
+description = "Encrypt staging environment secrets"
+run = ["sops --encrypt environments/staging/secrets.enc"]
+
+[tasks.encrypt-production]
+description = "Encrypt production environment secrets"
+run = ["sops --encrypt environments/production/secrets.enc"]
+
+[tasks.encrypt-global]
+description = "Encrypt global secrets"
+run = ["sops --encrypt environments/global/secrets.enc"]
+
+# Setup tasks
+[tasks.dev-setup]
+description = "Setup development environment"
+run = [
+  "mise install",
+  "./scripts/tools/setup-platform.sh",
+  "mkdir -p .secrets",
+  "mise run install-hooks",
+]
+
+
+[tasks.claude-zai]
+description = "🤖 Launch Claude CLI with z.ai configuration"
+run = """
+#!/bin/bash
+set -e
+
+echo "🚀 Launching Claude CLI with z.ai configuration..."
+
+# Check if ZAI_AUTH_TOKEN is set
+if [[ -z "$ZAI_AUTH_TOKEN" ]]; then
+  echo "❌ ZAI_AUTH_TOKEN environment variable is not set!"
+  echo ""
+  echo "💡 To fix this:"
+  echo "   1. Add ZAI_AUTH_TOKEN to your .env file"
+  echo "   2. Or export it manually: export ZAI_AUTH_TOKEN=\"your-token-here\""
+  echo "   3. Or add it to .env.secrets.json using: mise run secrets-edit"
+  echo ""
+  exit 1
+fi
+
+# Set environment variables for z.ai (these override ~/.claude/settings.json)
+export ANTHROPIC_AUTH_TOKEN="$ZAI_AUTH_TOKEN"
+export ANTHROPIC_BASE_URL="https://api.z.ai/api/anthropic"
+export API_TIMEOUT_MS="3000000"
+export ANTHROPIC_DEFAULT_HAIKU_MODEL="glm-4.5-air"
+export ANTHROPIC_DEFAULT_SONNET_MODEL="glm-4.6"
+export ANTHROPIC_DEFAULT_OPUS_MODEL="glm-4.6"
+
+echo "✅ Environment configured for z.ai"
+echo "🔗 Base URL: $ANTHROPIC_BASE_URL"
+echo "🤖 Models: Haiku=$ANTHROPIC_DEFAULT_HAIKU_MODEL, Sonnet=$ANTHROPIC_DEFAULT_SONNET_MODEL, Opus=$ANTHROPIC_DEFAULT_OPUS_MODEL"
+echo "🔑 Token: ${ANTHROPIC_AUTH_TOKEN:0:20}..."
+echo ""
+
+# Launch Claude CLI with the configured environment
+exec claude --dangerously-skip-permissions
+"""
 
 [hooks]
 enter = ["mise run setup", "mise run install-hooks"]
 
 [tools]
+# Core runtime
+bun = "latest"
+node = "20"
+
+# Security and encryption
 age = "latest"
 sops = "latest"
-# Secret detection tools
 gitleaks = "latest"
 trufflehog = "latest"
-# Git hooks manager
+
+# Git hooks and commit management
 lefthook = "latest"
-# GitHub Actions validator
+# commitizen = "latest"  # Disabled - not in mise registry
+
+# Shell development and testing
+shellspec = "latest"
+shellcheck = "latest"
+shfmt = "latest"
+
+# Local CI testing
+act = "latest"
+
+# GitHub Actions validation
 action-validator = "latest"
-# Notification tool
+
+# Notifications
 "pipx:apprise" = "latest"
-# TypeScript runtime
-bun = "latest"

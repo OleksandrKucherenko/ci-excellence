@@ -1,0 +1,66 @@
+# Lefthook configuration for CI/CD pipeline
+# https://evilmartians.com/leffthook
+
+pre-commit:
+  commands:
+    # Security scanning with comprehensive Gitleaks integration
+    secret-scan:
+      run: ./scripts/hooks/pre-commit-secret-scan.sh
+      tags: [security, secrets]
+
+    # Shell formatting with shfmt
+    format:
+      run: ./scripts/hooks/pre-commit-format.sh
+      tags: [format, shell]
+
+    # Shell linting with ShellCheck
+    lint:
+      run: ./scripts/hooks/pre-commit-lint.sh
+      tags: [lint, shell]
+
+commit-msg:
+  commands:
+    # Commit message validation with Commitizen
+    message-check:
+      run: ./scripts/hooks/pre-commit-message-check.sh {1}
+      tags: [commit, quality]
+
+pre-push:
+  commands:
+    # Protected environment tag validation
+    protected-tag-check:
+      run: ./scripts/hooks/pre-push-tag-protection.sh
+      tags: [security, deployment]
+
+    # Run tests before push
+    test:
+      run: shellspec --format documentation
+      tags: [test, quality]
+
+    # Security scan of git history
+    history-scan:
+      run: trufflehog git file://. --only-verified --fail
+      tags: [security, secrets]
+
+    # Validate workflow files if they exist
+    workflow-validation:
+      run: |
+        if [ -d .github/workflows ]; then
+          action-validator .github/workflows/*.yml .github/workflows/*.yaml 2>/dev/null || true
+        fi
+      glob: ".github/workflows/*.{yml,yaml}"
+      tags: [ci, validation]
+
+# Skip hooks for specific patterns
+skip_output:
+  - meta
+  - success
+  - summary
+
+# Fail fast on first error
+fail_fast: false
+
+# Global configuration
+extends:
+  - ts-lefthook
+  - js-lefthook

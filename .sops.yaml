@@ -1,0 +1,97 @@
+# SOPS configuration for encrypted secrets management
+# https://github.com/mozilla/sops
+
+# Age encryption configuration
+age_key_file: .secrets/mise-age.txt
+
+# Creation rules for different environments
+creation_rules:
+  # Global secrets (shared across all environments)
+  - path_regex: environments/global/secrets\.enc$
+    age: >-
+      age1y8l0yvdvpzcyphwr29ua8pwwm6uw8t2t7g4df3awfgcrdla5d3dq9ldk2n
+
+  # Production environment secrets
+  - path_regex: environments/production/secrets\.enc$
+    age: >-
+      age1y8l0yvdvpzcyphwr29ua8pwwm6uw8t2t7g4df3awfgcrdla5d3dq9ldk2n,
+      age1y8l0yvdvpzcyphwr29ua8pwwm6uw8t2t7g4df3awfgcrdla5d3dq9ldk2n
+
+  # Production region-specific secrets
+  - path_regex: environments/production/regions/.*/secrets\.enc$
+    age: >-
+      age1y8l0yvdvpzcyphwr29ua8pwwm6uw8t2t7g4df3awfgcrdla5d3dq9ldk2n
+
+  # Staging environment secrets
+  - path_regex: environments/staging/secrets\.enc$
+    age: >-
+      age1y8l0yvdvpzcyphwr29ua8pwwm6uw8t2t7g4df3awfgcrdla5d3dq9ldk2n,
+      age1y8l0yvdvpzcyphwr29ua8pwwm6uw8t2t7g4df3awfgcrdla5d3dq9ldk2n
+
+  # Staging region-specific secrets
+  - path_regex: environments/staging/regions/.*/secrets\.enc$
+    age: >-
+      age1y8l0yvdvpzcyphwr29ua8pwwm6uw8t2t7g4df3awfgcrdla5d3dq9ldk2n
+
+  # Canary environment secrets
+  - path_regex: environments/canary/secrets\.enc$
+    age: >-
+      age1y8l0yvdvpzcyphwr29ua8pwwm6uw8t2t7g4df3awfgcrdla5d3dq9ldk2n
+
+  # Sandbox environment secrets
+  - path_regex: environments/sandbox/secrets\.enc$
+    age: >-
+      age1y8l0yvdvpzcyphwr29ua8pwwm6uw8t2t7g4df3awfgcrdla5d3dq9ldk2n
+
+  # Performance environment secrets
+  - path_regex: environments/performance/secrets\.enc$
+    age: >-
+      age1y8l0yvdvpzcyphwr29ua8pwwm6uw8t2t7g4df3awfgcrdla5d3dq9ldk2n
+
+  # General environment files
+  - path_regex: environments/.*\.enc$
+    age: >-
+      age1y8l0yvdvpzcyphwr29ua8pwwm6uw8t2t7g4df3awfgcrdla5d3dq9ldk2n
+
+  # Config directory secrets
+  - path_regex: config/.*\.enc$
+    age: >-
+      age1y8l0yvdvpzcyphwr29ua8pwwm6uw8t2t7g4df3awfgcrdla5d3dq9ldk2n
+
+  # Repository secrets file
+  - path_regex: \.env\.secrets\.json$
+    age: >-
+      age1y8l0yvdvpzcyphwr29ua8pwwm6uw8t2t7g4df3awfgcrdla5d3dq9ldk2n
+
+# Configuration for encryption method
+encryption_method: age
+
+# MAC-only encryption (AES256-GCM)
+mac_only_encrypted: true
+
+# Groups for key management
+groups:
+  - age:
+      - age1y8l0yvdvpzcyphwr29ua8pwwm6uw8t2t7g4df3awfgcrdla5d3dq9ldk2n
+
+# Key service configuration
+key_service: ""
+insecure_decryption: false
+
+# JSON/YAML/TOML configuration
+stores:
+  yaml: {}
+  json: {}
+  toml: {}
+  dotenv: {}
+
+# File patterns
+suffix: .enc
+
+# Default encryption settings
+unencrypted_suffix: .dec
+encrypted_suffix: .enc
+encrypted_regex: ^(.*api[-_]?key|.*password|.*secret|.*token|.*credential).*$
+
+# GPG configuration (disabled in favor of age)
+gpg: false
