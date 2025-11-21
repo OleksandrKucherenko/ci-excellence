@@ -1,0 +1,261 @@
+name: Tag Assignment
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_type:
+        description: 'Type of tag to create'
+        required: true
+        type: choice
+        options:
+          - version
+          - environment
+          - state
+      version:
+        description: 'Version (e.g., v1.2.3) - required for version tags'
+        required: false
+        type: string
+      environment:
+        description: 'Environment name - required for environment tags'
+        required: false
+        type: choice
+        options:
+          - production
+          - staging
+          - development
+          - testing
+          - uat
+      state:
+        description: 'State name - required for state tags'
+        required: false
+        type: choice
+        options:
+          - testing
+          - stable
+          - unstable
+          - deprecated
+          - maintenance
+      subproject:
+        description: 'Subproject name (optional)'
+        required: false
+        type: string
+      commit_sha:
+        description: 'Commit SHA to tag (defaults to current)'
+        required: false
+        type: string
+      force_move:
+        description: 'Force move existing tag (for environment tags only)'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  # Tag assignment configuration
+  TAG_ASSIGNMENT_MODE: ${{ vars.TAG_ASSIGNMENT_MODE || 'EXECUTE' }}
+
+jobs:
+  validate-tag:
+    name: Validate Tag Parameters
+    runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{ steps.tag-info.outputs.tag_name }}
+      tag_type: ${{ steps.tag-info.outputs.tag_type }}
+      commit_sha: ${{ steps.tag-info.outputs.commit_sha }}
+      force_move: ${{ steps.tag-info.outputs.force_move }}
+      should_deploy: ${{ steps.tag-info.outputs.should_deploy }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for tag validation
+
+      - name: Setup environment
+        run: ./scripts/setup/10-ci-install-deps.sh
+
+      - name: Validate tag parameters
+        id: tag-info
+        env:
+          INPUT_TAG_TYPE: ${{ github.event.inputs.tag_type }}
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+          INPUT_ENVIRONMENT: ${{ github.event.inputs.environment }}
+          INPUT_STATE: ${{ github.event.inputs.state }}
+          INPUT_SUBPROJECT: ${{ github.event.inputs.subproject }}
+          INPUT_COMMIT_SHA: ${{ github.event.inputs.commit_sha }}
+          INPUT_FORCE_MOVE: ${{ github.event.inputs.force_move }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+        run: |
+          ./scripts/release/50-ci-tag-assignment.sh validate-inputs
+
+  create-or-move-tag:
+    name: Create or Move Tag
+    runs-on: ubuntu-latest
+    needs: validate-tag
+    if: needs.validate-tag.outputs.tag_name != ''
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup environment
+        run: ./scripts/setup/10-ci-install-deps.sh
+
+      - name: Create or move tag
+        env:
+          TAG_NAME: ${{ needs.validate-tag.outputs.tag_name }}
+          TAG_TYPE: ${{ needs.validate-tag.outputs.tag_type }}
+          COMMIT_SHA: ${{ needs.validate-tag.outputs.commit_sha }}
+          FORCE_MOVE: ${{ needs.validate-tag.outputs.force_move }}
+          VERSION: ${{ github.event.inputs.version }}
+          ENVIRONMENT: ${{ github.event.inputs.environment }}
+          STATE: ${{ github.event.inputs.state }}
+          SUBPROJECT: ${{ github.event.inputs.subproject }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./scripts/release/50-ci-tag-assignment.sh create-tag
+
+  trigger-deployment:
+    name: Trigger Deployment
+    runs-on: ubuntu-latest
+    needs: [validate-tag, create-or-move-tag]
+    if: needs.validate-tag.outputs.should_deploy == 'true' && needs.create-or-move-tag.result == 'success'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Trigger deployment workflow
+        env:
+          TAG_NAME: ${{ needs.validate-tag.outputs.tag_name }}
+          ENVIRONMENT: ${{ github.event.inputs.environment }}
+          SUBPROJECT: ${{ github.event.inputs.subproject }}
+          COMMIT_SHA: ${{ needs.validate-tag.outputs.commit_sha }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Triggering deployment for tag: $TAG_NAME"
+
+          # Extract environment from tag if it's an environment tag
+          DEPLOY_ENV="${ENVIRONMENT:-$TAG_NAME}"
+
+          # Trigger deployment workflow
+          curl -X POST \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.eagle-preview+json" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"ref\": \"main\",
+              \"inputs\": {
+                \"tag_name\": \"$TAG_NAME\",
+                \"environment\": \"$DEPLOY_ENV\",
+                \"subproject\": \"${SUBPROJECT:-}\",
+                \"commit_sha\": \"$COMMIT_SHA\"
+              }
+            }" \
+            "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/workflows/deployment.yml/dispatches"
+
+  notify-tag-assignment:
+    name: Notify Tag Assignment Results
+    runs-on: ubuntu-latest
+    needs: [validate-tag, create-or-move-tag, trigger-deployment]
+    if: always()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate notification
+        env:
+          TAG_NAME: ${{ needs.validate-tag.outputs.tag_name }}
+          TAG_TYPE: ${{ needs.validate-tag.outputs.tag_type }}
+          COMMIT_SHA: ${{ needs.validate-tag.outputs.commit_sha }}
+          FORCE_MOVE: ${{ needs.validate-tag.outputs.force_move }}
+          SHOULD_DEPLOY: ${{ needs.validate-tag.outputs.should_deploy }}
+          VALIDATE_RESULT: ${{ needs.validate-tag.result }}
+          CREATE_RESULT: ${{ needs.create-or-move-tag.result }}
+          DEPLOY_RESULT: ${{ needs.trigger-deployment.result }}
+          TRIGGER_REASON: ${{ github.event.inputs.tag_type }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: |
+          ./scripts/release/50-ci-tag-assignment.sh notify-results
+
+  # Optional: Integration with external systems
+  webhook-notification:
+    name: External Webhook Notification
+    runs-on: ubuntu-latest
+    needs: [validate-tag, create-or-move-tag]
+    if: always() && success() && vars.TAG_WEBHOOK_ENABLED == 'true'
+
+    steps:
+      - name: Send webhook notification
+        env:
+          TAG_NAME: ${{ needs.validate-tag.outputs.tag_name }}
+          TAG_TYPE: ${{ needs.validate-tag.outputs.tag_type }}
+          COMMIT_SHA: ${{ needs.validate-tag.outputs.commit_sha }}
+          WEBHOOK_URL: ${{ vars.TAG_WEBHOOK_URL }}
+          WEBHOOK_SECRET: ${{ secrets.TAG_WEBHOOK_SECRET }}
+        run: |
+          if [[ -n "$WEBHOOK_URL" ]]; then
+            TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+            # Generate webhook payload
+            PAYLOAD=$(jq -n \
+              --arg event "tag_assignment" \
+              --arg timestamp "$TIMESTAMP" \
+              --arg repo "$GITHUB_REPOSITORY" \
+              --arg tag_name "$TAG_NAME" \
+              --arg tag_type "$TAG_TYPE" \
+              --arg commit_sha "$COMMIT_SHA" \
+              --arg actor "$GITHUB_ACTOR" \
+              --arg run_id "$GITHUB_RUN_ID" \
+              --arg run_number "$GITHUB_RUN_NUMBER" \
+              '{
+                "event": $event,
+                "timestamp": $timestamp,
+                "repository": $repo,
+                "tag": {
+                  "name": $tag_name,
+                  "type": $tag_type,
+                  "commit_sha": $commit_sha
+                },
+                "actor": $actor,
+                "run_id": $run_id,
+                "run_number": ($run_number | tonumber)
+              }' || '{
+                "event": "tag_assignment",
+                "timestamp": "'"$TIMESTAMP"'",
+                "repository": "'"$GITHUB_REPOSITORY"'",
+                "tag": {
+                  "name": "'"$TAG_NAME"'",
+                  "type": "'"$TAG_TYPE"'",
+                  "commit_sha": "'"$COMMIT_SHA"'"
+                }
+              }')
+
+            # Send webhook with signature if secret is provided
+            if [[ -n "$WEBHOOK_SECRET" ]]; then
+              SIGNATURE=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" | cut -d' ' -f2)
+
+              curl -X POST "$WEBHOOK_URL" \
+                -H "Content-Type: application/json" \
+                -H "X-Webhook-Signature: sha256=$SIGNATURE" \
+                -d "$PAYLOAD"
+            else
+              curl -X POST "$WEBHOOK_URL" \
+                -H "Content-Type: application/json" \
+                -d "$PAYLOAD"
+            fi
+
+            echo "Webhook notification sent for tag: $TAG_NAME"
+          else
+            echo "No webhook URL configured, skipping notification"
+          fi
