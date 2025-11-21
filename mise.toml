@@ -68,6 +68,91 @@ run = [
   "fi",
 ]
 
+# Profile management tasks
+[tasks.switch-profile]
+description = "Switch MISE profile for environment context"
+run = ["./scripts/profile/switch-profile.sh \"$@\""]
+
+[tasks.profile-status]
+description = "Show current profile status"
+run = ["./scripts/profile/show-profile.sh"]
+
+# Testing tasks
+[tasks.test]
+description = "Run all tests with ShellSpec"
+run = ["shellspec"]
+
+[tasks."test:watch"]
+description = "Run tests in watch mode"
+run = ["shellspec --watch"]
+
+[tasks."test:coverage"]
+description = "Run tests with coverage"
+run = ["shellspec --format documentation --coverage"]
+
+[tasks.lint]
+description = "Lint all bash scripts with ShellCheck"
+run = ["shellcheck **/*.sh"]
+
+[tasks.format]
+description = "Format all bash scripts with shfmt"
+run = ["shfmt -l -w ."]
+
+[tasks."format:check"]
+description = "Check formatting without changing files"
+run = ["shfmt -l ."]
+
+[tasks.verify-tools]
+description = "Verify all required tools are installed"
+run = ["./scripts/tools/verify-tools.sh"]
+
+[tasks."test:local-ci"]
+description = "Run workflows locally with act in DRY_RUN mode"
+run = ["act --dry-run"]
+
+# Secret management tasks
+[tasks.secrets-init]
+description = "Initialize encrypted secrets for environment"
+run = ["./scripts/secrets/init-secrets.sh \"$@\""]
+
+[tasks.secrets-rotate]
+description = "Rotate encryption keys"
+run = ["./scripts/secrets/rotate-keys.sh"]
+
+[tasks.decrypt-staging]
+description = "Decrypt staging environment secrets"
+run = ["sops --decrypt environments/staging/secrets.enc"]
+
+[tasks.decrypt-production]
+description = "Decrypt production environment secrets"
+run = ["sops --decrypt environments/production/secrets.enc"]
+
+[tasks.decrypt-global]
+description = "Decrypt global secrets"
+run = ["sops --decrypt environments/global/secrets.enc"]
+
+[tasks.encrypt-staging]
+description = "Encrypt staging environment secrets"
+run = ["sops --encrypt environments/staging/secrets.enc"]
+
+[tasks.encrypt-production]
+description = "Encrypt production environment secrets"
+run = ["sops --encrypt environments/production/secrets.enc"]
+
+[tasks.encrypt-global]
+description = "Encrypt global secrets"
+run = ["sops --encrypt environments/global/secrets.enc"]
+
+# Setup tasks
+[tasks.dev-setup]
+description = "Setup development environment"
+run = [
+  "mise install",
+  "./scripts/tools/setup-platform.sh",
+  "mkdir -p .secrets",
+  "mise run install-hooks",
+]
+
 
 [tasks.claude-zai]
 description = "🤖 Launch Claude CLI with z.ai configuration"
@@ -111,16 +196,30 @@ exec claude --dangerously-skip-permissions
 enter = ["mise run setup", "mise run install-hooks"]
 
 [tools]
+# Core runtime
+bun = "latest"
+node = "20"
+
+# Security and encryption
 age = "latest"
 sops = "latest"
-# Secret detection tools
 gitleaks = "latest"
 trufflehog = "latest"
-# Git hooks manager
+
+# Git hooks and commit management
 lefthook = "latest"
-# GitHub Actions validator
+# commitizen = "latest"  # Disabled - not in mise registry
+
+# Shell development and testing
+shellspec = "latest"
+shellcheck = "latest"
+shfmt = "latest"
+
+# Local CI testing
+act = "latest"
+
+# GitHub Actions validation
 action-validator = "latest"
-# Notification tool
+
+# Notifications
 "pipx:apprise" = "latest"
-# TypeScript runtime
-bun = "latest"

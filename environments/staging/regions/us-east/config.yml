@@ -1,0 +1,290 @@
+# Staging Environment - US East Region Configuration
+# Regional settings for US-East deployment
+
+region:
+  name: us-east
+  code: use1
+  description: US East (N. Virginia) region
+  country: US
+  timezone: "America/New_York"
+
+# Cloud provider regional settings
+cloud:
+  provider: aws
+  region: us-east-1
+  region_code: use1
+
+  # AWS regional configuration
+  aws:
+    # Regional S3 buckets
+    s3_buckets:
+      artifacts: "staging-artifacts-us-east-1"
+      logs: "staging-logs-us-east-1"
+      backups: "staging-backups-us-east-1"
+      static_assets: "staging-static-us-east-1"
+
+    # Regional DynamoDB tables
+    dynamodb_tables:
+      users: "staging-users-use1"
+      sessions: "staging-sessions-use1"
+      audit_logs: "staging-audit-logs-use1"
+      metrics: "staging-metrics-use1"
+
+    # Regional VPC configuration
+    vpc:
+      cidr: "10.0.1.0/20"  # Subnet of staging VPC
+      availability_zones: 3
+      subnets:
+        # Public subnets
+        public-1a: "10.0.1.0/24"
+        public-1b: "10.0.2.0/24"
+        public-1c: "10.0.3.0/24"
+        # Private subnets
+        private-1a: "10.0.4.0/24"
+        private-1b: "10.0.5.0/24"
+        private-1c: "10.0.6.0/24"
+        # Database subnets
+        db-1a: "10.0.7.0/24"
+        db-1b: "10.0.8.0/24"
+        db-1c: "10.0.9.0/24"
+
+    # Regional security groups
+    security_groups:
+      web-sg: "staging-web-use1-sg"
+      api-sg: "staging-api-use1-sg"
+      db-sg: "staging-db-use1-sg"
+      cache-sg: "staging-cache-use1-sg"
+      alb-sg: "staging-alb-use1-sg"
+      nat-sg: "staging-nat-use1-sg"
+
+    # Regional networking
+    networking:
+      internet_gateway: "staging-igw-use1"
+      nat_gateways:
+        - "staging-nat-1a-use1"
+        - "staging-nat-1b-use1"
+        - "staging-nat-1c-use1"
+
+      route_tables:
+        public: "staging-rt-public-use1"
+        private-1a: "staging-rt-private-1a-use1"
+        private-1b: "staging-rt-private-1b-use1"
+        private-1c: "staging-rt-private-1c-use1"
+
+    # Regional load balancing
+    load_balancer:
+      type: "application"
+      name: "staging-alb-use1"
+      scheme: "internet-facing"
+      ip_address_type: "ipv4"
+      security_groups: ["staging-alb-use1-sg"]
+
+    # Regional endpoints
+    endpoints:
+      database_endpoint: "staging-db-use1.cluster-xxxxx.us-east-1.rds.amazonaws.com"
+      cache_endpoint: "staging-cache-use1.xxxxxx.use1.cache.amazonaws.com"
+
+# Regional service configuration
+services:
+  web:
+    replicas: 2
+    availability_zones: 2
+    subnets: ["private-1a", "private-1b"]
+    load_balancer: "staging-alb-use1"
+
+  api:
+    replicas: 2
+    availability_zones: 2
+    subnets: ["private-1a", "private-1b"]
+    load_balancer: "staging-alb-use1"
+
+  worker:
+    replicas: 1
+    availability_zones: 1
+    subnets: ["private-1a"]
+
+  database:
+    engine: "postgresql"
+    version: "13"
+    instance_class: "db.t3.micro"
+    multi_az: false
+    availability_zones: ["us-east-1a"]
+    subnets: ["db-1a"]
+
+  cache:
+    engine: "redis"
+    version: "6.2"
+    node_type: "cache.t3.micro"
+    cluster_mode: false
+    availability_zones: ["us-east-1a"]
+    subnets: ["private-1a"]
+
+# Regional monitoring and observability
+monitoring:
+  cloudwatch:
+    log_groups:
+      - "staging-app-use1"
+      - "staging-api-use1"
+      - "staging-worker-use1"
+      - "staging-lb-use1"
+
+    metrics:
+      collection_interval: 60
+      namespace: "staging/use1"
+
+  # Regional endpoints for monitoring
+  endpoints:
+    cloudwatch: "https://monitoring.us-east-1.amazonaws.com"
+    logs: "https://logs.us-east-1.amazonaws.com"
+    events: "https://events.us-east-1.amazonaws.com"
+
+# Regional security configuration
+security:
+  # Regional SSL certificates
+  ssl:
+    certificate_arn: "${STAGING_SSL_CERT_ARN_US_EAST}"
+    certificate_name: "staging-ssl-us-east-1"
+
+  # Regional security policies
+  security_groups:
+    inbound_rules:
+      web:
+        - protocol: "tcp"
+          port: 80
+          source: "0.0.0.0/0"
+        - protocol: "tcp"
+          port: 443
+          source: "0.0.0.0/0"
+
+      api:
+        - protocol: "tcp"
+          port: 3000
+          source: "0.0.0.0/0"
+
+    outbound_rules:
+      all:
+        - protocol: "-1"
+          port: "0-65535"
+          destination: "0.0.0.0/0"
+
+# Regional cost optimization
+cost:
+  # Regional pricing information
+  pricing:
+    database:
+      on_demand_per_hour: 0.017  # db.t3.micro
+      reserved_1_year: 0.012
+      reserved_3_year: 0.008
+
+    cache:
+      on_demand_per_hour: 0.020  # cache.t3.micro
+      reserved_1_year: 0.015
+      reserved_3_year: 0.010
+
+    compute:
+      on_demand_per_hour:
+        t3_small: 0.020    # 2 vCPU, 2GB
+        t3_medium: 0.040   # 2 vCPU, 4GB
+        t3_large: 0.080    # 2 vCPU, 8GB
+
+  # Regional cost optimization strategies
+  optimization:
+    instance_types: ["t3"]  # Use t3 burstable instances
+    reserved_capacity: false  # No reserved instances for staging
+    spot_instances: true      # Use spot instances for non-critical workloads
+    auto_scaling: true        # Enable auto-scaling
+
+# Regional compliance and data residency
+compliance:
+  data_residency:
+    location: "United States"
+    regulations: ["SOC2", "HIPAA", "PCI-DSS"]
+
+  backup_requirements:
+    cross_region_backup: false  # No cross-region backup for staging
+    point_in_time_recovery: true
+    backup_retention_days: 7
+
+# Regional deployment configuration
+deployment:
+  strategy: "rolling_update"
+  max_unavailable: 1
+  max_surge: 1
+
+  # Regional deployment settings
+  deployment_regions:
+    - name: "us-east-1"
+      primary: true
+      weight: 100
+
+  health_check:
+    path: "/health"
+    interval: 30
+    timeout: 10
+    retries: 3
+    success_threshold: 2
+    grace_period: 60
+
+# Regional infrastructure as code
+infrastructure:
+  terraform:
+    state_bucket: "staging-terraform-state-us-east-1"
+    state_key: "staging/us-east/terraform.tfstate"
+    state_lock_table: "staging-terraform-lock-use1"
+
+  # Regional infrastructure modules
+  modules:
+    - "vpc"
+    - "security-groups"
+    - "load-balancer"
+    - "ecs-cluster"
+    - "rds"
+    - "elasticache"
+    - "s3"
+    - "cloudwatch"
+
+# Regional DR configuration
+disaster_recovery:
+  # Regional recovery settings
+  recovery_point_objective: "1h"
+  recovery_time_objective: "2h"
+  backup_frequency: "daily"
+  backup_retention_days: 7
+
+  # Regional failover settings
+  failover:
+    enabled: false  # No automatic failover for staging
+    manual_failover: true
+    health_check_interval: 60
+
+# Regional integration endpoints
+integrations:
+  # Regional service endpoints
+  service_endpoints:
+    database: "staging-db-use1.cluster-xxxxx.us-east-1.rds.amazonaws.com:5432"
+    cache: "staging-cache-use1.xxxxxx.use1.cache.amazonaws.com:6379"
+    api: "https://api-staging-use1.example.com"
+    web: "https://staging-use1.example.com"
+
+  # Regional notification endpoints
+  notifications:
+    slack_webhook: "${STAGING_SLACK_WEBHOOK_US_EAST}"
+    email_endpoint: "arn:aws:sns:us-east-1:123456789012:staging-notifications"
+
+# Regional environment variables
+environment_variables:
+  # Regional AWS settings
+  AWS_REGION: "us-east-1"
+  AWS_DEFAULT_REGION: "us-east-1"
+
+  # Regional service endpoints
+  DATABASE_HOST: "staging-db-use1.cluster-xxxxx.us-east-1.rds.amazonaws.com"
+  REDIS_HOST: "staging-cache-use1.xxxxxx.use1.cache.amazonaws.com"
+
+  # Regional URLs
+  API_BASE_URL: "https://api-staging-use1.example.com"
+  WEB_BASE_URL: "https://staging-use1.example.com"
+
+  # Regional monitoring
+  LOG_GROUP: "/aws/ec2/staging/us-east-1"
+  METRICS_NAMESPACE: "staging/us-east-1"

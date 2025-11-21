@@ -1,0 +1,471 @@
+# Production Environment - US East Region Configuration
+# Regional settings for US-East production deployment
+
+region:
+  name: us-east
+  code: use1
+  description: US East (N. Virginia) region - Primary production region
+  country: US
+  timezone: "America/New_York"
+
+# Cloud provider regional settings
+cloud:
+  provider: aws
+  region: us-east-1
+  region_code: use1
+
+  # AWS regional configuration
+  aws:
+    # Regional S3 buckets
+    s3_buckets:
+      artifacts: "production-artifacts-us-east-1"
+      logs: "production-logs-us-east-1"
+      backups: "production-backups-us-east-1"
+      static_assets: "production-static-us-east-1"
+      media: "production-media-us-east-1"
+
+    # Regional DynamoDB tables
+    dynamodb_tables:
+      users: "production-users-use1"
+      sessions: "production-sessions-use1"
+      audit_logs: "production-audit-logs-use1"
+      metrics: "production-metrics-use1"
+      transactions: "production-transactions-use1"
+
+    # Regional VPC configuration
+    vpc:
+      cidr: "10.0.0.0/16"  # Primary production VPC
+      availability_zones: 3
+      subnets:
+        # Public subnets
+        public-1a: "10.0.0.0/24"
+        public-1b: "10.0.1.0/24"
+        public-1c: "10.0.2.0/24"
+        # Private subnets
+        private-1a: "10.0.3.0/24"
+        private-1b: "10.0.4.0/24"
+        private-1c: "10.0.5.0/24"
+        # Database subnets
+        db-1a: "10.0.6.0/24"
+        db-1b: "10.0.7.0/24"
+        db-1c: "10.0.8.0/24"
+        # Reserved subnets
+        reserved-1a: "10.0.9.0/24"
+        reserved-1b: "10.0.10.0/24"
+
+    # Regional security groups
+    security_groups:
+      web-sg: "production-web-use1-sg"
+      api-sg: "production-api-use1-sg"
+      db-sg: "production-db-use1-sg"
+      cache-sg: "production-cache-use1-sg"
+      alb-sg: "production-alb-use1-sg"
+      nat-sg: "production-nat-use1-sg"
+      bastion-sg: "production-bastion-use1-sg"
+
+    # Regional networking
+    networking:
+      internet_gateway: "production-igw-use1"
+      nat_gateways:
+        - "production-nat-1a-use1"
+        - "production-nat-1b-use1"
+        - "production-nat-1c-use1"
+
+      route_tables:
+        public: "production-rt-public-use1"
+        private-1a: "production-rt-private-1a-use1"
+        private-1b: "production-rt-private-1b-use1"
+        private-1c: "production-rt-private-1c-use1"
+
+      # Direct Connect
+      direct_connect:
+        enabled: true
+        connection_id: "${PROD_DIRECT_CONNECT_ID}"
+        bgp_asn: 64512
+
+    # Regional load balancing
+    load_balancer:
+      type: "application"
+      name: "production-alb-use1"
+      scheme: "internet-facing"
+      ip_address_type: "dualstack"  # IPv4 + IPv6
+      security_groups: ["production-alb-use1-sg"]
+
+      # ALB configuration
+      algorithm: "round_robin"
+      slow_start: "true"
+      stickiness:
+        type: "lb_cookie"
+        duration: 3600
+
+      # Cross-zone load balancing
+      cross_zone_load_balancing: "enabled"
+      idle_timeout: 60
+
+    # Regional endpoints
+    endpoints:
+      database_endpoint: "production-db-use1.cluster-xxxxx.us-east-1.rds.amazonaws.com"
+      cache_endpoint: "production-cache-use1.xxxxxx.use1.cache.amazonaws.com"
+      read_replicas:
+        - "production-db-read-1a-use1.cluster-xxxxx.us-east-1.rds.amazonaws.com"
+        - "production-db-read-1b-use1.cluster-xxxxx.us-east-1.rds.amazonaws.com"
+
+# Regional service configuration
+services:
+  web:
+    replicas: 3
+    availability_zones: 3
+    subnets: ["private-1a", "private-1b", "private-1c"]
+    load_balancer: "production-alb-use1"
+    cpu_limit: "1000m"
+    memory_limit: "1Gi"
+
+  api:
+    replicas: 4
+    availability_zones: 3
+    subnets: ["private-1a", "private-1b", "private-1c"]
+    load_balancer: "production-alb-use1"
+    cpu_limit: "2000m"
+    memory_limit: "2Gi"
+
+  worker:
+    replicas: 2
+    availability_zones: 2
+    subnets: ["private-1a", "private-1b"]
+    cpu_limit: "1000m"
+    memory_limit: "1Gi"
+
+  database:
+    engine: "postgresql"
+    version: "14"
+    instance_class: "db.r6g.large"
+    multi_az: true
+    availability_zones: ["us-east-1a", "us-east-1b"]
+    subnets: ["db-1a", "db-1b"]
+    read_replicas: 2
+    enhanced_monitoring: true
+
+  cache:
+    engine: "redis"
+    version: "6.2"
+    node_type: "cache.r6g.large"
+    cluster_mode: false
+    automatic_failover: true
+    multi_az: true
+    availability_zones: ["us-east-1a", "us-east-1b"]
+
+# Regional monitoring and observability
+monitoring:
+  cloudwatch:
+    log_groups:
+      - "production-app-use1"
+      - "production-api-use1"
+      "production-worker-use1"
+      - "production-lb-use1"
+      "production-security-use1"
+
+    metrics:
+      collection_interval: 30
+      namespace: "production/use1"
+      detailed_metrics: true
+
+    # CloudWatch Dashboards
+    dashboards:
+      - "production-overview-use1"
+      - "application-performance-use1"
+      - "infrastructure-health-use1"
+      "business-metrics-use1"
+      - "security-events-use1"
+
+  # Regional endpoints for monitoring
+  endpoints:
+    cloudwatch: "https://monitoring.us-east-1.amazonaws.com"
+    logs: "https://logs.us-east-1.amazonaws.com"
+    events: "https://events.us-east-1.amazonaws.com"
+
+  # Additional monitoring services
+  external_monitoring:
+    datadog:
+      api_key: "${PROD_DATADOG_API_KEY}"
+      site: "prod-us-east-1"
+
+    prometheus:
+      workspace: "prod-us-east-1"
+      endpoint: "https://prometheus-us-east-1.example.com"
+
+# Regional security configuration
+security:
+  # Regional SSL certificates
+  ssl:
+    certificate_arn: "${PRODUCTION_SSL_CERT_ARN_US_EAST}"
+    certificate_name: "production-ssl-us-east-1"
+    auto_renewal: true
+
+  # Web Application Firewall (WAF)
+  waf:
+    enabled: true
+    name: "production-waf-use1"
+    rules:
+      - name: "AWSManagedRules-CommonRuleSet"
+        priority: 1
+        override_action: "none"
+      - name: "AWSManagedRules-AmazonIPReputationList"
+        priority: 2
+        override_action: "none"
+
+  # Regional security groups
+  security_groups:
+    inbound_rules:
+      web:
+        - protocol: "tcp"
+          port: 80
+          source: "0.0.0.0/0"
+        - protocol: "tcp"
+          port: 443
+          source: "0.0.0.0/0"
+
+      api:
+        - protocol: "tcp"
+          port: 3000
+          source: "0.0.0.0/0"
+
+      bastion:
+        - protocol: "tcp"
+          port: 22
+          source: "10.0.0.0/8"
+
+    outbound_rules:
+      all:
+        - protocol: "-1"
+          port: "0-65535"
+          destination: "0.0.0.0/0"
+
+  # DDoS protection
+  ddos_protection:
+    enabled: true
+    shield_advanced: "${PROD_SHIELD_ADVANCED_USE1}"
+    network_acl: "production-nacl-use1"
+
+# Regional cost optimization
+cost:
+  # Regional pricing information
+  pricing:
+    database:
+      on_demand_per_hour: 0.250  # db.r6g.large
+      reserved_1_year: 0.175
+      reserved_3_year: 0.125
+      multi_az_surcharge: 0.05
+
+    cache:
+      on_demand_per_hour: 0.150  # cache.r6g.large
+      reserved_1_year: 0.112
+      reserved_3_year: 0.080
+      multi_az_surcharge: 0.05
+
+    compute:
+      on_demand_per_hour:
+        t3_small: 0.023    # 2 vCPU, 2GB
+        t3_medium: 0.046   # 2 vCPU, 4GB
+        t3_large: 0.092    # 2 vCPU, 8GB
+        r6g_large: 0.126   # 2 vCPU, 16GB
+
+  # Regional cost optimization strategies
+  optimization:
+    instance_types: ["r6g"]  # Use Graviton2 instances
+    reserved_capacity: true   # Use reserved instances
+    spot_instances: false      # No spot instances for critical workloads
+    auto_scaling: true         # Enable auto-scaling
+    rightsizing: true          # Enable automated rightsizing
+
+  # Cost allocation tags
+  allocation_tags:
+    Environment: "production"
+    Team: "platform"
+    Application: "ci-excellence"
+    Region: "us-east-1"
+    CostCenter: "engineering"
+
+# Regional compliance and data residency
+compliance:
+  data_residency:
+    location: "United States (East)"
+    regulations: ["SOC2", "HIPAA", "PCI-DSS", "SOX"]
+
+  backup_requirements:
+    cross_region_backup: true
+    cross_region_backup_regions: ["us-west-2", "eu-west-1"]
+    point_in_time_recovery: true
+    backup_retention_days: 30
+    archive_after_days: 90
+    archive_storage_class: "GLACIER"
+
+  # Regional compliance certificates
+  certifications:
+    - "ISO 27001"
+    - "SOC 2 Type II"
+    - "PCI DSS Level 1"
+    - "HIPAA"
+    - "FedRAMP"
+
+# Regional deployment configuration
+deployment:
+  strategy: "blue_green"
+  max_unavailable: 0
+  max_surge: 100
+
+  # Regional deployment settings
+  deployment_regions:
+    - name: "us-east-1"
+      primary: true
+      weight: 100
+    - name: "us-west-2"
+      primary: false
+      weight: 0
+    - name: "eu-west-1"
+      primary: false
+      weight: 0
+
+  health_check:
+    path: "/health"
+    interval: 15
+    timeout: 10
+    retries: 3
+    success_threshold: 2
+    grace_period: 120
+
+  # Deployment gates
+  deployment_gates:
+    - name: "security_scan"
+      enabled: true
+      threshold: 0
+    - name: "performance_test"
+      enabled: true
+      threshold: 95
+    - name: "functional_test"
+      enabled: true
+      threshold: 100
+    - name: "smoke_test"
+      enabled: true
+      threshold: 100
+
+# Regional infrastructure as code
+infrastructure:
+  terraform:
+    state_bucket: "production-terraform-state-us-east-1"
+    state_key: "production/us-east/terraform.tfstate"
+    state_lock_table: "production-terraform-lock-use1"
+
+    # Terraform workspaces
+    workspaces:
+      network: "production-network-use1"
+      security: "production-security-use1"
+      applications: "production-apps-use1"
+      databases: "production-databases-use1"
+
+  # Regional infrastructure modules
+  modules:
+    - "vpc"
+    - "security-groups"
+    - "load-balancer"
+    - "ecs-cluster"
+    - "rds"
+    - "elasticache"
+    - "s3"
+    - "cloudwatch"
+    - "waf"
+    - "shield"
+
+# Regional DR configuration
+disaster_recovery:
+  # Regional recovery settings
+  recovery_point_objective: "5m"  # 5 minutes
+  recovery_time_objective: "15m"  # 15 minutes
+  backup_frequency: "hourly"
+  backup_retention_days: 30
+  archive_after_days: 90
+
+  # Regional failover settings
+  failover:
+    enabled: true
+    automatic: true
+    health_check_interval: 30
+    failover_timeout: 300
+    rollback_on_failure: true
+
+  # Regional DR testing
+  testing:
+    quarterly_drills: true
+    chaos_engineering: true
+    failover_tests: true
+
+# Regional integration endpoints
+integrations:
+  # Regional service endpoints
+  service_endpoints:
+    database: "production-db-use1.cluster-xxxxx.us-east-1.rds.amazonaws.com:5432"
+    cache: "production-cache-use1.xxxxxx.use1.cache.amazonaws.com:6379"
+    api: "https://api.example.com"
+    web: "https://example.com"
+
+    # Read replica endpoints
+    database_read_1a: "production-db-read-1a-use1.cluster-xxxxx.us-east-1.rds.amazonaws.com:5432"
+    database_read_1b: "production-db-read-1b-use1.cluster-xxxxx.us-east-1.rds.amazonaws.com:5432"
+
+  # Regional notification endpoints
+  notifications:
+    slack_webhook: "${PRODUCTION_SLACK_WEBHOOK_US_EAST}"
+    pagerduty_service_key: "${PROD_PAGERDUTY_SERVICE_KEY}"
+    email_endpoint: "arn:aws:sns:us-east-1:123456789012:production-notifications"
+
+    # High-priority alerts
+    critical_alerts:
+      - "arn:aws:sns:us-east-1:123456789012:production-critical-alerts"
+
+# Regional environment variables
+environment_variables:
+  # Regional AWS settings
+  AWS_REGION: "us-east-1"
+  AWS_DEFAULT_REGION: "us-east-1"
+
+  # Regional service endpoints
+  DATABASE_HOST: "production-db-use1.cluster-xxxxx.us-east-1.rds.amazonaws.com"
+  DATABASE_READ_HOST_1A: "production-db-read-1a-use1.cluster-xxxxx.us-east-1.rds.amazonaws.com"
+  DATABASE_READ_HOST_1B: "production-db-read-1b-use1.cluster-xxxxx.us-east-1.rds.amazonaws.com"
+  REDIS_HOST: "production-cache-use1.xxxxxx.use1.cache.amazonaws.com"
+
+  # Regional URLs
+  API_BASE_URL: "https://api.example.com"
+  WEB_BASE_URL: "https://example.com"
+
+  # Regional monitoring
+  LOG_GROUP: "/aws/ec2/production/us-east-1"
+  METRICS_NAMESPACE: "production/us-east-1"
+
+  # Performance optimization
+  ENABLE_COMPRESSION: "true"
+  ENABLE_CACHING: "true"
+  CACHE_TTL: "3600"
+
+# Regional performance optimization
+performance:
+  cdn:
+    enabled: true
+    provider: "cloudfront"
+    distribution_name: "production-cdn-use1"
+    cache_ttl:
+      static: 31536000  # 1 year
+      api: 3600        # 1 hour
+      html: 86400       # 1 day
+
+  caching:
+    browser_cache: true
+    edge_cache: true
+    database_cache: true
+    redis_cache: true
+
+  # Performance thresholds
+  thresholds:
+    response_time_p50: 200   # 200ms
+    response_time_p95: 1000  # 1s
+    response_time_p99: 2000  # 2s
+    throughput: 5000        # requests/minute

@@ -56,8 +56,7 @@ jobs:
 
       - name: Setup environment
         run: |
-          chmod +x scripts/setup/*.sh
-          ./scripts/setup/install-tools.sh
+          mise run verify-tools
 
       - name: Install dependencies
         run: ./scripts/setup/install-dependencies.sh
@@ -104,16 +103,14 @@ jobs:
 
       - name: Setup environment
         run: |
-          chmod +x scripts/setup/*.sh
-          ./scripts/setup/install-tools.sh
+          mise run verify-tools
 
       - name: Install dependencies
         run: ./scripts/setup/install-dependencies.sh
 
       - name: Build
         run: |
-          chmod +x scripts/build/*.sh
-          ./scripts/build/compile.sh
+          CI_TEST_MODE="EXECUTE" ./scripts/build/10-ci-compile.sh
 
       - name: Bundle
         run: ./scripts/build/bundle.sh
@@ -140,8 +137,7 @@ jobs:
 
       - name: Setup environment
         run: |
-          chmod +x scripts/setup/*.sh
-          ./scripts/setup/install-tools.sh
+          mise run verify-tools
 
       - name: Install dependencies
         run: ./scripts/setup/install-dependencies.sh
@@ -153,9 +149,8 @@ jobs:
 
       - name: Run tests
         run: |
-          chmod +x scripts/test/*.sh
-          ./scripts/test/unit.sh
-          ./scripts/test/integration.sh
+          CI_TEST_MODE="EXECUTE" ./scripts/test/10-ci-unit-tests.sh
+          CI_TEST_MODE="EXECUTE" ./scripts/test/20-ci-integration-tests.sh
 
   publish-npm:
     name: Publish to NPM
@@ -230,12 +225,10 @@ jobs:
 
       - name: Generate release notes
         id: notes
+        env:
+          RELEASE_VERSION: "${{ needs.prepare.outputs.version }}"
         run: |
-          chmod +x scripts/release/*.sh
-          NOTES=$(./scripts/release/generate-release-notes.sh "${{ needs.prepare.outputs.version }}")
-          echo "notes<<EOF" >> $GITHUB_OUTPUT
-          echo "$NOTES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          ./scripts/ci/reporting/31-ci-generate-release-notes.sh
 
       - name: Create GitHub Release
         uses: actions/create-release@v1
@@ -310,8 +303,7 @@ jobs:
 
       - name: Setup environment
         run: |
-          chmod +x scripts/setup/*.sh
-          ./scripts/setup/install-tools.sh
+          mise run verify-tools
 
       - name: Build documentation
         run: |
@@ -328,18 +320,19 @@ jobs:
     if: always() && github.event.inputs.dry-run != 'true'
     steps:
       - name: Generate summary
+        env:
+          VERSION: "${{ needs.prepare.outputs.version }}"
+          IS_PRERELEASE: "${{ needs.prepare.outputs.is-prerelease }}"
+          PUBLISH_NPM_RESULT: "${{ needs.publish-npm.result }}"
+          PUBLISH_GITHUB_RESULT: "${{ needs.publish-github.result }}"
+          PUBLISH_DOCKER_RESULT: "${{ needs.publish-docker.result }}"
+          PUBLISH_DOCUMENTATION_RESULT: "${{ needs.publish-documentation.result }}"
+          ENABLE_NPM_PUBLISH: "${{ vars.ENABLE_NPM_PUBLISH || 'false' }}"
+          ENABLE_GITHUB_RELEASE: "${{ vars.ENABLE_GITHUB_RELEASE || 'false' }}"
+          ENABLE_DOCKER_PUBLISH: "${{ vars.ENABLE_DOCKER_PUBLISH || 'false' }}"
+          ENABLE_DOCUMENTATION: "${{ vars.ENABLE_DOCUMENTATION || 'false' }}"
         run: |
-          echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** ${{ needs.prepare.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Pre-release:** ${{ needs.prepare.outputs.is-prerelease }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Target | Status | Enabled |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|--------|---------|" >> $GITHUB_STEP_SUMMARY
-          echo "| NPM | ${{ needs.publish-npm.result }} | ${{ vars.ENABLE_NPM_PUBLISH || 'false' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| GitHub | ${{ needs.publish-github.result }} | ${{ vars.ENABLE_GITHUB_RELEASE || 'false' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Docker | ${{ needs.publish-docker.result }} | ${{ vars.ENABLE_DOCKER_PUBLISH || 'false' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Documentation | ${{ needs.publish-documentation.result }} | ${{ vars.ENABLE_DOCUMENTATION || 'false' }} |" >> $GITHUB_STEP_SUMMARY
+          ./scripts/ci/reporting/32-ci-generate-release-summary.sh
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -358,18 +351,15 @@ jobs:
       - name: Determine release status
         if: steps.check_notify.outputs.enabled == 'true'
         id: status
+        env:
+          RELEASE_VERSION: "${{ needs.prepare.outputs.version }}"
+          PREPARE_RESULT: "${{ needs.prepare.result }}"
+          PUBLISH_NPM_RESULT: "${{ needs.publish-npm.result }}"
+          PUBLISH_GITHUB_RESULT: "${{ needs.publish-github.result }}"
+          PUBLISH_DOCKER_RESULT: "${{ needs.publish-docker.result }}"
+          PUBLISH_DOCUMENTATION_RESULT: "${{ needs.publish-documentation.result }}"
         run: |
-          # Check if any critical job failed
-          if [ "${{ needs.prepare.result }}" == "failure" ] || \
-             [ "${{ needs.publish-npm.result }}" == "failure" ] || \
-             [ "${{ needs.publish-github.result }}" == "failure" ] || \
-             [ "${{ needs.publish-docker.result }}" == "failure" ]; then
-            echo "status=failure" >> $GITHUB_OUTPUT
-            echo "message=Release ${{ needs.prepare.outputs.version }} Failed ❌" >> $GITHUB_OUTPUT
-          else
-            echo "status=success" >> $GITHUB_OUTPUT
-            echo "message=Release ${{ needs.prepare.outputs.version }} Published ✅" >> $GITHUB_OUTPUT
-          fi
+          ./scripts/ci/reporting/30-ci-determine-release-status.sh
 
       - name: Send notification
         if: steps.check_notify.outputs.enabled == 'true'

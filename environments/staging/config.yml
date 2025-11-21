@@ -1,0 +1,261 @@
+# Staging Environment Configuration
+# Environment-specific settings for staging deployments
+
+environment:
+  name: staging
+  description: Staging environment for pre-production testing
+  type: non-production
+
+# Cloud provider configurations
+cloud:
+  provider: aws
+  region: us-east-1
+  account_id: "123456789012"
+
+  # AWS-specific settings
+  aws:
+    # S3 buckets
+    s3_buckets:
+      artifacts: "staging-artifacts-bucket"
+      logs: "staging-logs-bucket"
+      backups: "staging-backups-bucket"
+
+    # DynamoDB tables
+    dynamodb_tables:
+      users: "staging-users-table"
+      sessions: "staging-sessions-table"
+      audit_logs: "staging-audit-table"
+
+    # VPC configuration
+    vpc:
+      cidr: "10.0.1.0/24"
+      subnets:
+        - "10.0.1.0/26"  # Public
+        - "10.0.1.64/26" # Private
+        - "10.0.1.128/26" # Database
+
+    # Security groups
+    security_groups:
+      - "staging-web-sg"
+      - "staging-db-sg"
+      - "staging-cache-sg"
+
+# Application configuration
+application:
+  name: "ci-excellence-app"
+  version: "${VERSION:-latest}"
+
+  # Environment variables
+  environment_variables:
+    NODE_ENV: "staging"
+    LOG_LEVEL: "info"
+    API_BASE_URL: "https://api.staging.example.com"
+    WEB_BASE_URL: "https://staging.example.com"
+
+    # Database configuration
+    DATABASE_HOST: "${STAGING_DATABASE_HOST}"
+    DATABASE_PORT: "5432"
+    DATABASE_NAME: "staging_db"
+
+    # Redis configuration
+    REDIS_HOST: "${STAGING_REDIS_HOST}"
+    REDIS_PORT: "6379"
+    REDIS_DB: "0"
+
+    # Security
+    JWT_SECRET: "${STAGING_JWT_SECRET}"
+    ENCRYPTION_KEY: "${STAGING_ENCRYPTION_KEY}"
+
+    # External services
+    PAYMENT_PROVIDER: "stripe_staging"
+    EMAIL_PROVIDER: "sendgrid_staging"
+    ANALYTICS_PROVIDER: "google_analytics_staging"
+
+# Service configuration
+services:
+  web:
+    replicas: 2
+    cpu_limit: "500m"
+    memory_limit: "512Mi"
+    image: "nginx:1.21-alpine"
+    port: 80
+    health_check:
+      path: "/health"
+      interval: 30
+      timeout: 5
+      retries: 3
+
+  api:
+    replicas: 2
+    cpu_limit: "1000m"
+    memory_limit: "1Gi"
+    image: "${API_IMAGE:-ci-excellence-api:staging}"
+    port: 3000
+    health_check:
+      path: "/api/health"
+      interval: 30
+      timeout: 10
+      retries: 3
+
+  worker:
+    replicas: 1
+    cpu_limit: "500m"
+    memory_limit: "512Mi"
+    image: "${WORKER_IMAGE:-ci-excellence-worker:staging}"
+
+  database:
+    engine: "postgresql"
+    version: "13"
+    instance_class: "db.t3.micro"
+    storage_gb: 20
+    backup_retention: 7
+
+  cache:
+    engine: "redis"
+    version: "6.2"
+    node_type: "cache.t3.micro"
+
+  monitoring:
+    enabled: true
+    tools:
+      - prometheus
+      - grafana
+      - jaeger
+      - loki
+
+# Feature flags
+feature_flags:
+  new_ui: true
+  advanced_search: true
+  beta_features: true
+  debug_mode: true
+
+# Scaling configuration
+scaling:
+  auto_scaling:
+    min_replicas: 2
+    max_replicas: 5
+    target_cpu_utilization: 70
+    target_memory_utilization: 80
+
+  schedule_scaling:
+    - name: "business_hours"
+      min_replicas: 3
+      max_replicas: 6
+      timezone: "America/New_York"
+      schedule: "0 9 * * 1-5"  # 9 AM weekdays
+    - name: "after_hours"
+      min_replicas: 1
+      max_replicas: 2
+      timezone: "America/New_York"
+      schedule: "0 18 * * 1-5"  # 6 PM weekdays
+
+# Monitoring and alerting
+monitoring:
+  alerting:
+    enabled: true
+    channels:
+      - type: "email"
+        recipients: ["staging-alerts@example.com"]
+      - type: "slack"
+        webhook_url: "${STAGING_SLACK_WEBHOOK}"
+
+  metrics:
+    collection_interval: 60
+    retention_days: 30
+
+  logging:
+    level: "info"
+    format: "json"
+    destination: "cloudwatch"
+
+# Security settings
+security:
+  authentication:
+    enabled: true
+    method: "jwt"
+    token_expiry: "24h"
+
+  authorization:
+    rbac_enabled: true
+    default_role: "viewer"
+
+  network:
+    ssl_enabled: true
+    ssl_cert_arn: "${STAGING_SSL_CERT_ARN}"
+
+  compliance:
+    encryption_at_rest: true
+    encryption_in_transit: true
+    audit_logging: true
+
+# Deployment configuration
+deployment:
+  strategy: "rolling_update"
+  max_unavailable: 1
+  max_surge: 1
+
+  health_check_grace_period: 60
+  termination_grace_period: 30
+
+  # Staging-specific deployment settings
+  environment_validation: true
+  smoke_tests: true
+  rollback_on_failure: true
+
+# Data management
+data:
+  backups:
+    enabled: true
+    frequency: "daily"
+    retention_days: 7
+    cross_region: false
+
+  migrations:
+    auto_apply: false
+    require_approval: false
+
+  replication:
+    read_replicas: 0
+    cross_region_replication: false
+
+# Integration endpoints
+integrations:
+  external_apis:
+    - name: "payment_service"
+      base_url: "https://api.stripe.com/v1"
+      timeout: 30
+      retry_count: 3
+
+    - name: "email_service"
+      base_url: "https://api.sendgrid.com/v3"
+      timeout: 15
+      retry_count: 2
+
+  webhooks:
+    - name: "deployment_notifications"
+      url: "${DEPLOYMENT_WEBHOOK_URL}"
+      events: ["deploy_start", "deploy_success", "deploy_failure"]
+
+# Resource quotas
+quotas:
+  cpu: "2000m"
+  memory: "4Gi"
+  storage: "100Gi"
+  bandwidth: "100GB/month"
+
+# Environment-specific overrides
+overrides:
+  development:
+    feature_flags:
+      debug_mode: true
+      beta_features: true
+
+  production:
+    feature_flags:
+      debug_mode: false
+      beta_features: false
+    scaling:
+      auto_scaling:
+        min_replicas: 3
+        max_replicas: 10

@@ -96,9 +96,110 @@ desktop.ini
 # These require the private key to decrypt
 !.env.secrets.json
 
-# Reports
-gitleaks-report.json
-trufflehog-report.json
+# CI/CD Verification Artifacts and Reports
+# Security scanning reports
+gitleaks-report.*
+trufflehog-report.*
+detect-secrets-report.*
+shhgit-report.*
+security-results.sarif
+.security-summary.md
+script-standards-validation-report.md
+security-gates-report.md
+region-mapping-output.txt
+webhook-authentication-results.json
+
+# Test results and coverage
+test-results/
+coverage/
+*.coverage
+.nyc_output/
+htmlcov/
+junit.xml
+pytest.xml
+unit-test-report.json
+integration-test-report.json
+e2e-test-report.json
+
+# CI/CD artifacts and deployment files
+deployment-*.txt
+deployment-*.json
+deployment-*.md
+deployment-artifacts/
+build-artifacts/
+*.tgz
+*.tar.gz
+*.zip (when in root directory)
+bundle-output/
+release-artifacts/
+
+# GitHub Actions and CI reports
+.github/security-reports/
+.github/workflow-logs/
+github-workflow-*.log
+workflow-run-*.json
+
+# Pipeline summaries and reports
+pipeline-summary.md
+release-summary.md
+deployment-summary.md
+pre-release-summary.md
+verification-results.md
+rollback-*.md
+tagging-*.md
+
+# Temporary CI files
+*.tmp-ci
+*.temp-ci
+ci-temp-*
+pipeline-cache/
+.cache/
+temp-reports/
+
+# Cloud provider artifacts
+.terraform/
+.tfplan
+.tfstate
+*.tfstate.*
+cloudformation-templates/
+k8s-manifests-*.yaml
+
+# Mise and tool management
+.mise/
+.mise.local
+*.mise.toml.local
+
+# SOPS and encryption
+.sops.yaml~
+*.enc.tmp
+.decrypted-secrets/
+
+# Notification and monitoring
+notification-logs/
+webhook-logs/
+monitoring-reports/
+
+# Development and debugging
+.debug/
+.devlogs/
+*.debug.log
+*.trace
+
+# Backup and migration files
+*.backup
+*.bak
+*.old
+*.orig
+.migration-backup/
+
+# Local configuration overrides
+config/local.*
+environments/local.*
+.local.env*
+
+# Git hooks temporary files
+.git/hooks/*.tmp
+.lefthook.local.*
 
 ## AI Coding
 .mcp.json

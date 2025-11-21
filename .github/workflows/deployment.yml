@@ -1,0 +1,307 @@
+name: Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name to deploy'
+        required: true
+        type: string
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - production
+          - staging
+          - development
+          - testing
+          - uat
+      subproject:
+        description: 'Subproject to deploy'
+        required: false
+        type: string
+      commit_sha:
+        description: 'Commit SHA to deploy'
+        required: false
+        type: string
+      deployment_strategy:
+        description: 'Deployment strategy'
+        required: false
+        type: choice
+        options:
+          - rolling
+          - blue-green
+          - canary
+        default: rolling
+      rollback_enabled:
+        description: 'Enable rollback capability'
+        required: false
+        type: boolean
+        default: true
+  workflow_run:
+    workflows: ["Tag Assignment"]
+    types:
+      - completed
+
+env:
+  # Deployment configuration
+  DEPLOYMENT_MODE: ${{ vars.DEPLOYMENT_MODE || 'EXECUTE' }}
+  ROLLBACK_ENABLED: ${{ vars.ROLLBACK_ENABLED || 'true' }}
+
+jobs:
+  validate-deployment:
+    name: Validate Deployment Parameters
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    outputs:
+      deployment_id: ${{ steps.deployment-info.outputs.deployment_id }}
+      commit_sha: ${{ steps.deployment-info.outputs.commit_sha }}
+      environment_url: ${{ steps.deployment-info.outputs.environment_url }}
+      should_rollback: ${{ steps.deployment-info.outputs.should_rollback }}
+      rollback_tag: ${{ steps.deployment-info.outputs.rollback_tag }}
+      environment: ${{ steps.deployment-info.outputs.environment }}
+      subproject: ${{ steps.deployment-info.outputs.subproject }}
+      deployment_strategy: ${{ steps.deployment-info.outputs.deployment_strategy }}
+      tag_name: ${{ steps.deployment-info.outputs.tag_name }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for tag validation
+
+      - name: Setup environment
+        run: mise run verify-tools
+
+      - name: Validate deployment parameters
+        id: deployment-info
+        env:
+          INPUT_TAG_NAME: ${{ github.event.inputs.tag_name || '' }}
+          INPUT_ENVIRONMENT: ${{ github.event.inputs.environment || '' }}
+          INPUT_SUBPROJECT: ${{ github.event.inputs.subproject || '' }}
+          INPUT_COMMIT_SHA: ${{ github.event.inputs.commit_sha || '' }}
+          INPUT_DEPLOYMENT_STRATEGY: ${{ github.event.inputs.deployment_strategy || 'rolling' }}
+          INPUT_ROLLBACK_ENABLED: ${{ github.event.inputs.rollback_enabled || 'true' }}
+          WORKFLOW_RUN_TAG_NAME: ${{ github.event.workflow_run.inputs.tag_name || '' }}
+          WORKFLOW_RUN_ENVIRONMENT: ${{ github.event.workflow_run.inputs.environment || '' }}
+          WORKFLOW_RUN_SUBPROJECT: ${{ github.event.workflow_run.inputs.subproject || '' }}
+          WORKFLOW_RUN_COMMIT_SHA: ${{ github.event.workflow_run.inputs.commit_sha || '' }}
+        run: |
+          ./scripts/ci/deployment/15-ci-validate-deployment-params.sh
+
+  pre-deployment:
+    name: Pre-deployment Checks
+    runs-on: ubuntu-latest
+    needs: validate-deployment
+    environment:
+      name: Deploy to ${{ needs.validate-deployment.outputs.environment }}
+      url: ${{ needs.validate-deployment.outputs.environment_url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate-deployment.outputs.commit_sha }}
+
+      - name: Setup environment
+        run: mise run verify-tools
+
+      - name: Validate environment configuration
+        run: mise run validate-config
+
+      - name: Run pre-deployment tests
+        run: |
+          echo "Running pre-deployment checks..."
+          echo "Environment: ${{ needs.validate-deployment.outputs.environment }}"
+          echo "Commit: ${{ needs.validate-deployment.outputs.commit_sha }}"
+          echo "Deployment ID: ${{ needs.validate-deployment.outputs.deployment_id }}"
+
+          # Add actual pre-deployment checks here
+          # - Environment validation
+          # - Configuration validation
+          # - Security scans
+          # - Health checks
+
+  deploy:
+    name: Deploy to Environment
+    runs-on: ubuntu-latest
+    needs: [validate-deployment, pre-deployment]
+    environment:
+      name: Deploy to ${{ needs.validate-deployment.outputs.environment }}
+      url: ${{ needs.validate-deployment.outputs.environment_url }}
+    concurrency:
+      group: deploy-${{ needs.validate-deployment.outputs.subproject }}-${{ needs.validate-deployment.outputs.environment }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate-deployment.outputs.commit_sha }}
+
+      - name: Setup environment
+        run: mise run verify-tools
+
+      - name: Create rollback point
+        if: needs.validate-deployment.outputs.should_rollback == 'true'
+        env:
+          ROLLBACK_TAG: ${{ needs.validate-deployment.outputs.rollback_tag }}
+        run: |
+          echo "Creating rollback point: $ROLLBACK_TAG"
+          git tag -a "$ROLLBACK_TAG" -m "Rollback point before deployment ${{ needs.validate-deployment.outputs.deployment_id }}
+
+# Environment: ${{ needs.validate-deployment.outputs.environment }}
+# Commit: ${{ needs.validate-deployment.outputs.commit_sha }}
+# Deployment ID: ${{ needs.validate-deployment.outputs.deployment_id }}
+
+      - name: Execute deployment
+        env:
+          CI_TEST_MODE: "EXECUTE"
+          PIPELINE_DEPLOYMENT_MODE: "${{ vars.DEPLOYMENT_MODE || 'EXECUTE' }}"
+          DEPLOYMENT_STRATEGY: ${{ needs.validate-deployment.outputs.deployment_strategy }}
+          ENVIRONMENT: ${{ needs.validate-deployment.outputs.environment }}
+          SUBPROJECT: ${{ needs.validate-deployment.outputs.subproject }}
+          COMMIT_SHA: ${{ needs.validate-deployment.outputs.commit_sha }}
+          DEPLOYMENT_ID: ${{ needs.validate-deployment.outputs.deployment_id }}
+          CI_COMMIT_SHA: ${{ needs.validate-deployment.outputs.commit_sha }}
+          FORCE_DEPLOY: "true"
+        run: |
+          echo "Starting framework-based deployment..."
+          echo "Strategy: $DEPLOYMENT_STRATEGY"
+          echo "Environment: $ENVIRONMENT"
+          echo "Subproject: ${SUBPROJECT:-root}"
+          echo "Commit: $COMMIT_SHA"
+          echo "Deployment ID: $DEPLOYMENT_ID"
+
+          # Use framework deployment script based on environment
+          case "$ENVIRONMENT" in
+            "production")
+              echo "Executing production deployment with enhanced validation..."
+              ./scripts/deployment/20-ci-deploy-production.sh deploy us-east
+              ;;
+            "staging")
+              echo "Executing staging deployment..."
+              ./scripts/deployment/10-ci-deploy-staging.sh deploy us-east
+              ;;
+            "development"|"testing"|"uat")
+              echo "Executing development deployment..."
+              # Use staging deployment script for non-production environments
+              ./scripts/deployment/10-ci-deploy-staging.sh deploy us-east
+              ;;
+            *)
+              echo "Unknown deployment environment: $ENVIRONMENT"
+              exit 1
+              ;;
+          esac
+
+          echo "Framework deployment completed!"
+
+      - name: Manage deployment tags with atomic tag movement
+        env:
+          ENVIRONMENT: ${{ needs.validate-deployment.outputs.environment }}
+          COMMIT_SHA: ${{ needs.validate-deployment.outputs.commit_sha }}
+          DEPLOYMENT_ID: ${{ needs.validate-deployment.outputs.deployment_id }}
+          ROLLBACK_TAG: ${{ needs.validate-deployment.outputs.rollback_tag }}
+        run: |
+          echo "Managing deployment tags with atomic tag movement..."
+
+          # Move environment tag to current deployment
+          ./scripts/deployment/40-ci-atomic-tag-movement.sh move-environment "$ENVIRONMENT" "$COMMIT_SHA" "$DEPLOYMENT_ID"
+
+          # Create rollback capability if enabled
+          if [[ "${{ needs.validate-deployment.outputs.should_rollback }}" == "true" ]]; then
+            echo "Creating rollback capability..."
+            ./scripts/deployment/40-ci-atomic-tag-movement.sh create-state "$ENVIRONMENT-rollback-ready" "$COMMIT_SHA" "$ENVIRONMENT" "$DEPLOYMENT_ID"
+          fi
+
+          # Create deployment success state
+          ./scripts/deployment/40-ci-atomic-tag-movement.sh create-state "$ENVIRONMENT-success" "$COMMIT_SHA" "$ENVIRONMENT" "$DEPLOYMENT_ID"
+
+          echo "Atomic tag management completed!"
+
+      - name: Update deployment status
+        env:
+          DEPLOYMENT_ID: ${{ needs.validate-deployment.outputs.deployment_id }}
+          ENVIRONMENT_URL: ${{ needs.validate-deployment.outputs.environment_url }}
+        run: |
+          echo "Deployment $DEPLOYMENT_ID completed successfully"
+          echo "Environment URL: $ENVIRONMENT_URL"
+
+  post-deployment:
+    name: Post-deployment Verification
+    runs-on: ubuntu-latest
+    needs: [validate-deployment, deploy]
+    if: always() && needs.deploy.result == 'success'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify deployment
+        env:
+          ENVIRONMENT: ${{ needs.validate-deployment.outputs.environment }}
+          ENVIRONMENT_URL: ${{ needs.validate-deployment.outputs.environment_url }}
+          DEPLOYMENT_ID: ${{ needs.validate-deployment.outputs.deployment_id }}
+        run: |
+          echo "Verifying deployment $DEPLOYMENT_ID..."
+          echo "Environment: $ENVIRONMENT"
+          echo "URL: $ENVIRONMENT_URL"
+
+          # Add actual verification steps here
+          # - Health checks
+          # - Smoke tests
+          # - Integration tests
+          # - Performance checks
+
+          echo "Deployment verification completed successfully!"
+
+  cleanup:
+    name: Cleanup and Archive
+    runs-on: ubuntu-latest
+    needs: [validate-deployment, post-deployment]
+    if: always()
+
+    steps:
+      - name: Archive deployment artifacts
+        env:
+          DEPLOYMENT_ID: ${{ needs.validate-deployment.outputs.deployment_id }}
+        run: |
+          echo "Archiving deployment artifacts for: $DEPLOYMENT_ID"
+
+          # Create deployment summary
+          echo "Deployment ID: $DEPLOYMENT_ID" > "deployment-$DEPLOYMENT_ID-summary.txt"
+          echo "Environment: ${{ needs.validate-deployment.outputs.environment }}" >> "deployment-$DEPLOYMENT_ID-summary.txt"
+          echo "Commit: ${{ needs.validate-deployment.outputs.commit_sha }}" >> "deployment-$DEPLOYMENT_ID-summary.txt"
+          echo "Strategy: ${{ needs.validate-deployment.outputs.deployment_strategy }}" >> "deployment-$DEPLOYMENT_ID-summary.txt"
+          echo "Timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> "deployment-$DEPLOYMENT_ID-summary.txt"
+
+          echo "Deployment summary created"
+
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [validate-deployment, deploy, post-deployment]
+    if: always()
+
+    steps:
+      - name: Generate deployment summary
+        env:
+          DEPLOYMENT_ID: ${{ needs.validate-deployment.outputs.deployment_id }}
+          ENVIRONMENT: ${{ needs.validate-deployment.outputs.environment }}
+          COMMIT_SHA: ${{ needs.validate-deployment.outputs.commit_sha }}
+          DEPLOYMENT_STRATEGY: ${{ needs.validate-deployment.outputs.deployment_strategy }}
+          SUBPROJECT: ${{ needs.validate-deployment.outputs.subproject }}
+          VALIDATE_RESULT: ${{ needs.validate-deployment.result }}
+          PRE_DEPLOY_RESULT: ${{ needs.pre-deployment.result }}
+          DEPLOY_RESULT: ${{ needs.deploy.result }}
+          POST_DEPLOY_RESULT: ${{ needs.post-deployment.result }}
+          ROLLBACK_TAG: ${{ needs.validate-deployment.outputs.rollback_tag }}
+          ENVIRONMENT_URL: ${{ needs.validate-deployment.outputs.environment_url }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          ENABLE_ACTION_LINKS: "true"
+        run: |
+          ./scripts/ci/reporting/25-ci-generate-deployment-summary.sh

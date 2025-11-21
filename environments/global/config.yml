@@ -1,0 +1,546 @@
+# Global Configuration
+# Cross-environment shared settings and defaults
+
+environment:
+  name: global
+  description: Global shared configuration across all environments
+  type: global
+
+# Global cloud provider settings
+cloud:
+  default_provider: aws
+  default_region: us-east-1
+  default_account_id: "123456789012"
+
+  # Global AWS settings
+  aws:
+    # Global S3 bucket patterns
+    s3_bucket_patterns:
+      - "{environment}-{purpose}-bucket-{account_id}"
+      - "{application}-{environment}-assets"
+
+    # Global VPC CIDR patterns
+    vpc_cidr_patterns:
+      staging: "10.0.1.0/16"
+      production: "10.0.0.0/16"
+      canary: "10.0.2.0/16"
+      development: "10.0.99.0/16"
+
+    # Global security group patterns
+    security_group_patterns:
+      - "{environment}-{service}-sg"
+      - "{environment}-common-sg"
+
+    # Global tagging strategy
+    tags:
+      Project: "ci-excellence"
+      ManagedBy: "terraform"
+      Environment: "{environment}"
+      Owner: "platform-team"
+
+# Global application settings
+application:
+  name: "ci-excellence-app"
+  description: "CI/CD Excellence Framework Application"
+  repository: "github.com/your-org/ci-excellence"
+
+  # Global application configuration
+  global_variables:
+    # Application metadata
+    APP_NAME: "CI Excellence Framework"
+    APP_VERSION: "${VERSION:-latest}"
+    APP_DESCRIPTION: "Comprehensive CI/CD pipeline framework"
+
+    # Default ports
+    DEFAULT_HTTP_PORT: 80
+    DEFAULT_HTTPS_PORT: 443
+    DEFAULT_API_PORT: 3000
+
+    # Default timeouts
+    DEFAULT_TIMEOUT: 30
+    DEFAULT_CONNECTION_TIMEOUT: 10
+    DEFAULT_READ_TIMEOUT: 60
+
+    # Default limits
+    DEFAULT_REQUEST_TIMEOUT: 30000
+    DEFAULT_FILE_UPLOAD_SIZE: "10MB"
+    DEFAULT_RATE_LIMIT: 1000
+
+# Global service configuration
+services:
+  # Standard service ports
+  ports:
+    web_http: 80
+    web_https: 443
+    api: 3000
+    database: 5432
+    cache: 6379
+    monitoring: 9090
+
+  # Standard resource limits
+  resource_defaults:
+    small:
+      cpu_limit: "500m"
+      memory_limit: "512Mi"
+      replicas: 1
+
+    medium:
+      cpu_limit: "1000m"
+      memory_limit: "1Gi"
+      replicas: 2
+
+    large:
+      cpu_limit: "2000m"
+      memory_limit: "2Gi"
+      replicas: 3
+
+    xlarge:
+      cpu_limit: "4000m"
+      memory_limit: "4Gi"
+      replicas: 4
+
+# Global monitoring configuration
+monitoring:
+  default_retention_days: 30
+  default_collection_interval: 60
+
+  # Standard metrics
+  metrics:
+    application:
+      - request_count
+      - response_time
+      - error_rate
+      - throughput
+      - availability
+
+    infrastructure:
+      - cpu_utilization
+      - memory_utilization
+      - disk_utilization
+      - network_in
+      - network_out
+
+    business:
+      - user_registrations
+      - active_users
+      - transaction_count
+      - revenue
+
+  # Standard alerting
+  alerting:
+    default_thresholds:
+      error_rate: 5
+      response_time_p95: 5000
+      cpu_utilization: 80
+      memory_utilization: 85
+      disk_utilization: 80
+
+# Global security settings
+security:
+  # Standard SSL configuration
+  ssl:
+    protocols: ["TLSv1.2", "TLSv1.3"]
+    ciphers:
+      - "ECDHE-RSA-AES256-GCM-SHA384"
+      - "ECDHE-RSA-AES128-GCM-SHA256"
+      - "ECDHE-RSA-AES256-SHA384"
+      - "ECDHE-RSA-AES128-SHA256"
+
+  # Standard authentication
+  authentication:
+    session_timeout: 86400  # 24 hours
+    max_login_attempts: 5
+    lockout_duration: 900    # 15 minutes
+
+  # Standard headers
+  security_headers:
+    X-Frame-Options: "DENY"
+    X-Content-Type-Options: "nosniff"
+    X-XSS-Protection: "1; mode=block"
+    Strict-Transport-Security: "max-age=31536000; includeSubDomains"
+    Content-Security-Policy: "default-src 'self'"
+
+# Global logging configuration
+logging:
+  default_level: "info"
+  default_format: "json"
+
+  # Log destinations
+  destinations:
+    - type: "cloudwatch"
+      enabled: true
+    - type: "s3"
+      enabled: false
+    - type: "elasticsearch"
+      enabled: false
+
+  # Standard log formats
+  formats:
+    json:
+      timestamp: true
+      level: true
+      service: true
+      environment: true
+      request_id: true
+
+    structured:
+      include_stack_trace: true
+      include_metadata: true
+
+# Global backup configuration
+backup:
+  default_retention_days: 30
+  default_frequency: "daily"
+
+  retention_policies:
+    daily: 30
+    weekly: 12
+    monthly: 12
+    yearly: 7
+
+# Global networking configuration
+networking:
+  # Standard CIDR blocks
+  cidr_blocks:
+    private: "10.0.0.0/8"
+    public: "0.0.0.0/0"
+
+  # Standard ports
+  allowed_ports:
+    inbound: [80, 443, 22]
+    outbound: [80, 443, 22, 25, 53, 123, 587, 993, 995]
+
+  # Standard DNS settings
+  dns:
+    ttl:
+      short: 300    # 5 minutes
+      medium: 3600  # 1 hour
+      long: 86400   # 1 day
+
+# Global scaling configuration
+scaling:
+  default_cooldown_period: 300
+  default_health_check_grace_period: 60
+
+  scaling_policies:
+    conservative:
+      target_cpu: 70
+      target_memory: 80
+      scale_up_cooldown: 300
+      scale_down_cooldown: 300
+
+    aggressive:
+      target_cpu: 50
+      target_memory: 60
+      scale_up_cooldown: 60
+      scale_down_cooldown: 120
+
+# Global compliance settings
+compliance:
+  # Standard data retention
+  data_retention:
+    logs: 90
+    metrics: 365
+    backups: 2555  # 7 years
+    audit_logs: 2555
+
+  # Standard encryption
+  encryption:
+    at_rest: true
+    in_transit: true
+    key_rotation_frequency: 365
+
+# Global cost optimization
+cost:
+  # Resource optimization
+  rightsizing:
+    enabled: true
+    frequency: "weekly"
+    thresholds:
+      cpu_underutilization: 20
+      memory_underutilization: 20
+
+  # Schedule-based scaling
+  schedules:
+    business_hours:
+      timezone: "America/New_York"
+      start: "09:00"
+      end: "18:00"
+      days: ["monday", "tuesday", "wednesday", "thursday", "friday"]
+
+    after_hours:
+      timezone: "America/New_York"
+      start: "18:00"
+      end: "09:00"
+      days: ["monday", "tuesday", "wednesday", "thursday", "friday"]
+      weekend: true
+
+# Global feature flags
+feature_flags:
+  default_flags:
+    monitoring: true
+    logging: true
+    health_checks: true
+    auto_scaling: true
+    load_balancing: true
+
+  experimental_flags:
+    chaos_engineering: false
+    predictive_scaling: false
+    ai_analytics: false
+
+# Global integration settings
+integrations:
+  # Standard notification channels
+  notifications:
+    default_channels:
+      - type: "email"
+        recipients: ["platform-team@example.com"]
+      - type: "slack"
+        channel: "#platform-alerts"
+
+    # Event types
+    event_types:
+      - deployment_start
+      - deployment_success
+      - deployment_failure
+      - scale_event
+      - health_check_failure
+      - security_incident
+      - cost_threshold_exceeded
+
+  # Standard external services
+  external_services:
+    monitoring:
+      providers: ["datadog", "prometheus", "grafana"]
+      default_retention: 90
+
+    logging:
+      providers: ["cloudwatch", "elasticsearch"]
+      default_retention: 90
+
+    storage:
+      providers: ["s3", "glacier"]
+      default_retention: 2555
+
+# Global environment variables
+global_variables:
+  # Timezone settings
+  TIMEZONE: "UTC"
+  TZ: "UTC"
+
+  # Locale settings
+  LOCALE: "en_US"
+  LANG: "en_US.UTF-8"
+
+  # Process settings
+  NODE_OPTIONS: "--max-old-space-size=2048"
+  PYTHONUNBUFFERED: "1"
+  GO_ENV: "production"
+
+  # Build settings
+  BUILD_NUMBER: "${BUILD_NUMBER:-0}"
+  COMMIT_SHA: "${COMMIT_SHA:-unknown}"
+  BRANCH_NAME: "${BRANCH_NAME:-unknown}"
+
+# Global version management
+version_management:
+  default_versioning: "semantic"
+  tag_patterns:
+    - "v{major}.{minor}.{patch}"
+    - "{major}.{minor}.{patch}"
+    - "{branch}-build-{number}"
+
+  release_branches:
+    - "main"
+    - "develop"
+    - "release/*"
+
+# Global quality gates
+quality_gates:
+  # Code quality thresholds
+  code_quality:
+    test_coverage_min: 80
+    code_complexity_max: 10
+    duplicate_code_max: 5
+
+  # Performance thresholds
+  performance:
+    response_time_p95_max: 2000  # 2 seconds
+    response_time_p99_max: 5000  # 5 seconds
+    throughput_min: 100          # requests/minute
+
+  # Security thresholds
+  security:
+    vulnerability_severity_max: "medium"
+    scan_coverage_min: 95
+    failed_tests_max: 0
+
+# Cloud-Agnostic Region Mapping
+# Maps logical region names to cloud provider-specific regions
+region_mapping:
+  # Primary logical regions
+  regions:
+    us-east:
+      description: "US East Coast (Primary)"
+      aws: "us-east-1"
+      gcp: "us-east1"
+      azure: "eastus"
+      priority: 1
+      primary: true
+
+    us-west:
+      description: "US West Coast"
+      aws: "us-west-2"
+      gcp: "us-west1"
+      azure: "westus2"
+      priority: 2
+      primary: false
+
+    eu-west:
+      description: "Europe West"
+      aws: "eu-west-1"
+      gcp: "europe-west1"
+      azure: "westeurope"
+      priority: 3
+      primary: false
+
+    eu-central:
+      description: "Europe Central"
+      aws: "eu-central-1"
+      gcp: "europe-west3"
+      azure: "germanywestcentral"
+      priority: 4
+      primary: false
+
+    ap-southeast:
+      description: "Asia Pacific Southeast"
+      aws: "ap-southeast-1"
+      gcp: "asia-southeast1"
+      azure: "southeastasia"
+      priority: 5
+      primary: false
+
+    ap-northeast:
+      description: "Asia Pacific Northeast"
+      aws: "ap-northeast-1"
+      gcp: "asia-northeast1"
+      azure: "japaneast"
+      priority: 6
+      primary: false
+
+  # Region groups for deployment strategies
+  region_groups:
+    primary:
+      name: "Primary Regions"
+      regions: ["us-east"]
+      strategy: "active-active"
+
+    secondary:
+      name: "Secondary Regions"
+      regions: ["us-west", "eu-west"]
+      strategy: "active-passive"
+
+    disaster_recovery:
+      name: "Disaster Recovery Regions"
+      regions: ["eu-central", "ap-southeast"]
+      strategy: "backup-only"
+
+    experimental:
+      name: "Experimental Regions"
+      regions: ["ap-northeast"]
+      strategy: "canary-only"
+
+  # Multi-cloud deployment preferences
+  multi_cloud:
+    default_provider: "aws"
+    fallback_providers: ["gcp", "azure"]
+
+    provider_preferences:
+      us-east: ["aws", "gcp", "azure"]
+      us-west: ["aws", "azure", "gcp"]
+      eu-west: ["aws", "azure", "gcp"]
+      eu-central: ["azure", "aws", "gcp"]
+      ap-southeast: ["aws", "gcp", "azure"]
+      ap-northeast: ["gcp", "aws", "azure"]
+
+  # Region-specific configurations
+  region_configs:
+    us-east:
+      timezone: "America/New_York"
+      currency: "USD"
+      language: "en-US"
+      data_residency: "US"
+
+    us-west:
+      timezone: "America/Los_Angeles"
+      currency: "USD"
+      language: "en-US"
+      data_residency: "US"
+
+    eu-west:
+      timezone: "Europe/Dublin"
+      currency: "EUR"
+      language: "en-IE"
+      data_residency: "EU"
+      compliance: ["GDPR", "SOC2", "PCI-DSS"]
+
+    eu-central:
+      timezone: "Europe/Berlin"
+      currency: "EUR"
+      language: "de-DE"
+      data_residency: "EU"
+      compliance: ["GDPR", "SOC2", "PCI-DSS"]
+
+    ap-southeast:
+      timezone: "Asia/Singapore"
+      currency: "SGD"
+      language: "en-SG"
+      data_residency: "SG"
+      compliance: ["SOC2", "PDPA"]
+
+    ap-northeast:
+      timezone: "Asia/Tokyo"
+      currency: "JPY"
+      language: "ja-JP"
+      data_residency: "JP"
+      compliance: ["SOC2", "APPI"]
+
+# Global deployment settings
+deployment:
+  default_strategy: "rolling_update"
+  default_max_unavailable: 1
+  default_max_surge: 1
+
+  health_check:
+    default_path: "/health"
+    default_interval: 30
+    default_timeout: 10
+    default_retries: 3
+    default_success_threshold: 2
+
+  rollout:
+    default_pause_duration: 30
+    default_health_check_grace_period: 60
+
+  # Region deployment priorities
+  region_deployment:
+    primary_regions: ["us-east"]
+    secondary_regions: ["us-west", "eu-west"]
+    dr_regions: ["eu-central", "ap-southeast"]
+
+    # Deployment order for multi-region deployments
+    deployment_order:
+      - "us-east"      # Deploy to primary first
+      - "us-west"      # Then to secondary US region
+      - "eu-west"      # Then to secondary EU region
+      - "eu-central"   # Then to DR regions
+      - "ap-southeast" # Finally to APAC DR
+
+    # Inter-region dependencies
+    dependencies:
+      us-west: ["us-east"]
+      eu-west: ["us-east"]
+      eu-central: ["eu-west", "us-east"]
+      ap-southeast: ["us-east"]
+      ap-northeast: ["ap-southeast"]

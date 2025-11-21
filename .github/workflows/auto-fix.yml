@@ -1,0 +1,370 @@
+name: Auto-Fix Quality and Security Issues
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: 'Scope of fixes to apply'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+        - all
+        - staged
+        - modified
+      dry_run:
+        description: 'Dry run mode (no actual changes)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  # Enable git operations
+  GIT_AUTHOR_NAME: 'github-actions[bot]'
+  GIT_AUTHOR_EMAIL: 'github-actions[bot]@users.noreply.github.com'
+  GIT_COMMITTER_NAME: 'github-actions[bot]'
+  GIT_COMMITTER_EMAIL: 'github-actions[bot]@users.noreply.github.com'
+
+  # Auto-fix configuration
+  AUTO_COMMIT: true
+  AUTO_APPLY_FIXES: true
+  PUSH_CHANGES: false  # Set to true for auto-push, false for PR
+
+jobs:
+  # Security scanning job
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    outputs:
+      secrets-found: ${{ steps.security.outputs.secrets-found }}
+      security-report: ${{ steps.security.outputs.report-file }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for security scanning
+
+    - name: Setup MISE
+      uses: jdx/mise-action@v2
+      with:
+        install: true
+
+    - name: Install security tools
+      run: |
+        # Install Gitleaks
+        wget https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64
+        chmod +x gitleaks-linux-amd64
+        sudo mv gitleaks-linux-amd64 /usr/local/bin/gitleaks
+
+        # Install Trufflehog
+        go install github.com/trufflesecurity/trufflehog/v3/cmd/trufflehog@latest
+
+        # Install detect-secrets
+        pip install detect-secrets
+
+    - name: Run security scan
+      id: security
+      run: |
+        echo "Running comprehensive security scan..."
+        ./scripts/build/30-ci-security-scan.sh all
+      env:
+        SECURITY_SCAN_MODE: EXECUTE
+        CI_TEST_MODE: ${{ github.event.inputs.dry_run == 'true' && 'DRY_RUN' || 'EXECUTE' }}
+
+    - name: Upload security report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-report
+        path: .github/reports/
+        retention-days: 30
+
+  # Auto-format job
+  auto-format:
+    name: Auto-Format Bash Scripts
+    runs-on: ubuntu-latest
+    needs: security-scan
+    if: needs.security-scan.outputs.secrets-found == 'false'
+    outputs:
+      files-formatted: ${{ steps.format.outputs.files-formatted }}
+      format-report: ${{ steps.format.outputs.report-file }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+
+    - name: Setup MISE
+      uses: jdx/mise-action@v2
+      with:
+        install: true
+
+    - name: Install shfmt
+      run: |
+        go install mvdan.cc/sh/v3/cmd/shfmt@latest
+
+    - name: Run auto-format
+      id: format
+      run: |
+        echo "Running auto-format with scope: ${{ github.event.inputs.scope || 'all' }}"
+        ./scripts/ci/50-ci-auto-format.sh ${{ github.event.inputs.scope || 'all' }}
+      env:
+        CI_AUTO_FORMAT_MODE: ${{ github.event.inputs.dry_run == 'true' && 'DRY_RUN' || 'EXECUTE' }}
+        AUTO_COMMIT: ${{ env.AUTO_COMMIT }}
+        SHFMT_OPTIONS: "-i 2 -bn -ci -sr"
+
+    - name: Upload format report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: format-report
+        path: .github/reports/
+        retention-days: 30
+
+  # Auto-lint-fix job
+  auto-lint-fix:
+    name: Auto-Fix ShellCheck Issues
+    runs-on: ubuntu-latest
+    needs: [security-scan, auto-format]
+    if: needs.security-scan.outputs.secrets-found == 'false'
+    outputs:
+      files-fixed: ${{ steps.lint.outputs.files-fixed }}
+      lint-report: ${{ steps.lint.outputs.report-file }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+
+    - name: Setup MISE
+      uses: jdx/mise-action@v2
+      with:
+        install: true
+
+    - name: Install ShellCheck
+      run: |
+        # Install ShellCheck
+        sudo apt-get update
+        sudo apt-get install -y shellcheck
+
+    - name: Run auto-lint-fix
+      id: lint
+      run: |
+        echo "Running auto-lint-fix with scope: ${{ github.event.inputs.scope || 'all' }}"
+        ./scripts/ci/60-ci-auto-lint-fix.sh ${{ github.event.inputs.scope || 'all' }}
+      env:
+        CI_AUTO_LINT_FIX_MODE: ${{ github.event.inputs.dry_run == 'true' && 'DRY_RUN' || 'EXECUTE' }}
+        AUTO_COMMIT: ${{ env.AUTO_COMMIT }}
+        AUTO_APPLY_FIXES: ${{ env.AUTO_APPLY_FIXES }}
+        SHELLCHECK_SEVERITY: warning
+        SHELLCHECK_SHELL: bash
+
+    - name: Upload lint report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: lint-report
+        path: .github/reports/
+        retention-days: 30
+
+  # Commit fixes job
+  commit-fixes:
+    name: Commit Auto-Fixes
+    runs-on: ubuntu-latest
+    needs: [auto-format, auto-lint-fix]
+    if: always() && (needs.auto-format.result == 'success' || needs.auto-lint-fix.result == 'success')
+    outputs:
+      commit-sha: ${{ steps.commit.outputs.commit-sha }}
+      commit-report: ${{ steps.commit.outputs.report-file }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+
+    - name: Setup git configuration
+      run: |
+        git config --global user.name "${{ env.GIT_AUTHOR_NAME }}"
+        git config --global user.email "${{ env.GIT_AUTHOR_EMAIL }}"
+
+    - name: Download format reports
+      if: needs.auto-format.result == 'success'
+      uses: actions/download-artifact@v4
+      with:
+        name: format-report
+        path: .github/reports/
+
+    - name: Download lint reports
+      if: needs.auto-lint-fix.result == 'success'
+      uses: actions/download-artifact@v4
+      with:
+        name: lint-report
+        path: .github/reports/
+
+    - name: Commit formatting fixes
+      if: needs.auto-format.result == 'success'
+      run: |
+        echo "Committing formatting fixes..."
+        ./scripts/ci/70-ci-commit-fixes.sh format
+      env:
+        CI_COMMIT_FIXES_MODE: ${{ github.event.inputs.dry_run == 'true' && 'DRY_RUN' || 'EXECUTE' }}
+
+    - name: Commit lint fixes
+      if: needs.auto-lint-fix.result == 'success'
+      run: |
+        echo "Committing lint fixes..."
+        ./scripts/ci/70-ci-commit-fixes.sh lint
+      env:
+        CI_COMMIT_FIXES_MODE: ${{ github.event.inputs.dry_run == 'true' && 'DRY_RUN' || 'EXECUTE' }}
+
+    - name: Commit all fixes
+      id: commit
+      run: |
+        echo "Committing all remaining fixes..."
+        ./scripts/ci/70-ci-commit-fixes.sh all
+      env:
+        CI_COMMIT_FIXES_MODE: ${{ github.event.inputs.dry_run == 'true' && 'DRY_RUN' || 'EXECUTE' }}
+
+    - name: Upload commit report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: commit-report
+        path: .github/reports/
+        retention-days: 30
+
+    - name: Push changes for pull requests
+      if: github.event_name == 'pull_request' && github.event.inputs.dry_run != 'true'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { execSync } = require('child_process');
+
+          // Check if there are changes to push
+          try {
+            const status = execSync('git status --porcelain', { encoding: 'utf8' });
+            if (status.trim()) {
+              console.log('Pushing changes to pull request branch...');
+              execSync('git push origin ${{ github.head_ref }}', { stdio: 'inherit' });
+
+              // Post comment with summary
+              const octokit = github;
+              const comment = `
+              ## 🤖 Auto-Fix Summary
+
+              I've automatically applied fixes to improve code quality:
+
+              - **Format**: ${needs.auto-format.outputs.files-formatted || '0'} files formatted
+              - **Lint**: ${needs.auto-lint-fix.outputs.files-fixed || '0'} files fixed
+
+              ### Reports
+              - Security: [View Report](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+              - Format: [Download](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+              - Lint: [Download](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+              Changes have been committed and pushed to this branch.
+              `;
+
+              await octokit.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }
+          } catch (error) {
+            console.log('No changes to push or error occurred:', error.message);
+          }
+
+  # Summary job
+  summary:
+    name: Auto-Fix Summary
+    runs-on: ubuntu-latest
+    needs: [security-scan, auto-format, auto-lint-fix, commit-fixes]
+    if: always()
+
+    steps:
+    - name: Generate summary
+      run: |
+        echo "# 🤖 Auto-Fix Workflow Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Generated**: $(date -u)" >> $GITHUB_STEP_SUMMARY
+        echo "**Run ID**: [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+        echo "**Dry Run**: ${{ github.event.inputs.dry_run == 'true' && 'Yes' || 'No' }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Scope**: ${{ github.event.inputs.scope || 'all' }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## 📊 Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Job | Status | Output |" >> $GITHUB_STEP_SUMMARY
+        echo "|-----|--------|--------|" >> $GITHUB_STEP_SUMMARY
+
+        # Security scan
+        if [[ "${{ needs.security-scan.result }}" == "success" ]]; then
+          echo "| Security Scan | ✅ Success | Secrets: ${{ needs.security-scan.outputs.secrets-found }}" >> $GITHUB_STEP_SUMMARY
+        elif [[ "${{ needs.security-scan.result }}" == "failure" ]]; then
+          echo "| Security Scan | ❌ Failed | Secrets detected" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| Security Scan | ⏭️ Skipped | -" >> $GITHUB_STEP_SUMMARY
+        fi
+
+        # Auto-format
+        if [[ "${{ needs.auto-format.result }}" == "success" ]]; then
+          echo "| Auto-Format | ✅ Success | Files: ${{ needs.auto-format.outputs.files-formatted }}" >> $GITHUB_STEP_SUMMARY
+        elif [[ "${{ needs.auto-format.result }}" == "failure" ]]; then
+          echo "| Auto-Format | ❌ Failed | -" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| Auto-Format | ⏭️ Skipped | -" >> $GITHUB_STEP_SUMMARY
+        fi
+
+        # Auto-lint-fix
+        if [[ "${{ needs.auto-lint-fix.result }}" == "success" ]]; then
+          echo "| Auto-Lint-Fix | ✅ Success | Files: ${{ needs.auto-lint-fix.outputs.files-fixed }}" >> $GITHUB_STEP_SUMMARY
+        elif [[ "${{ needs.auto-lint-fix.result }}" == "failure" ]]; then
+          echo "| Auto-Lint-Fix | ❌ Failed | -" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| Auto-Lint-Fix | ⏭️ Skipped | -" >> $GITHUB_STEP_SUMMARY
+        fi
+
+        # Commit fixes
+        if [[ "${{ needs.commit-fixes.result }}" == "success" ]]; then
+          echo "| Commit Fixes | ✅ Success | [Commit](${{ github.server_url }}/${{ github.repository }}/commit/${{ needs.commit-fixes.outputs.commit-sha }})" >> $GITHUB_STEP_SUMMARY
+        elif [[ "${{ needs.commit-fixes.result }}" == "failure" ]]; then
+          echo "| Commit Fixes | ❌ Failed | -" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| Commit Fixes | ⏭️ Skipped | -" >> $GITHUB_STEP_SUMMARY
+        fi
+
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## 📁 Artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- [Security Report](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+        echo "- [Format Report](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+        echo "- [Lint Report](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+        echo "- [Commit Report](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## 🔄 Next Steps" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        if [[ "${{ needs.security-scan.result }}" == "failure" ]]; then
+          echo "🚨 **Security issues detected** - Please review and fix manually" >> $GITHUB_STEP_SUMMARY
+        elif [[ "${{ github.event.inputs.dry_run }}" == "true" ]]; then
+          echo "🔍 **Dry run completed** - No actual changes were made" >> $GITHUB_STEP_SUMMARY
+        elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          echo "✅ **Manual workflow completed** - Check commits for applied fixes" >> $GITHUB_STEP_SUMMARY
+        elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          echo "🔄 **Pull request updated** - Fixes applied and pushed" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "✅ **Push workflow completed** - Check repository for fixes" >> $GITHUB_STEP_SUMMARY
+        fi

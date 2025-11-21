@@ -11,11 +11,61 @@ tests?/fixtures/.*
 .*\.template$
 config/.*\.template$
 
-# Documentation
+# Documentation (excludes test credentials in docs)
 docs/.*\.md$
 README\.md$
-CONTRIBUTING\.md$
-NOTIFICATIONS\.md$
+CLAUDE\.md$
+
+# But scan for real secrets in documentation (above patterns exclude content)
+# Only exclude structural content, not credential examples
+# Use gitleaks:allow comments to mark safe examples
 
 # CI workflows (use GitHub secrets)
 \.github/workflows/.*\.yml$
+
+# CI/CD artifacts and reports (generated files, not source code)
+.*-report\.(json|md|txt|sarif)$
+.*-summary\.(json|md|txt)$
+.*-results\.(json|md|txt)$
+security-.*\.(json|md|txt)$
+test-results/.*
+coverage/.*
+\.github/security-reports/.*
+
+# Build artifacts and dist files (generated content)
+dist/.*
+build/.*
+out/.*
+.*\.(tgz|tar\.gz|zip)$
+
+# Local development and temporary files
+\.env\.local$
+.*\.local$
+\.mise/.*
+\.cache/.*
+temp-.*
+tmp-.*
+.*\.(tmp|temp|bak|backup|old|orig)$
+
+# Git and version control
+\.git/.*
+\.gitignore
+\.gitattributes
+
+# IDE and editor files
+\.vscode/.*
+\.idea/.*
+.*\.swp$
+.*\.swo$
+.*\.DS_Store$
+
+# Configuration templates (examples, not real credentials)
+.*\.template$
+.*\.example$
+config/.*\.template$
+
+# Lock files (dependencies, not secrets)
+.*-lock\.(json|yml|yaml)$
+package-lock\.json$
+yarn\.lock$
+pnpm-lock\.yaml$

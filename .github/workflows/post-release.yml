@@ -38,18 +38,16 @@ jobs:
 
       - name: Setup environment
         run: |
-          chmod +x scripts/setup/*.sh
-          ./scripts/setup/install-tools.sh
+          mise run verify-tools
 
       - name: Determine version
         id: version
+        env:
+          GITHUB_EVENT_NAME: "${{ github.event_name }}"
+          GITHUB_EVENT_RELEASE_TAG_NAME: "${{ github.event.release.tag_name }}"
+          GITHUB_EVENT_INPUTS_VERSION: "${{ github.event.inputs.version }}"
         run: |
-          if [ "${{ github.event_name }}" == "release" ]; then
-            VERSION="${{ github.event.release.tag_name }}"
-          else
-            VERSION="${{ github.event.inputs.version }}"
-          fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          ./scripts/ci/deployment/16-ci-determine-post-release-version.sh
 
       - name: Verify NPM deployment
         if: vars.ENABLE_NPM_PUBLISH == 'true'
@@ -74,12 +72,11 @@ jobs:
 
       - name: Report verification results
         if: always()
+        env:
+          VERSION: "${{ steps.version.outputs.version }}"
+          VERIFICATION_STATUS: "${{ job.status }}"
         run: |
-          echo "## Deployment Verification Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "All deployment targets verified successfully!" >> $GITHUB_STEP_SUMMARY
+          ./scripts/ci/reporting/33-ci-generate-verification-results.sh
 
   tag-stable:
     name: Tag as Stable
@@ -97,16 +94,7 @@ jobs:
 
       - name: Create stable tag
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          VERSION="${{ github.event.inputs.version }}"
-          git tag -f stable "$VERSION"
-          git push -f origin stable
-
-          echo "## Stability Tagging" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Version $VERSION tagged as stable**" >> $GITHUB_STEP_SUMMARY
+          ./scripts/ci/deployment/17-ci-manage-stability-tags.sh "stable" "${{ github.event.inputs.version }}"
 
   tag-unstable:
     name: Tag as Unstable
@@ -124,16 +112,7 @@ jobs:
 
       - name: Create unstable tag
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          VERSION="${{ github.event.inputs.version }}"
-          git tag -f unstable "$VERSION"
-          git push -f origin unstable
-
-          echo "## Stability Tagging" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Version $VERSION tagged as unstable**" >> $GITHUB_STEP_SUMMARY
+          ./scripts/ci/deployment/17-ci-manage-stability-tags.sh "unstable" "${{ github.event.inputs.version }}"
 
   rollback:
     name: Rollback Release
@@ -151,8 +130,7 @@ jobs:
 
       - name: Setup environment
         run: |
-          chmod +x scripts/setup/*.sh
-          ./scripts/setup/install-tools.sh
+          mise run verify-tools
 
       - name: Confirm rollback
         run: |
@@ -224,24 +202,13 @@ jobs:
       - name: Determine action type and status
         if: steps.check_notify.outputs.enabled == 'true'
         id: status
+        env:
+          VERIFY_DEPLOYMENT_RESULT: "${{ needs.verify-deployment.result }}"
+          TAG_STABLE_RESULT: "${{ needs.tag-stable.result }}"
+          TAG_UNSTABLE_RESULT: "${{ needs.tag-unstable.result }}"
+          ROLLBACK_RESULT: "${{ needs.rollback.result }}"
         run: |
-          # Determine which action was performed
-          if [ "${{ needs.rollback.result }}" == "success" ]; then
-            echo "status=warning" >> $GITHUB_OUTPUT
-            echo "message=Rollback Completed ⚠️" >> $GITHUB_OUTPUT
-          elif [ "${{ needs.tag-stable.result }}" == "success" ]; then
-            echo "status=success" >> $GITHUB_OUTPUT
-            echo "message=Version Tagged as Stable ✅" >> $GITHUB_OUTPUT
-          elif [ "${{ needs.verify-deployment.result }}" == "success" ]; then
-            echo "status=success" >> $GITHUB_OUTPUT
-            echo "message=Deployment Verified ✅" >> $GITHUB_OUTPUT
-          elif [ "${{ needs.rollback.result }}" == "failure" ]; then
-            echo "status=failure" >> $GITHUB_OUTPUT
-            echo "message=Rollback Failed ❌" >> $GITHUB_OUTPUT
-          else
-            echo "status=info" >> $GITHUB_OUTPUT
-            echo "message=Post-Release Actions Completed ℹ️" >> $GITHUB_OUTPUT
-          fi
+          ./scripts/ci/reporting/34-ci-determine-post-release-status.sh
 
       - name: Send notification
         if: steps.check_notify.outputs.enabled == 'true'

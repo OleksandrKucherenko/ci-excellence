@@ -30,11 +30,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup environment
-        run: ./scripts/ci/setup/ci-01-install-tools.sh
+      - name: Setup environment and validate
+        run: ./scripts/setup/00-setup-folders.sh
 
-      - name: Install dependencies
-        run: ./scripts/ci/setup/ci-02-install-dependencies.sh
+      - name: Install dependencies and tools
+        run: mise run verify-tools
 
       - name: Cache dependencies
         uses: actions/cache@v3
@@ -66,7 +66,10 @@ jobs:
           key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
 
       - name: Run compile
-        run: ./scripts/ci/build/ci-01-compile.sh
+        env:
+          CI_TEST_MODE: "EXECUTE"
+          PIPELINE_COMPILE_MODE: "${{ vars.COMPILE_MODE || 'EXECUTE' }}"
+        run: ./scripts/build/10-ci-compile.sh
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -97,7 +100,10 @@ jobs:
           key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
 
       - name: Run linter
-        run: ./scripts/ci/build/ci-02-lint.sh
+        env:
+          CI_TEST_MODE: "EXECUTE"
+          PIPELINE_LINT_MODE: "${{ vars.LINT_MODE || 'EXECUTE' }}"
+        run: ./scripts/build/20-ci-lint.sh
 
   unit-tests:
     name: Unit Tests
@@ -118,7 +124,10 @@ jobs:
           key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
 
       - name: Run unit tests
-        run: ./scripts/ci/test/ci-01-unit-tests.sh
+        env:
+          CI_TEST_MODE: "EXECUTE"
+          PIPELINE_UNIT_TESTS_MODE: "${{ vars.UNIT_TESTS_MODE || 'EXECUTE' }}"
+        run: ./scripts/test/10-ci-unit-tests.sh
 
       - name: Upload test results
         if: always()
@@ -155,7 +164,10 @@ jobs:
           name: build-output
 
       - name: Run integration tests
-        run: ./scripts/ci/test/ci-02-integration-tests.sh
+        env:
+          CI_TEST_MODE: "EXECUTE"
+          PIPELINE_INTEGRATION_TESTS_MODE: "${{ vars.INTEGRATION_TESTS_MODE || 'EXECUTE' }}"
+        run: ./scripts/test/20-ci-integration-tests.sh
 
       - name: Upload test results
         if: always()
@@ -192,7 +204,10 @@ jobs:
           name: build-output
 
       - name: Run E2E tests
-        run: ./scripts/ci/test/ci-03-e2e-tests.sh
+        env:
+          CI_TEST_MODE: "EXECUTE"
+          PIPELINE_E2E_TESTS_MODE: "${{ vars.E2E_TESTS_MODE || 'EXECUTE' }}"
+        run: ./scripts/test/30-ci-e2e-tests.sh
 
       - name: Upload test results
         if: always()
@@ -217,10 +232,13 @@ jobs:
           fetch-depth: 0  # Full history for trufflehog to scan
 
       - name: Setup mise and install tools
-        run: ./scripts/ci/setup/ci-01-install-tools.sh
+        run: mise run verify-tools
 
       - name: Run vulnerability scan
-        run: ./scripts/ci/build/ci-03-security-scan.sh
+        env:
+          CI_TEST_MODE: "EXECUTE"
+          PIPELINE_SECURITY_SCAN_MODE: "${{ vars.SECURITY_SCAN_MODE || 'EXECUTE' }}"
+        run: ./scripts/build/30-ci-security-scan.sh staging high all
 
       - name: Upload security reports
         if: always()
@@ -233,15 +251,78 @@ jobs:
             security-results.sarif
           retention-days: 30
 
+  enhanced-security-gates:
+    name: Enhanced Security Gates
+    runs-on: ubuntu-latest
+    needs: [setup, compile, lint, unit-tests]
+    if: |
+      always() &&
+      (needs.setup.result == 'success') &&
+      (needs.compile.result == 'success' || needs.compile.result == 'skipped') &&
+      (needs.lint.result == 'success' || needs.lint.result == 'skipped') &&
+      (needs.unit-tests.result == 'success' || needs.unit-tests.result == 'skipped') &&
+      vars.ENABLE_ENHANCED_SECURITY == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup mise and install tools
+        run: mise run verify-tools
+
+      - name: Run enhanced security and quality gates
+        env:
+          CI_TEST_MODE: "EXECUTE"
+          SECURITY_GATES_MODE: "${{ vars.SECURITY_GATES_MODE || 'EXECUTE' }}"
+          WEBHOOK_AUTH_TOKEN: "${{ secrets.WEBHOOK_AUTH_TOKEN }}"
+          WEBHOOK_URL: "${{ vars.WEBHOOK_URL }}"
+          QUALITY_THRESHOLD_SCORE: "${{ vars.QUALITY_THRESHOLD_SCORE || '80' }}"
+          CRITICAL_VULNERABILITY_LIMIT: "${{ vars.CRITICAL_VULNERABILITY_LIMIT || '0' }}"
+          HIGH_VULNERABILITY_LIMIT: "${{ vars.HIGH_VULNERABILITY_LIMIT || '5' }}"
+          REQUIRE_GDPR_COMPLIANCE: "${{ vars.REQUIRE_GDPR_COMPLIANCE || 'true' }}"
+          REQUIRE_SOC2_COMPLIANCE: "${{ vars.REQUIRE_SOC2_COMPLIANCE || 'false' }}"
+          REQUIRE_HIPAA_COMPLIANCE: "${{ vars.REQUIRE_HIPAA_COMPLIANCE || 'false' }}"
+        run: |
+          ./scripts/ci/security/02-ci-enhanced-security-gates.sh high all
+
+      - name: Validate cloud region mapping
+        env:
+          CLOUD_PROVIDER: "${{ vars.CLOUD_PROVIDER || 'aws' }}"
+          REGION_CODE: "${{ vars.CLOUD_REGION || 'us-east-1' }}"
+          REQUIRE_GDPR_COMPLIANCE: "${{ vars.REQUIRE_GDPR_COMPLIANCE || 'true' }}"
+        run: |
+          ./scripts/ci/security/03-ci-cloud-region-mapping.sh "$CLOUD_PROVIDER" "$REGION_CODE"
+
+      - name: Test webhook authentication
+        if: vars.WEBHOOK_URL != ''
+        env:
+          WEBHOOK_AUTH_TOKEN: "${{ secrets.WEBHOOK_AUTH_TOKEN }}"
+          WEBHOOK_URL: "${{ vars.WEBHOOK_URL }}"
+        run: |
+          ./scripts/ci/security/04-ci-webhook-authentication.sh test "$WEBHOOK_URL" "test_payload"
+
+      - name: Upload security gates reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: enhanced-security-reports
+          path: |
+            security-gates-report.md
+            region-mapping-output.txt
+            webhook-authentication-results.json
+          retention-days: 30
+
   bundle:
     name: Bundle and Package
     runs-on: ubuntu-latest
-    needs: [compile, lint, unit-tests]
+    needs: [compile, lint, unit-tests, enhanced-security-gates]
     if: |
       always() &&
       (needs.compile.result == 'success' || needs.compile.result == 'skipped') &&
       (needs.lint.result == 'success' || needs.lint.result == 'skipped') &&
       (needs.unit-tests.result == 'success' || needs.unit-tests.result == 'skipped') &&
+      (needs.enhanced-security-gates.result == 'success' || needs.enhanced-security-gates.result == 'skipped') &&
       vars.ENABLE_BUNDLE == 'true'
     steps:
       - name: Checkout code
@@ -279,43 +360,45 @@ jobs:
   summary:
     name: Pipeline Summary
     runs-on: ubuntu-latest
-    needs: [setup, compile, lint, unit-tests, integration-tests, e2e-tests, security-scan, bundle]
+    needs: [setup, compile, lint, unit-tests, integration-tests, e2e-tests, security-scan, enhanced-security-gates, bundle]
     if: always()
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Generate summary
+      - name: Generate comprehensive summary with action links
         env:
-          ENABLE_COMPILE: ${{ vars.ENABLE_COMPILE || 'false' }}
-          ENABLE_LINT: ${{ vars.ENABLE_LINT || 'false' }}
-          ENABLE_UNIT_TESTS: ${{ vars.ENABLE_UNIT_TESTS || 'false' }}
-          ENABLE_INTEGRATION_TESTS: ${{ vars.ENABLE_INTEGRATION_TESTS || 'false' }}
-          ENABLE_E2E_TESTS: ${{ vars.ENABLE_E2E_TESTS || 'false' }}
-          ENABLE_SECURITY_SCAN: ${{ vars.ENABLE_SECURITY_SCAN || 'false' }}
-          ENABLE_BUNDLE: ${{ vars.ENABLE_BUNDLE || 'false' }}
-        run: |
-          ./scripts/ci/build/ci-05-summary-pre-release.sh \
-            "${{ needs.setup.result }}" \
-            "${{ needs.compile.result }}" \
-            "${{ needs.lint.result }}" \
-            "${{ needs.unit-tests.result }}" \
-            "${{ needs.integration-tests.result }}" \
-            "${{ needs.e2e-tests.result }}" \
-            "${{ needs.security-scan.result }}" \
-            "${{ needs.bundle.result }}"
+          # Pipeline results for summary generation
+          SETUP_RESULT: "${{ needs.setup.result }}"
+          COMPILE_RESULT: "${{ needs.compile.result }}"
+          LINT_RESULT: "${{ needs.lint.result }}"
+          UNIT_TESTS_RESULT: "${{ needs.unit-tests.result }}"
+          INTEGRATION_TESTS_RESULT: "${{ needs.integration-tests.result }}"
+          E2E_TESTS_RESULT: "${{ needs.e2e-tests.result }}"
+          SECURITY_SCAN_RESULT: "${{ needs.security-scan.result }}"
+          ENHANCED_SECURITY_GATES_RESULT: "${{ needs.enhanced-security-gates.result }}"
+          BUNDLE_RESULT: "${{ needs.bundle.result }}"
 
-      - name: Check for failures
+          # GitHub context for action links
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+
+          # Action link configuration
+          PIPELINE_TYPE: "pre-release"
+          ENABLE_ACTION_LINKS: "true"
         run: |
-          ./scripts/ci/build/ci-06-check-failures.sh \
-            "${{ needs.setup.result }}" \
-            "${{ needs.compile.result }}" \
-            "${{ needs.lint.result }}" \
-            "${{ needs.unit-tests.result }}" \
-            "${{ needs.integration-tests.result }}" \
-            "${{ needs.e2e-tests.result }}" \
-            "${{ needs.security-scan.result }}" \
-            "${{ needs.bundle.result }}"
+          ./scripts/ci/reporting/15-ci-generate-pre-release-summary.sh
+
+      - name: Upload pipeline summary
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pre-release-summary
+          path: summaries/
+          retention-days: 30
 
   notify:
     name: Send Notifications

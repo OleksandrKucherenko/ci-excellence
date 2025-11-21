@@ -1,0 +1,6 @@
+indent = 2
+binary_next_line = true
+case_indent = true
+space_redirects = true
+keep_padding = false
+func_next_line = false
