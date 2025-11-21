@@ -79,18 +79,8 @@ validate_environment_config() {
 
     log_info "Validating environment configuration for $environment ($region)"
 
-    # Check required files
-    local config_file="${PROJECT_ROOT}/environments/${environment}/config.yml"
-    if [[ ! -f "$config_file" ]]; then
-        log_error "Environment config file not found: $config_file"
-        return 1
-    fi
-
-    # Validate environment name
-    local valid_environments=("staging" "production" "development")
-    if [[ ! " ${valid_environments[*]} " =~ " $environment " ]]; then
-        log_error "Invalid environment: $environment"
-        log_info "Valid environments: ${valid_environments[*]}"
+    # Use dynamic environment validation
+    if ! validate_environment_exists "$environment"; then
         return 1
     fi
 
@@ -223,11 +213,95 @@ list_environments() {
         find "$environments_dir" -maxdepth 1 -type d -not -path "$environments_dir" | while read -r env_dir; do
             local env_name
             env_name=$(basename "$env_dir")
-            echo "  - $env_name"
+            # Only show environments with config.yml files
+            if [[ -f "$env_dir/config.yml" ]]; then
+                echo "  - $env_name"
+            fi
         done
     else
         echo "  No environments found"
     fi
+}
+
+# Dynamic Environment Discovery Functions
+
+# Discover supported environments by enumerating environment directories
+discover_environments() {
+    local environments=()
+    local environments_dir="${PROJECT_ROOT}/environments"
+
+    if [[ ! -d "$environments_dir" ]]; then
+        log_error "Environments directory '$environments_dir' does not exist"
+        return 1
+    fi
+
+    # Find all directories with config.yml files
+    for env_dir in "$environments_dir"/*/; do
+        if [[ -d "$env_dir" && -f "$env_dir/config.yml" ]]; then
+            local env_name
+            env_name=$(basename "$env_dir")
+            environments+=("$env_name")
+        fi
+    done
+
+    # Sort environments for consistent output
+    IFS=$'\n' environments=($(sort <<<"${environments[*]}"))
+    unset IFS
+
+    printf '%s\n' "${environments[@]}"
+}
+
+# Validate environment exists and has proper configuration
+validate_environment_exists() {
+    local env="$1"
+    local environments_dir="${PROJECT_ROOT}/environments"
+
+    if [[ -z "$env" ]]; then
+        log_error "Environment name is required"
+        return 1
+    fi
+
+    # Check if environment directory exists
+    if [[ ! -d "$environments_dir/$env" ]]; then
+        log_error "❌ Environment '$env' does not exist"
+        log_info "Available environments: $(discover_environments | tr '\n' ' ')"
+        return 1
+    fi
+
+    # Check if configuration exists
+    if [[ ! -f "$environments_dir/$env/config.yml" ]]; then
+        log_error "❌ Environment '$env' configuration not found"
+        return 1
+    fi
+
+    # Validate configuration YAML syntax if yq is available
+    if command -v yq >/dev/null 2>&1; then
+        if ! yq eval "$environments_dir/$env/config.yml" >/dev/null 2>&1; then
+            log_error "❌ Invalid YAML syntax in environment configuration"
+            return 1
+        fi
+    fi
+
+    return 0
+}
+
+# Check if environment is a default environment (cannot be deleted)
+is_default_environment() {
+    local env="$1"
+    local default_environments=("staging" "production")
+
+    for default_env in "${default_environments[@]}"; do
+        if [[ "$env" == "$default_env" ]]; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+# Get supported environments (for backward compatibility)
+get_supported_environments() {
+    discover_environments
 }
 
 # List regions for environment
