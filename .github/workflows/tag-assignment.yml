@@ -1,0 +1,335 @@
+name: Tag Assignment Workflow
+
+# Manual trigger for creating and managing git tags
+on:
+  workflow_dispatch:
+    inputs:
+      tag_type:
+        description: 'Type of tag to create'
+        required: true
+        type: choice
+        options:
+          - version
+          - environment
+          - state
+      version:
+        description: 'Version (e.g., v1.2.3 or api/v1.2.3)'
+        required: false
+        type: string
+      commit_sha:
+        description: 'Commit SHA (defaults to HEAD)'
+        required: false
+        default: 'HEAD'
+        type: string
+      environment:
+        description: 'Target environment (for environment tags)'
+        required: false
+        type: choice
+        options:
+          - production
+          - staging
+          - canary
+          - sandbox
+          - performance
+      state:
+        description: 'Version state (for state tags)'
+        required: false
+        type: choice
+        options:
+          - stable
+          - unstable
+          - deprecated
+      sub_project:
+        description: 'Sub-project path (empty for root project)'
+        required: false
+        type: string
+      force_move:
+        description: 'Force move existing environment tag (admin only)'
+        required: false
+        default: false
+        type: boolean
+
+# Environment variables
+env:
+  CI_TEST_MODE: ${{ vars.CI_TEST_MODE || 'EXECUTE' }}
+
+jobs:
+  validate-tag:
+    name: Validate Tag Request
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ vars.CI_JOB_TIMEOUT_MINUTES || 5 }}
+    outputs:
+      tag_type: ${{ steps.validation.outputs.tag_type }}
+      version: ${{ steps.validation.outputs.version }}
+      environment: ${{ steps.validation.outputs.environment }}
+      state: ${{ steps.validation.outputs.state }}
+      sub_project: ${{ steps.validation.outputs.sub_project }}
+      commit_sha: ${{ steps.validation.outputs.commit_sha }}
+      force_move: ${{ steps.validation.outputs.force_move }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for tag operations
+
+      - name: Setup MISE
+        uses: jdx/mise-action@v2
+        with:
+          mise_toml: mise.toml
+          cache: true
+
+      - name: Validate inputs
+        id: validation
+        env:
+          INPUT_TAG_TYPE: ${{ inputs.tag_type }}
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
+          INPUT_STATE: ${{ inputs.state }}
+          INPUT_SUB_PROJECT: ${{ inputs.sub_project }}
+          INPUT_COMMIT_SHA: ${{ inputs.commit_sha }}
+          INPUT_FORCE_MOVE: ${{ inputs.force_move }}
+        run: |
+          # Validate required inputs based on tag type
+          case "$INPUT_TAG_TYPE" in
+            "version")
+              if [[ -z "$INPUT_VERSION" ]]; then
+                echo "❌ Version is required for version tags"
+                exit 1
+              fi
+              # Validate semver format
+              if [[ ! "$INPUT_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
+                echo "❌ Invalid semver format: $INPUT_VERSION"
+                echo "Expected format: v1.2.3 or v1.2.3-beta.1"
+                exit 1
+              fi
+              ;;
+            "environment")
+              if [[ -z "$INPUT_ENVIRONMENT" ]]; then
+                echo "❌ Environment is required for environment tags"
+                exit 1
+              fi
+              ;;
+            "state")
+              if [[ -z "$INPUT_VERSION" || -z "$INPUT_STATE" ]]; then
+                echo "❌ Version and state are required for state tags"
+                exit 1
+              fi
+              if [[ ! "$INPUT_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
+                echo "❌ Invalid semver format: $INPUT_VERSION"
+                exit 1
+              fi
+              ;;
+          esac
+
+          # Validate commit SHA
+          if ! git rev-parse --verify "$INPUT_COMMIT_SHA" >/dev/null 2>&1; then
+            echo "❌ Invalid commit SHA: $INPUT_COMMIT_SHA"
+            exit 1
+          fi
+
+          # Validate sub-project path
+          if [[ -n "$INPUT_SUB_PROJECT" ]]; then
+            if [[ "$INPUT_SUB_PROJECT" == "/" || "$INPUT_SUB_PROJECT" =~ ^/+|/+$ ]]; then
+              echo "❌ Invalid sub-project path: $INPUT_SUB_PROJECT"
+              echo "Path should not start or end with '/'"
+              exit 1
+            fi
+          fi
+
+          # Validate force move permission for environment tags
+          if [[ "$INPUT_TAG_TYPE" == "environment" && "$INPUT_FORCE_MOVE" == "true" ]]; then
+            echo "⚠️ Force move enabled - admin operation"
+            echo "This will overwrite existing environment tag"
+          fi
+
+          # Output validated inputs
+          echo "tag_type=$INPUT_TAG_TYPE" >> $GITHUB_OUTPUT
+          echo "version=${INPUT_VERSION:-}" >> $GITHUB_OUTPUT
+          echo "environment=$INPUT_ENVIRONMENT" >> $GITHUB_OUTPUT
+          echo "state=$INPUT_STATE" >> $GITHUB_OUTPUT
+          echo "sub_project=${INPUT_SUB_PROJECT:-}" >> $GITHUB_OUTPUT
+          echo "commit_sha=$INPUT_COMMIT_SHA" >> $GITHUB_OUTPUT
+          echo "force_move=$INPUT_FORCE_MOVE" >> $GITHUB_OUTPUT
+
+      - name: Show tag preview
+        run: |
+          TAG_TYPE="${{ steps.validation.outputs.tag_type }}"
+          VERSION="${{ steps.validation.outputs.version }}"
+          ENVIRONMENT="${{ steps.validation.outputs.environment }}"
+          STATE="${{ steps.validation.outputs.state }}"
+          SUB_PROJECT="${{ steps.validation.outputs.sub_project }}"
+
+          echo "## Tag Creation Preview"
+          echo ""
+
+          case "$TAG_TYPE" in
+            "version")
+              TAG_NAME="${SUB_PROJECT:+${SUB_PROJECT}/}${VERSION}"
+              echo "📦 **Version Tag**: \`$TAG_NAME\`"
+              echo "   - Immutable version marker"
+              echo "   - Points to commit: \`${{ steps.validation.outputs.commit_sha }}\`"
+              ;;
+            "environment")
+              TAG_NAME="${SUB_PROJECT:+${SUB_PROJECT}/}${ENVIRONMENT}"
+              echo "🚀 **Environment Tag**: \`$TAG_NAME\`"
+              echo "   - Movable deployment pointer"
+              echo "   - Will point to commit: \`${{ steps.validation.outputs.commit_sha }}\`"
+              [[ "${{ steps.validation.outputs.force_move }}" == "true" ]] && echo "   - ⚠️ Force move enabled"
+              ;;
+            "state")
+              TAG_NAME="${SUB_PROJECT:+${SUB_PROJECT}/}${VERSION}-${STATE}"
+              echo "🏷️  **State Tag**: \`$TAG_NAME\`"
+              echo "   - Immutable state marker for version"
+              echo "   - State: $STATE"
+              echo "   - Points to same commit as version tag"
+              ;;
+          esac
+
+          echo ""
+          echo "📋 **Details**:"
+          echo "   - Repository: \`${{ github.repository }}\`"
+          echo "   - Actor: \`${{ github.actor }}\`"
+          echo "   - Workflow: \`${{ github.workflow }}\`"
+          echo "   - Run ID: \`${{ github.run_id }}\`"
+
+  create-or-move-tag:
+    name: Create or Move Tag
+    runs-on: ubuntu-latest
+    needs: validate-tag
+    timeout-minutes: ${{ vars.CI_JOB_TIMEOUT_MINUTES || 10 }}
+    outputs:
+      created_tag: ${{ steps.tag.outputs.created_tag }}
+      tag_type: ${{ steps.tag.outputs.tag_type }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup MISE
+        uses: jdx/mise-action@v2
+        with:
+          mise_toml: mise.toml
+          cache: true
+
+      - name: Configure git
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Create or move tag
+        id: tag
+        env:
+          INPUT_TAG_TYPE: ${{ needs.validate-tag.outputs.tag_type }}
+          INPUT_VERSION: ${{ needs.validate-tag.outputs.version }}
+          INPUT_ENVIRONMENT: ${{ needs.validate-tag.outputs.environment }}
+          INPUT_STATE: ${{ needs.validate-tag.outputs.state }}
+          INPUT_SUB_PROJECT: ${{ needs.validate-tag.outputs.sub_project }}
+          INPUT_COMMIT_SHA: ${{ needs.validate-tag.outputs.commit_sha }}
+          INPUT_FORCE_MOVE: ${{ needs.validate-tag.outputs.force_move }}
+        run: |
+          ./scripts/release/50-ci-tag-assignment.sh
+
+      - name: Verify tag creation
+        run: |
+          TAG_NAME="${{ steps.tag.outputs.created_tag }}"
+          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            echo "✅ Tag created/updated successfully: $TAG_NAME"
+            echo "📍 Points to: $(git rev-parse "$TAG_NAME")"
+          else
+            echo "❌ Tag creation failed: $TAG_NAME"
+            exit 1
+          fi
+
+  trigger-deployment:
+    name: Trigger Deployment
+    runs-on: ubuntu-latest
+    needs: create-or-move-tag
+    timeout-minutes: ${{ vars.CI_JOB_TIMEOUT_MINUTES || 5 }}
+    if: needs.create-or-move-tag.outputs.tag_type == 'environment'
+    steps:
+      - name: Trigger deployment workflow
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG_NAME: ${{ needs.create-or-move-tag.outputs.created_tag }}
+        run: |
+          echo "🚀 Triggering deployment for environment tag: $TAG_NAME"
+
+          # Extract environment from tag name
+          ENVIRONMENT="${TAG_NAME##*/}"
+
+          # Extract sub-project path
+          SUB_PROJECT="${TAG_NAME%/$ENVIRONMENT}"
+          [[ "$SUB_PROJECT" == "$TAG_NAME" ]] && SUB_PROJECT=""
+
+          # Trigger deployment workflow
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            https://api.github.com/repos/$REPO/actions/workflows/deployment.yml/dispatches \
+            -d "{
+              \"ref\": \"main\",
+              \"inputs\": {
+                \"environment\": \"$ENVIRONMENT\",
+                \"sub_project\": \"$SUB_PROJECT\"
+              }
+            }"
+
+          echo "✅ Deployment workflow triggered"
+          echo "🔗 View deployment: https://github.com/$REPO/actions/workflows/deployment.yml"
+
+  notify-tag-assignment:
+    name: Report Results
+    runs-on: ubuntu-latest
+    needs: [validate-tag, create-or-move-tag, trigger-deployment]
+    timeout-minutes: ${{ vars.CI_JOB_TIMEOUT_MINUTES || 5 }}
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate report
+        run: |
+          echo "# Tag Assignment Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ needs.validate-tag.result }}" == "success" && "${{ needs.create-or-move-tag.result }}" == "success" ]]; then
+            TAG_TYPE="${{ needs.create-or-move-tag.outputs.tag_type }}"
+            CREATED_TAG="${{ needs.create-or-move-tag.outputs.created_tag }}"
+            ACTOR="${{ github.actor }}"
+
+            echo "## ✅ Tag Assignment Successful" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Tag Type**: $TAG_TYPE" >> $GITHUB_STEP_SUMMARY
+            echo "**Created Tag**: \`$CREATED_TAG\`" >> $GITHUB_STEP_SUMMARY
+            echo "**Created By**: $ACTOR" >> $GITHUB_STEP_SUMMARY
+            echo "**Repository**: \`${{ github.repository }}\`" >> $GITHUB_STEP_SUMMARY
+
+            # Add action links based on tag type
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "## Action Links" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+
+            if [[ "$TAG_TYPE" == "version" ]]; then
+              VERSION="${{ needs.validate-tag.outputs.version }}"
+              SUB_PROJECT="${{ needs.validate-tag.outputs.sub_project }}"
+              echo "- **Deploy to Staging**: [🚀](https://github.com/${{ github.repository }}/actions/workflows/tag-assignment.yml?inputs=tag_type:environment,environment:staging,version:$VERSION,sub_project:$SUB_PROJECT)" >> $GITHUB_STEP_SUMMARY
+              echo "- **Deploy to Production**: [🚀](https://github.com/${{ github.repository }}/actions/workflows/tag-assignment.yml?inputs=tag_type:environment,environment:production,version:$VERSION,sub_project:$SUB_PROJECT)" >> $GITHUB_STEP_SUMMARY
+              echo "- **Mark as Stable**: [✅](https://github.com/${{ github.repository }}/actions/workflows/tag-assignment.yml?inputs=tag_type:state,version:$VERSION,state:stable,sub_project:$SUB_PROJECT)" >> $GITHUB_STEP_SUMMARY
+            elif [[ "$TAG_TYPE" == "environment" ]]; then
+              echo "- **View Deployment**: [👁️](https://github.com/${{ github.repository }}/actions/workflows/deployment.yml)" >> $GITHUB_STEP_SUMMARY
+              echo "- **Rollback**: [↩️](https://github.com/${{ github.repository }}/actions/workflows/rollback.yml)" >> $GITHUB_STEP_SUMMARY
+            elif [[ "$TAG_TYPE" == "state" ]]; then
+              echo "- **View Version Info**: [ℹ️](https://github.com/${{ github.repository }}/tags/$CREATED_TAG)" >> $GITHUB_STEP_SUMMARY
+            fi
+
+          else
+            echo "## ❌ Tag Assignment Failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Validation Result**: ${{ needs.validate-tag.result }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Tag Creation Result**: ${{ needs.create-or-move-tag.result }}" >> $GITHUB_STEP_SUMMARY
+          fi

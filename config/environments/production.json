@@ -1,0 +1,290 @@
+{
+  "environment": {
+    "name": "production",
+    "type": "production",
+    "description": "Production environment for live traffic"
+  },
+  "deployment": {
+    "strategy": "blue-green",
+    "timeout_seconds": 1800,
+    "health_check": {
+      "endpoint": "/health",
+      "timeout_seconds": 60,
+      "retries": 5
+    },
+    "rollback": {
+      "enabled": true,
+      "automatic": true,
+      "failure_threshold": 3,
+      "keep_count": 10
+    }
+  },
+  "infrastructure": {
+    "platform": "kubernetes",
+    "namespace": "production",
+    "resources": {
+      "cpu": {
+        "request": "500m",
+        "limit": "2000m"
+      },
+      "memory": {
+        "request": "512Mi",
+        "limit": "2048Mi"
+      }
+    },
+    "replicas": {
+      "min": 3,
+      "max": 20,
+      "default": 6
+    },
+    "auto_scaling": {
+      "enabled": true,
+      "target_cpu_utilization": 60,
+      "scale_up_cooldown": 180,
+      "scale_down_cooldown": 300,
+      "scale_up_policy": {
+        "max_replicas": 20,
+        "scale_up_factor": 1.5
+      }
+    }
+  },
+  "application": {
+    "log_level": "warn",
+    "debug": false,
+    "metrics": {
+      "enabled": true,
+      "port": 9090
+    },
+    "tracing": {
+      "enabled": true,
+      "sampling_rate": 0.01
+    }
+  },
+  "network": {
+    "ingress": {
+      "enabled": true,
+      "host": "ci-excellence.example.com",
+      "tls": {
+        "enabled": true,
+        "secret_name": "production-tls",
+        "certificate_arn": "${PRODUCTION_TLS_CERT_ARN}"
+      }
+    },
+    "ports": {
+      "http": 3000,
+      "https": 3001,
+      "metrics": 9090
+    },
+    "load_balancer": {
+      "type": "application",
+      "health_check_path": "/health",
+      "idle_timeout": 300
+    }
+  },
+  "database": {
+    "host": "${PRODUCTION_DB_HOST}",
+    "port": 5432,
+    "name": "ci_excellence_production",
+    "ssl_mode": "require",
+    "pool": {
+      "min": 5,
+      "max": 25,
+      "idle_timeout": 600
+    },
+    "backup": {
+      "enabled": true,
+      "schedule": "0 3 * * *",
+      "retention_days": 30,
+      "point_in_time_recovery": true
+    },
+    "high_availability": {
+      "enabled": true,
+      "failover_timeout": 30,
+      "read_replicas": 2
+    }
+  },
+  "cache": {
+    "redis": {
+      "host": "${PRODUCTION_REDIS_HOST}",
+      "port": 6379,
+      "db": 0,
+      "ttl_seconds": 1800,
+      "cluster_mode": true,
+      "max_connections": 20
+    }
+  },
+  "storage": {
+    "type": "s3",
+    "bucket": "ci-excellence-production",
+    "region": "us-east-1",
+    "encryption": {
+      "enabled": true,
+      "algorithm": "aws:kms",
+      "key_id": "${PRODUCTION_KMS_KEY_ID}"
+    },
+    "versioning": {
+      "enabled": true,
+      "keep_versions": 100
+    },
+    "replication": {
+      "enabled": true,
+      "destination_bucket": "ci-excellence-production-backup",
+      "destination_region": "us-west-2"
+    }
+  },
+  "security": {
+    "cors": {
+      "enabled": true,
+      "origins": ["https://ci-excellence.example.com"],
+      "methods": ["GET", "POST", "PUT", "DELETE"],
+      "max_age": 86400,
+      "credentials": true
+    },
+    "rate_limiting": {
+      "enabled": true,
+      "requests_per_minute": 5000,
+      "burst": 500,
+      "per_ip": true
+    },
+    "authentication": {
+      "session_timeout": 1800,
+      "max_login_attempts": 3,
+      "lockout_duration": 1800,
+      "mfa_required": true
+    },
+    "headers": {
+      "strict_transport_security": "max-age=31536000; includeSubDomains",
+      "content_security_policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
+      "x_frame_options": "DENY",
+      "x_content_type_options": "nosniff"
+    }
+  },
+  "monitoring": {
+    "alerts": {
+      "enabled": true,
+      "channels": ["pagerduty", "slack", "email", "sms"],
+      "escalation_policy": {
+        "level_1": {
+          "delay_minutes": 5,
+          "channels": ["slack", "email"]
+        },
+        "level_2": {
+          "delay_minutes": 15,
+          "channels": ["pagerduty", "slack", "email"]
+        },
+        "level_3": {
+          "delay_minutes": 30,
+          "channels": ["pagerduty", "sms"]
+        }
+      },
+      "thresholds": {
+        "error_rate": 0.01,
+        "response_time": 1000,
+        "cpu_usage": 70,
+        "memory_usage": 80,
+        "disk_usage": 85,
+        "availability": 99.9
+      }
+    },
+    "dashboards": {
+      "enabled": true,
+      "refresh_interval": 60,
+      "retention_days": 90
+    },
+    "sla": {
+      "availability_target": 99.9,
+      "response_time_p99": 1000,
+      "error_rate_budget": 0.1
+    }
+  },
+  "ci_cd": {
+    "branch_protection": {
+      "enabled": true,
+      "required_reviewers": 2,
+      "dismiss_stale_reviews": true,
+      "require_up_to_date": true,
+      "require_status_checks": true,
+      "status_checks": ["build", "test", "lint", "security-scan", "integration-test", "performance-test"],
+      "enforce_admins": true,
+      "require_code_owner_reviews": true
+    },
+    "deployment_policy": {
+      "auto_deploy": false,
+      "required_checks": ["build-success", "test-pass", "security-clear", "performance-pass", "integration-pass"],
+      "approval_required": true,
+      "approvers": ["production-owners", "devops-team"],
+      "approval_count": 2
+    },
+    "release": {
+      "tags_required": true,
+      "changelog_required": true,
+      "rollback_window_hours": 24
+    }
+  },
+  "features": {
+    "feature_flags": {
+      "experimental_api": false,
+      "new_ui": false,
+      "enhanced_logging": true,
+      "beta_features": false,
+      "advanced_analytics": true,
+      "real_time_updates": true
+    }
+  },
+  "external_services": {
+    "payment": {
+      "provider": "stripe",
+      "mode": "live",
+      "webhook_secret": "${PRODUCTION_STRIPE_WEBHOOK_SECRET}"
+    },
+    "email": {
+      "provider": "sendgrid",
+      "from_address": "noreply@ci-excellence.example.com",
+      "template_id": "${PRODUCTION_EMAIL_TEMPLATE_ID}"
+    },
+    "analytics": {
+      "provider": "google-analytics",
+      "tracking_id": "${PRODUCTION_GA_TRACKING_ID}"
+    },
+    "cdn": {
+      "provider": "cloudflare",
+      "zone_id": "${PRODUCTION_CLOUDFLARE_ZONE_ID}",
+      "cache_ttl": 3600
+    }
+  },
+  "compliance": {
+    "audit_logging": {
+      "enabled": true,
+      "retention_days": 2555,
+      "include_sensitive_data": false
+    },
+    "data_classification": "confidential",
+    "gdpr_compliant": true,
+    "soc2_compliant": true
+  },
+  "backup": {
+    "automated": true,
+    "schedule": {
+      "full": "0 4 * * 0",
+      "incremental": "0 2 * * 1-6"
+    },
+    "retention": {
+      "daily": 30,
+      "weekly": 12,
+      "monthly": 12,
+      "yearly": 7
+    },
+    "cross_region": {
+      "enabled": true,
+      "destination_regions": ["us-west-2", "eu-west-1"]
+    }
+  },
+  "tags": {
+    "environment": "production",
+    "managed_by": "ci-excellence",
+    "cost_center": "engineering",
+    "backup_policy": "hourly",
+    "compliance_level": "high",
+    "criticality": "high"
+  }
+}

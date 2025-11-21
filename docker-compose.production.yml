@@ -1,0 +1,448 @@
+# Production Docker Compose Configuration
+# This file extends the base docker-compose.yml with production-specific configurations
+
+version: '3.8'
+
+services:
+  app:
+    extends:
+      file: docker-compose.yml
+      service: app
+    environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=warn
+      - DEBUG=false
+      - METRICS_ENABLED=true
+      - METRICS_PORT=9090
+      - ENVIRONMENT=production
+      - DB_HOST=production-db
+      - DB_PORT=5432
+      - DB_NAME=ci_excellence_production
+      - REDIS_HOST=production-redis
+      - INGRESS_HOST=ci-excellence.example.com
+      - SESSION_TIMEOUT=1800
+      - MFA_REQUIRED=true
+      - RATE_LIMITING_ENABLED=true
+    ports:
+      - "3000:3000"
+      - "9090:9090"
+    deploy:
+      replicas: 6
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2048M
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 5
+        window: 120s
+      update_config:
+        parallelism: 2
+        delay: 30s
+        failure_action: rollback
+        monitor: 60s
+        max_failure_ratio: 0.3
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - ci-excellence-production
+
+  # High availability database with read replicas
+  database-primary:
+    image: postgres:15-alpine
+    container_name: ci-excellence-production-db-primary
+    environment:
+      - POSTGRES_DB=ci_excellence_production
+      - POSTGRES_USER=production_user
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
+      - POSTGRES_REPLICATION_USER=replicator
+      - POSTGRES_REPLICATION_PASSWORD_FILE=/run/secrets/replication_password
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - production_db_primary_data:/var/lib/postgresql/data
+      - ./config/postgres/production-postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./config/postgres/production-pg_hba.conf:/etc/postgresql/pg_hba.conf
+      - ./config/postgres/production-recovery.conf:/etc/postgresql/recovery.conf
+    secrets:
+      - db_password
+      - replication_password
+    command: >
+      postgres
+      -c config_file=/etc/postgresql/postgresql.conf
+      -c hba_file=/etc/postgresql/pg_hba.conf
+      -c wal_level=replica
+      -c max_wal_senders=3
+      -c max_replication_slots=3
+      -c hot_standby=on
+    ports:
+      - "5434:5432"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1024M
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 30s
+        max_attempts: 3
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U production_user -d ci_excellence_production"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - ci-excellence-production
+
+  database-replica:
+    image: postgres:15-alpine
+    environment:
+      - PGUSER=postgres
+      - POSTGRES_MASTER_SERVICE=database-primary
+      - POSTGRES_USER=production_user
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
+      - POSTGRES_REPLICATION_USER=replicator
+      - POSTGRES_REPLICATION_PASSWORD_FILE=/run/secrets/replication_password
+      - POSTGRES_REPLICATION_MODE=slave
+      - POSTGRES_MASTER_PORT_NUMBER=5432
+    volumes:
+      - production_db_replica_data:/var/lib/postgresql/data
+    secrets:
+      - db_password
+      - replication_password
+    depends_on:
+      - database-primary
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U production_user -d ci_excellence_production"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - ci-excellence-production
+
+  # Redis cluster for high availability
+  redis-primary:
+    image: redis:7-alpine
+    container_name: ci-excellence-production-redis-primary
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1 300 10 60 10000
+    volumes:
+      - production_redis_primary_data:/data
+    ports:
+      - "6381:6379"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - ci-excellence-production
+
+  redis-replica:
+    image: redis:7-alpine
+    command: >
+      redis-server
+      --slaveof redis-primary 6379
+      --appendonly yes
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - production_redis_replica_data:/data
+    depends_on:
+      - redis-primary
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.15'
+          memory: 200M
+        reservations:
+          cpus: '0.075'
+          memory: 100M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - ci-excellence-production
+
+  # Load balancer with SSL termination
+  nginx:
+    image: nginx:alpine
+    container_name: ci-excellence-production-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx/production.conf:/etc/nginx/nginx.conf:ro
+      - ./config/ssl/production:/etc/nginx/ssl:ro
+      - ./logs/nginx:/var/log/nginx
+      - production_cache_data:/var/cache/nginx
+    depends_on:
+      - app
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+      restart_policy:
+        condition: on-failure
+        delay: 15s
+        max_attempts: 3
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - ci-excellence-production
+
+  # Monitoring stack
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ci-excellence-production-prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./config/prometheus/production.yml:/etc/prometheus/prometheus.yml:ro
+      - production_prometheus_data:/prometheus
+      - ./config/prometheus/production-rules:/etc/prometheus/rules:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+      - '--web.external-url=https://prometheus.ci-excellence.example.com'
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - ci-excellence-production
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ci-excellence-production-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD_FILE=/run/secrets/grafana_admin_password
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource,grafana-piechart-panel
+      - GF_SECURITY_COOKIE_SECURE=true
+      - GF_SECURITY_COOKIE_Samesite=strict
+      - GF_SERVER_DOMAIN=grafana.ci-excellence.example.com
+      - GF_SERVER_ROOT_URL=https://grafana.ci-excellence.example.com
+    volumes:
+      - production_grafana_data:/var/lib/grafana
+      - ./config/grafana/production/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./config/grafana/production/datasources:/etc/grafana/provisioning/datasources:ro
+    secrets:
+      - grafana_admin_password
+    depends_on:
+      - prometheus
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - ci-excellence-production
+
+  # Log aggregation
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.x
+    container_name: ci-excellence-production-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - xpack.security.enabled=false
+      - xpack.monitoring.collection.enabled=true
+    volumes:
+      - production_elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1024M
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - ci-excellence-production
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.x
+    container_name: ci-excellence-production-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=5601
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5601/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - ci-excellence-production
+
+secrets:
+  db_password:
+    file: ./secrets/production/db_password.txt
+  replication_password:
+    file: ./secrets/production/replication_password.txt
+  grafana_admin_password:
+    file: ./secrets/production/grafana_admin_password.txt
+
+volumes:
+  production_db_primary_data:
+    driver: local
+    labels:
+      - "environment=production"
+      - "managed-by=ci-excellence"
+      - "backup-policy=daily"
+  production_db_replica_data:
+    driver: local
+    labels:
+      - "environment=production"
+      - "managed-by=ci-excellence"
+      - "backup-policy=daily"
+  production_redis_primary_data:
+    driver: local
+    labels:
+      - "environment=production"
+      - "managed-by=ci-excellence"
+      - "backup-policy=hourly"
+  production_redis_replica_data:
+    driver: local
+    labels:
+      - "environment=production"
+      - "managed-by=ci-excellence"
+      - "backup-policy=hourly"
+  production_prometheus_data:
+    driver: local
+    labels:
+      - "environment=production"
+      - "managed-by=ci-excellence"
+      - "backup-policy=daily"
+  production_grafana_data:
+    driver: local
+    labels:
+      - "environment=production"
+      - "managed-by=ci-excellence"
+      - "backup-policy=daily"
+  production_elasticsearch_data:
+    driver: local
+    labels:
+      - "environment=production"
+      - "managed-by=ci-excellence"
+      - "backup-policy=daily"
+  production_cache_data:
+    driver: local
+    labels:
+      - "environment=production"
+      - "managed-by=ci-excellence"
+
+networks:
+  ci-excellence-production:
+    driver: bridge
+    labels:
+      - "environment=production"
+      - "managed-by=ci-excellence"
+      - "security-level=high"
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.21.0.0/16

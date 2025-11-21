@@ -1,0 +1,90 @@
+{
+  "name": "conventional",
+  "version": "1.0.0",
+  "type": "conventional",
+  "commitTypes": [
+    {
+      "type": "feat",
+      "section": "Features",
+      "description": "A new feature"
+    },
+    {
+      "type": "fix",
+      "section": "Bug Fixes",
+      "description": "A bug fix"
+    },
+    {
+      "type": "docs",
+      "section": "Documentation",
+      "description": "Documentation only changes"
+    },
+    {
+      "type": "style",
+      "section": "Style",
+      "description": "Changes that do not affect the meaning of the code"
+    },
+    {
+      "type": "refactor",
+      "section": "Code Refactoring",
+      "description": "A code change that neither fixes a bug nor adds a feature"
+    },
+    {
+      "type": "perf",
+      "section": "Performance",
+      "description": "A code change that improves performance"
+    },
+    {
+      "type": "test",
+      "section": "Tests",
+      "description": "Adding missing or correcting existing tests"
+    },
+    {
+      "type": "build",
+      "section": "Builds",
+      "description": "Changes that affect the build system or external dependencies"
+    },
+    {
+      "type": "ci",
+      "section": "Continuous Integration",
+      "description": "Changes to our CI configuration files and scripts"
+    },
+    {
+      "type": "chore",
+      "section": "Chores",
+      "description": "Other changes that don't modify src or test files"
+    },
+    {
+      "type": "revert",
+      "section": "Reverts",
+      "description": "Reverts a previous commit"
+    }
+  ],
+  "commitScopes": [
+    "ci",
+    "cd",
+    "pipeline",
+    "workflows",
+    "scripts",
+    "deployment",
+    "security",
+    "testing",
+    "docs",
+    "config",
+    "release",
+    "maintenance"
+  ],
+  "disableScopeLowerCase": false,
+  "disableSubjectLowerCase": false,
+  "maxHeaderWidth": 100,
+  "maxLineWidth": 100,
+  "defaultType": "feat",
+  "defaultScope": "ci",
+  "defaultSubject": "",
+  "defaultBody": "",
+  "defaultFooter": "",
+  "defaultIssues": "",
+  "allowCustomScopes": true,
+  "allowBreakingChanges": ["feat", "fix"],
+  "skipQuestions": ["body", "footer", "issues"],
+  "prompterCI": true
+}

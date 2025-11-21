@@ -1,0 +1,168 @@
+{
+  "environment": {
+    "name": "development",
+    "type": "development",
+    "description": "Development environment for local development and testing"
+  },
+  "deployment": {
+    "strategy": "recreate",
+    "timeout_seconds": 300,
+    "health_check": {
+      "endpoint": "/health",
+      "timeout_seconds": 10,
+      "retries": 1
+    },
+    "rollback": {
+      "enabled": false,
+      "automatic": false
+    }
+  },
+  "infrastructure": {
+    "platform": "docker-compose",
+    "namespace": "development",
+    "resources": {
+      "cpu": {
+        "request": "50m",
+        "limit": "200m"
+      },
+      "memory": {
+        "request": "64Mi",
+        "limit": "256Mi"
+      }
+    },
+    "replicas": {
+      "min": 1,
+      "max": 1,
+      "default": 1
+    },
+    "auto_scaling": {
+      "enabled": false
+    }
+  },
+  "application": {
+    "log_level": "debug",
+    "debug": true,
+    "metrics": {
+      "enabled": false,
+      "port": 9090
+    },
+    "tracing": {
+      "enabled": false,
+      "sampling_rate": 1.0
+    }
+  },
+  "network": {
+    "ingress": {
+      "enabled": false,
+      "host": "localhost",
+      "port": 3000
+    },
+    "ports": {
+      "http": 3000,
+      "https": 3001,
+      "metrics": 9090
+    }
+  },
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+    "name": "ci_excellence_development",
+    "ssl_mode": "prefer",
+    "pool": {
+      "min": 1,
+      "max": 5,
+      "idle_timeout": 30
+    },
+    "backup": {
+      "enabled": false
+    }
+  },
+  "cache": {
+    "redis": {
+      "host": "localhost",
+      "port": 6379,
+      "db": 1,
+      "ttl_seconds": 300
+    }
+  },
+  "storage": {
+    "type": "local",
+    "bucket": "./uploads",
+    "region": "local",
+    "encryption": {
+      "enabled": false
+    }
+  },
+  "security": {
+    "cors": {
+      "enabled": true,
+      "origins": ["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000"],
+      "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      "max_age": 86400,
+      "credentials": true
+    },
+    "rate_limiting": {
+      "enabled": false
+    },
+    "authentication": {
+      "session_timeout": 86400,
+      "max_login_attempts": 10,
+      "lockout_duration": 300,
+      "mfa_required": false
+    }
+  },
+  "monitoring": {
+    "alerts": {
+      "enabled": false
+    },
+    "dashboards": {
+      "enabled": false
+    }
+  },
+  "ci_cd": {
+    "branch_protection": {
+      "enabled": false
+    },
+    "deployment_policy": {
+      "auto_deploy": true,
+      "required_checks": [],
+      "approval_required": false
+    }
+  },
+  "features": {
+    "feature_flags": {
+      "experimental_api": true,
+      "new_ui": true,
+      "enhanced_logging": true,
+      "beta_features": true,
+      "debug_endpoints": true
+    }
+  },
+  "external_services": {
+    "payment": {
+      "provider": "stripe",
+      "mode": "test",
+      "webhook_secret": "test_secret"
+    },
+    "email": {
+      "provider": "console",
+      "from_address": "dev@localhost"
+    },
+    "analytics": {
+      "provider": "local"
+    }
+  },
+  "development": {
+    "hot_reload": true,
+    "mock_external_services": true,
+    "seed_data": true,
+    "debug_toolbar": true,
+    "profiling": true
+  },
+  "tags": {
+    "environment": "development",
+    "managed_by": "ci-excellence",
+    "cost_center": "engineering",
+    "backup_policy": "none"
+  }
+}

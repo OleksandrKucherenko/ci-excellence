@@ -8,6 +8,7 @@ sops.strict = false                         # if age key is not provided do not 
 [[env]]
 MISE_SOPS_AGE_KEY_FILE = ".secrets/mise-age.txt"
 SOPS_AGE_KEY_FILE = "{{env.MISE_SOPS_AGE_KEY_FILE}}"
+GIT_PAGER = "cat"
 
 [[env]]
 _.file = [".env.secrets.json", ".env"]
@@ -42,8 +43,8 @@ run = [
 description = "Decrypt secrets file with SOPS"
 run = ["sops --decrypt .env.secrets.json"]
 
-[tasks.edit-secrets]
-description = "Edit encrypted secrets file"
+[tasks.edit-secrets-legacy]
+description = "Edit encrypted secrets file (legacy .env.secrets.json)"
 run = ["sops .env.secrets.json"]
 
 [tasks.generate-age-key]
@@ -67,6 +68,177 @@ run = [
   "  echo 'No workflows found in .github/workflows'",
   "fi",
 ]
+
+# Environment management tasks
+[tasks.decrypt-staging]
+description = "Decrypt staging environment secrets"
+run = ["sops --decrypt environments/staging/secrets.enc"]
+
+[tasks.decrypt-production]
+description = "Decrypt production environment secrets"
+run = ["sops --decrypt environments/production/secrets.enc"]
+
+[tasks.decrypt-global]
+description = "Decrypt global environment secrets"
+run = ["sops --decrypt environments/global/secrets.enc"]
+
+[tasks.edit-secrets]
+description = "Edit encrypted secrets file (usage: mise run edit-secrets <environment>)"
+run = ["sops environments/${1:-staging}/secrets.enc"]
+
+# Development tools
+[tasks.install-commitizen]
+description = "Install commitizen for conventional commit enforcement"
+run = [
+  "brew install commitizen || echo 'commitizen available via uvx (preferred method)'",
+]
+
+[tasks.setup-dev-tools]
+description = "Install optional development tools (commitizen, etc.)"
+run = [
+  "echo 'Installing optional development tools...'",
+  "mise run install-commitizen",
+]
+
+# Configuration management tasks
+[tasks.config-init]
+description = "Initialize configuration for environment (usage: mise run config-init [environment])"
+run = ["./scripts/ci/config-manager.sh init \"$1\""]
+
+[tasks.config-load]
+description = "Load configuration and secrets for environment (usage: mise run config-load [environment])"
+run = ["./scripts/ci/config-manager.sh load \"$1\""]
+
+[tasks.config-validate]
+description = "Validate configuration and secrets (usage: mise run config-validate [environment])"
+run = ["./scripts/ci/config-manager.sh validate \"$1\""]
+
+[tasks.config-show]
+description = "Show environment configuration (usage: mise run config-show [environment])"
+run = ["./scripts/ci/config-manager.sh show \"$1\""]
+
+[tasks.config-list]
+description = "List available environments"
+run = ["./scripts/ci/config-manager.sh list"]
+
+[tasks.config-compare]
+description = "Compare two environment configurations (usage: mise run config-compare <env1> <env2>)"
+run = ["./scripts/ci/config-manager.sh compare \"$1\" \"$2\""]
+
+[tasks.config-export-k8s]
+description = "Export Kubernetes configuration (usage: mise run config-export-k8s <env> [dir])"
+run = ["./scripts/ci/config-manager.sh export-k8s \"$1\" \"$2\""]
+
+[tasks.config-clean]
+description = "Clean configuration and secrets cache"
+run = ["./scripts/ci/config-manager.sh clean-cache"]
+
+[tasks.config-encrypt-secrets]
+description = "Encrypt secrets file (usage: mise run config-encrypt-secrets <file>)"
+run = ["./scripts/ci/config-manager.sh encrypt \"$1\""]
+
+[tasks.config-decrypt-secrets]
+description = "Decrypt secrets file (usage: mise run config-decrypt-secrets <file>)"
+run = ["./scripts/ci/config-manager.sh decrypt \"$1\""]
+
+[tasks.config-get-value]
+description = "Get configuration value (usage: mise run config-get-value <key> [env])"
+run = ["./scripts/ci/config-manager.sh get-value \"$1\" \"$2\""]
+
+[tasks.config-get-secret]
+description = "Get secret value (usage: mise run config-get-secret <key> [env])"
+run = ["./scripts/ci/config-manager.sh get-secret \"$1\" \"$2\""]
+
+# Environment-specific deployment tasks
+[tasks.deploy-staging]
+description = "Deploy to staging environment"
+run = [
+  "echo '🚀 Deploying to staging environment...'",
+  "./scripts/ci/config-manager.sh init staging",
+  "./scripts/release/60-ci-deploy.sh --environment staging",
+]
+
+[tasks.deploy-production]
+description = "Deploy to production environment (requires confirmation)"
+run = [
+  "echo '🚀 Deploying to production environment...'",
+  "./scripts/ci/config-manager.sh init production",
+  "./scripts/release/60-ci-deploy.sh --environment production",
+]
+
+[tasks.deploy-rollback]
+description = "Rollback deployment (usage: mise run deploy-rollback <env> [tag])"
+run = [
+  "echo '🔄 Rolling back deployment...'",
+  "./scripts/release/70-ci-rollback.sh --environment \"$1\"",
+]
+
+# Docker Compose environment tasks
+[tasks.compose-staging-up]
+description = "Start staging environment with Docker Compose"
+run = [
+  "echo '🐳 Starting staging environment...'",
+  "docker-compose -f docker-compose.yml -f docker-compose.staging.yml up -d",
+]
+
+[tasks.compose-staging-down]
+description = "Stop staging environment"
+run = [
+  "echo '🛑 Stopping staging environment...'",
+  "docker-compose -f docker-compose.yml -f docker-compose.staging.yml down",
+]
+
+[tasks.compose-production-up]
+description = "Start production environment with Docker Compose"
+run = [
+  "echo '🐳 Starting production environment...'",
+  "docker-compose -f docker-compose.yml -f docker-compose.production.yml up -d",
+]
+
+[tasks.compose-production-down]
+description = "Stop production environment"
+run = [
+  "echo '🛑 Stopping production environment...'",
+  "docker-compose -f docker-compose.yml -f docker-compose.production.yml down",
+]
+
+# Testing tasks
+[tasks.test]
+description = "Run all shellspec tests"
+run = ["shellspec"]
+
+[tasks.test-watch]
+description = "Run shellspec tests in watch mode"
+run = ["shellspec --format documentation --watch"]
+
+[tasks.test-coverage]
+description = "Run tests with coverage reporting"
+run = ["shellspec --format documentation --coverage"]
+
+[tasks.lint]
+description = "Run shellcheck linting on all bash scripts"
+run = [
+  "find scripts/ -name '*.sh' -exec shellcheck {} +",
+  "find .github/workflows/ -name '*.yml' -exec shellcheck {} + || true",
+]
+
+[tasks.format]
+description = "Format bash scripts with shfmt"
+run = [
+  "find scripts/ -name '*.sh' -exec shfmt -w -i 2 -ci -sr {} +",
+  "find .github/workflows/ -name '*.sh' -exec shfmt -w -i 2 -ci -sr {} + || true",
+]
+
+[tasks.format-check]
+description = "Check formatting of bash scripts without modifying"
+run = [
+  "find scripts/ -name '*.sh' -exec shfmt -d -i 2 -ci -sr {} +",
+  "find .github/workflows/ -name '*.sh' -exec shfmt -d -i 2 -ci -sr {} + || true",
+]
+
+[tasks.test-local-ci]
+description = "Test GitHub Actions workflows locally using act"
+run = ["act --dry-run"]
 
 
 [tasks.claude-zai]
@@ -111,6 +283,7 @@ exec claude --dangerously-skip-permissions
 enter = ["mise run setup", "mise run install-hooks"]
 
 [tools]
+# Core encryption and secret management
 age = "latest"
 sops = "latest"
 # Secret detection tools
@@ -124,3 +297,11 @@ action-validator = "latest"
 "pipx:apprise" = "latest"
 # TypeScript runtime
 bun = "latest"
+# Testing tools for bash scripts
+shellspec = "latest"
+shfmt = "latest"
+shellcheck = "latest"
+# Local GitHub Actions testing
+act = "latest"
+# Note: commitizen not available in MISE tool registry, installed via brew/pipx/npm
+# commitizen = "latest"

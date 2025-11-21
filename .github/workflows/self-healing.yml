@@ -1,0 +1,396 @@
+name: Self-Healing Workflow
+
+# Manual trigger for automatic code fixing
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to fix (defaults to current branch)'
+        required: false
+        type: string
+      scope:
+        description: 'What to fix'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - format
+          - lint
+          - all
+      dry_run:
+        description: 'Dry run mode (preview changes)'
+        required: false
+        default: false
+        type: boolean
+
+# Environment variables
+env:
+  CI_TEST_MODE: ${{ vars.CI_TEST_MODE || 'EXECUTE' }}
+
+jobs:
+  auto-format:
+    name: Auto-format Code
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ vars.CI_JOB_TIMEOUT_MINUTES || 10 }}
+    if: ${{ inputs.scope == 'format' || inputs.scope == 'all' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ inputs.branch }}
+
+      - name: Setup MISE
+        uses: jdx/mise-action@v2
+        with:
+          mise_toml: mise.toml
+          cache: true
+
+      - name: Check for shfmt
+        id: check_shfmt
+        run: |
+          if command -v shfmt >/dev/null 2>&1; then
+            echo "shfmt_available=true" >> $GITHUB_OUTPUT
+          else
+            echo "shfmt_available=false" >> $GITHUB_OUTPUT
+            echo "⚠️ shfmt not available, skipping formatting"
+          fi
+
+      - name: Format bash scripts
+        if: steps.check_shfmt.outputs.shfmt_available == 'true'
+        run: |
+          echo "🎨 Auto-formatting bash scripts..."
+
+          # Find all shell scripts
+          local scripts=()
+          while IFS= read -r -d '' file; do
+            scripts+=("$file")
+          done < <(find . -name "*.sh" -type f -print0)
+
+          if [[ ${#scripts[@]} -eq 0 ]]; then
+            echo "No shell scripts found to format"
+            exit 0
+          fi
+
+          echo "Found ${#scripts[@]} shell scripts to format"
+
+          local formatted_count=0
+          local changes_made=false
+
+          for script in "${scripts[@]}"; do
+            echo "Formatting: $script"
+
+            # Create backup to compare
+            local temp_script
+            temp_script=$(mktemp)
+            cp "$script" "$temp_script"
+
+            # Format the script
+            if shfmt -w -i 2 -ci -sr "$script" 2>/dev/null; then
+              # Check if file was changed
+              if ! diff -q "$temp_script" "$script" >/dev/null 2>&1; then
+                echo "  ✅ Formatted: $script"
+                ((formatted_count++))
+                changes_made=true
+              fi
+            else
+              echo "  ❌ Failed to format: $script"
+            fi
+
+            # Clean up backup
+            rm -f "$temp_script"
+          done
+
+          echo "Formatted $formatted_count shell scripts"
+
+          # Stage formatted files if changes were made
+          if [[ "$changes_made" == "true" && "${{ inputs.dry_run }}" != "true" ]]; then
+            echo "Staging formatted files..."
+            git add .
+          fi
+
+          # Report summary
+          if [[ "$formatted_count" -gt 0 ]]; then
+            echo "✅ Formatted $formatted_count shell scripts"
+          else
+            echo "✅ All shell scripts are already properly formatted"
+          fi
+
+      - name: Check formatting results
+        if: steps.check_shfmt.outputs.shfmt_available == 'true'
+        run: |
+          echo "Checking formatting results..."
+
+          # Check if any staged changes from formatting
+          local staged_count
+          staged_count=$(git diff --cached --name-only | wc -l)
+          if [[ "$staged_count" -gt 0 ]]; then
+            echo "✅ Formatting changes staged ($staged_count files)"
+          else
+            echo "ℹ️  No formatting changes to commit"
+          fi
+
+  auto-lint-fix:
+    name: Auto-Lint Fixes
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ vars.CI_JOB_TIMEOUT_MINUTES || 15 }}
+    if: ${{ inputs.scope == 'lint' || inputs.scope == 'all' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ inputs.branch }}
+
+      - name: Setup MISE
+        uses: jdx/mise-action@v2
+        with:
+          mise_toml: mise.toml
+          cache: true
+
+      - name: Check for shellcheck
+        id: check_shellcheck
+        run: |
+          if command -v shellcheck >/dev/null 2>&1; then
+            echo "shellcheck_available=true" >> $GITHUB_OUTPUT
+          else
+            echo "shellcheck_available=false" >> $GITHUB_OUTPUT
+            echo "⚠️ shellcheck not available, skipping linting"
+          fi
+
+      - name: Auto-fix shellcheck issues
+        if: steps.check_shellcheck.outputs.shellcheck_available == 'true'
+        run: |
+          echo "🔧 Running shellcheck with auto-fix..."
+
+          # Find all shell scripts
+          local scripts=()
+          while IFS= read -r -d '' file; do
+            scripts+=("$file")
+          done < <(find . -name "*.sh" -type f -print0)
+
+          if [[ ${#scripts[@]} -eq 0 ]]; then
+            echo "No shell scripts found to lint"
+            exit 0
+          fi
+
+          echo "Found ${#scripts[@]} shell scripts to check"
+
+          local fixed_count=0
+          local issues_found=0
+          local changes_made=false
+
+          for script in "${scripts[@]}"; do
+            echo "Linting: $script"
+
+            # Try to auto-fix issues
+            if shellcheck -f diff "$script" 2>/dev/null; then
+              # shellcheck found issues and provided diff
+              echo "  🔧 Auto-fixing: $script"
+              shellcheck -f diff "$script" | git apply
+              ((fixed_count++))
+              changes_made=true
+              ((issues_found++))
+            else
+              # No fixable issues or shellcheck command failed
+              local issues
+              issues=$(shellcheck "$script" 2>&1 | grep -c "^\[^:]*\]" || echo "0")
+              if [[ $issues -gt 0 ]]; then
+                echo "  ❌ Issues found: $script ($issues issues)"
+                ((issues_found++))
+              else
+                echo "  ✅ No issues found: $script"
+              fi
+            fi
+          done
+
+          echo "Found $issues_found issues, fixed $fixed_count"
+
+          # Stage fixed files if changes were made
+          if [[ "$changes_made" == "true" && "${{ inputs.dry_run }}" != "true" ]]; then
+            echo "Staging lint fixes..."
+            git add .
+          fi
+
+          # Report summary
+          if [[ "$fixed_count" -gt 0 ]]; then
+            echo "✅ Fixed $fixed_count shellcheck issues"
+          fi
+          if [[ $issues_found -gt 0 ]]; then
+            echo "⚠️  $((issues_found - fixed_count)) issues remain (manual fix required)"
+          else
+            echo "✅ All shell scripts passed linting"
+          fi
+
+      - name: Check linting results
+        if: steps.check_shellcheck.outputs.shellcheck_available == 'true'
+        run: |
+          echo "Checking linting results..."
+
+          # Check if any staged changes from linting
+          local staged_count
+          staged_count=$(git diff --cached --name-only | wc -l)
+          if [[ "$staged_count" -gt 0 ]]; then
+            echo "✅ Lint fixes staged ($staged_count files)"
+          else
+            echo "ℹ️  No lint changes to commit"
+          fi
+
+  commit-fixes:
+    name: Commit Fixes
+    runs-on: ubuntu-latest
+    needs: [auto-format, auto-lint-fix]
+    timeout-minutes: ${{ vars.CI_JOB_TIMEOUT_MINUTES || 5 }}
+    if: always() && (needs.auto-format.result == 'success' || needs.auto-lint-fix.result == 'success')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ inputs.branch }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "changes_found=true" >> $GITHUB_OUTPUT
+          else
+            echo "changes_found=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit fixes
+        if: steps.check_changes.outputs.changes_found == 'true' && inputs.dry_run == 'false'
+        run: |
+          echo "📝 Committing auto-fixes..."
+
+          # Get staged changes
+          local status
+          status=$(git status --porcelain)
+
+          # Create commit message
+          local commit_message="chore: auto-fix formatting and linting [skip ci]
+
+          # Check what was changed
+          local formatted_files=0
+          local lint_files=0
+          local other_files=0
+
+          while IFS= read -r line; do
+            local status_char="${line:0:1}"
+            local file="${line:3}"
+
+            case "$file" in
+              *.sh)
+                [[ "$status_char" == "M" || "$status_char" == "A" ]] && ((formatted_files++))
+                [[ "$status_char" == "M" || "$status_char" == "A" ]] && ((lint_files++))
+                ;;
+              *)
+                [[ "$status_char" == "M" || "$status_char" == "A" ]] && ((other_files++))
+                ;;
+            esac
+          done <<< "$status"
+
+          # Add details to commit message if significant changes
+          if [[ $formatted_files -gt 0 || $lint_files -gt 0 || $other_files -gt 0 ]]; then
+            commit_message="$commit_message"
+            echo "" >> temp_commit_msg.txt
+            echo "Affected files:" >> temp_commit_msg.txt
+            if [[ $formatted_files -gt 0 ]]; then
+              echo "- $formatted_files shell scripts formatted" >> temp_commit_msg.txt
+            fi
+            if [[ $lint_files -gt 0 ]]; then
+              echo "- $lint_files lint issues fixed" >> temp_commit_msg.txt
+            fi
+            if [[ $other_files -gt 0 ]]; then
+              echo "- $other_files other files modified" >> temp_commit_msg.txt
+            fi
+            commit_message="$commit_message$(cat temp_commit_msg.txt)"
+            rm -f temp_commit_msg.txt
+          fi
+
+          echo "Commit message:"
+          echo "$commit_message"
+
+          git commit -m "$commit_message"
+
+      - name: Push changes
+        if: steps.check_changes.outputs.changes_found == 'true' && inputs.dry_run == 'false'
+        run: |
+          echo "📤 Pushing fixes to branch: ${{ inputs.branch || github.ref_name }}"
+          git push origin "${{ inputs.branch || github.ref_name }}"
+
+  notify-healing:
+    name: Report Results
+    runs-on: ubuntu-latest
+    needs: [auto-format, auto-lint-fix, commit-fixes]
+    timeout-minutes: ${{ vars.CI_JOB_TIMEOUT_MINUTES || 5 }}
+    if: always()
+    steps:
+      - name: Generate healing report
+        run: |
+          echo "# Self-Healing Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch**: \`${{ inputs.branch || github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Scope**: \`${{ inputs.scope }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Dry Run**: \`${{ inputs.dry_run }}\`" >> $GITHUB_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "## Results" >> $GITHUB_SUMMARY
+          echo "" >> $GITHUB_SUMMARY
+
+          # Auto-format results
+          if [[ "${{ needs.auto-format.result }}" != "skipped" ]]; then
+            echo "### Auto-Format" >> $GITHUB_SUMMARY
+            echo "- Status: ${{ needs.auto-format.result }}" >> $GITHUB_SUMMARY
+            echo "" >> $GITHUB_SUMMARY
+          fi
+
+          # Auto-lint results
+          if [[ "${{ needs.auto-lint-fix.result }}" != "skipped" ]]; then
+            echo "### Auto-Lint" >> $GITHUB_SUMMARY
+            echo "- Status: ${{ needs.auto-lint-fix.result }}" >> $ITHUB_SUMMARY
+            echo "" >> $GITHUB_SUMMARY
+          fi
+
+          # Commit results
+          if [[ "${{ needs.commit-fixes.result }}" != "skipped" ]]; then
+            echo "### Commit Fixes" >> $GITHUB_SUMMARY
+            echo "- Status: ${{ needs.commit-fixes.result }}" >> $ITHUB_SUMMARY
+            echo "" >> $GITHUB_SUMMARY
+          fi
+
+          # Action links
+          echo "## Action Links" >> $GITHUB_SUMMARY
+          echo "" >> $GITHUB_SUMMARY
+          echo "- **Rerun Workflow**: [🔄](https://github.com/${{ github.repository }}/actions/workflows/self-healing.yml?inputs=scope:${{ inputs.scope }},branch:${{ inputs.branch || github.ref_name }},dry_run:${{ inputs.dry_run }})" >> $GITHUB_SUMMARY
+          echo "- **View Changes**: [👁️](https://github.com/${{ github.repository }}/commits/${{ github.sha }})" >> $GITHUB_SUMMARY
+
+          if [[ "${{ needs.commit-fixes.result }}" == "success" ]]; then
+            echo "- **View Commit**: [📝](https://github.com/${{ github.repository }}/commit/${{ github.sha }})" >> $GITHUB_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_SUMMARY
+          echo "---" >> $GITHUB_SUMMARY
+          echo "*Report generated at $(date '+%Y-%m-%d %H:%M:%S UTC')*" >> $GITHUB_SUMMARY
+
+      - name: Send notifications
+        if: vars.ENABLE_NOTIFICATIONS == 'true' && env.APPRISE_URL != ''
+        run: |
+          STATUS="${{ job.status }}"
+          SCOPE="${{ inputs.scope }}"
+          BRANCH="${{ inputs.branch || github.ref_name }}"
+          REPO="${{ github.repository }}"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          MESSAGE="Self-healing $STATUS: $SCOPE for $BRANCH"
+          if [[ "$STATUS" == "success" ]]; then
+            apprise -t "✅ $MESSAGE" -b "View details: $RUN_URL" "$APPRISE_URL"
+          else
+            apprise -t "❌ $MESSAGE" -b "View details: $RUN_URL" "$APPRISE_URL"
+          fi

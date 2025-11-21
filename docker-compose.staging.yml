@@ -1,0 +1,222 @@
+# Staging Docker Compose Configuration
+# This file extends the base docker-compose.yml with staging-specific configurations
+
+version: '3.8'
+
+services:
+  app:
+    extends:
+      file: docker-compose.yml
+      service: app
+    environment:
+      - NODE_ENV=staging
+      - LOG_LEVEL=info
+      - DEBUG=false
+      - METRICS_ENABLED=true
+      - METRICS_PORT=9090
+      - ENVIRONMENT=staging
+      - DB_HOST=staging-db
+      - DB_PORT=5432
+      - DB_NAME=ci_excellence_staging
+      - REDIS_HOST=staging-redis
+      - INGRESS_HOST=staging.ci-excellence.example.com
+    ports:
+      - "3000:3000"
+      - "9090:9090"
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  database:
+    image: postgres:15-alpine
+    container_name: ci-excellence-staging-db
+    environment:
+      - POSTGRES_DB=ci_excellence_staging
+      - POSTGRES_USER=staging_user
+      - POSTGRES_PASSWORD=staging_password
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    ports:
+      - "5433:5432"
+    volumes:
+      - staging_db_data:/var/lib/postgresql/data
+      - ./scripts/setup/database/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./scripts/setup/database/staging-schema.sql:/docker-entrypoint-initdb.d/02-schema.sql
+      - ./scripts/setup/database/staging-data.sql:/docker-entrypoint-initdb.d/03-data.sql
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U staging_user -d ci_excellence_staging"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - ci-excellence-staging
+
+  redis:
+    image: redis:7-alpine
+    container_name: ci-excellence-staging-redis
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6380:6379"
+    volumes:
+      - staging_redis_data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 128M
+        reservations:
+          cpus: '0.05'
+          memory: 32M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - ci-excellence-staging
+
+  nginx:
+    image: nginx:alpine
+    container_name: ci-excellence-staging-nginx
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - ./config/nginx/staging.conf:/etc/nginx/nginx.conf:ro
+      - ./config/ssl/staging:/etc/nginx/ssl:ro
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - app
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 64M
+        reservations:
+          cpus: '0.05'
+          memory: 32M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - ci-excellence-staging
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ci-excellence-staging-prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./config/prometheus/staging.yml:/etc/prometheus/prometheus.yml:ro
+      - staging_prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    restart: unless-stopped
+    networks:
+      - ci-excellence-staging
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ci-excellence-staging-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=staging_admin
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - staging_grafana_data:/var/lib/grafana
+      - ./config/grafana/staging/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./config/grafana/staging/datasources:/etc/grafana/provisioning/datasources:ro
+    depends_on:
+      - prometheus
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 128M
+        reservations:
+          cpus: '0.05'
+          memory: 32M
+    restart: unless-stopped
+    networks:
+      - ci-excellence-staging
+
+volumes:
+  staging_db_data:
+    driver: local
+    labels:
+      - "environment=staging"
+      - "managed-by=ci-excellence"
+  staging_redis_data:
+    driver: local
+    labels:
+      - "environment=staging"
+      - "managed-by=ci-excellence"
+  staging_prometheus_data:
+    driver: local
+    labels:
+      - "environment=staging"
+      - "managed-by=ci-excellence"
+  staging_grafana_data:
+    driver: local
+    labels:
+      - "environment=staging"
+      - "managed-by=ci-excellence"
+
+networks:
+  ci-excellence-staging:
+    driver: bridge
+    labels:
+      - "environment=staging"
+      - "managed-by=ci-excellence"
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16

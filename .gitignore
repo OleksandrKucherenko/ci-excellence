@@ -95,11 +95,47 @@ desktop.ini
 # Encrypted secrets are OK to commit (encrypted with SOPS)
 # These require the private key to decrypt
 !.env.secrets.json
+secrets/*.secrets.yaml
 
-# Reports
+# CI/CD and Configuration Management
+.reports/
+cache/
+.cache/
+.env.secrets.json.tmp
+*.decrypted.yaml
+config/environments/*.local.json
+secrets/*.local.*
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Kubernetes
+k8s/overlays/*
+!k8s/overlays/.gitkeep
+
+# Reports and test outputs
 gitleaks-report.json
 trufflehog-report.json
+reports/
+test-results/
+*.coverage
+
+# Monitoring and metrics
+prometheus-data/
+grafana-data/
+elasticsearch-data/
+logs/*.log
+
+# Age and SOPS keys (keep secure)
+*.age-key
+.age-key
+sops-key.txt
 
 ## AI Coding
 .mcp.json
 .claude/settings.json
+
+# Local development
+.local/
+.vscode/settings.json

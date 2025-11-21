@@ -42,6 +42,24 @@ pre-commit:
         - merge
         - rebase
 
+    # Check for protected environment tag patterns in commits (pre-push hook handles this better)
+    check-environment-tags:
+      tags: tag-protection
+      run: |
+        # Check if we're pushing environment tags
+        for ref in $@; do
+          case "$ref" in
+            refs/tags/*production|refs/tags/*staging|refs/tags/*canary|refs/tags/*sandbox|refs/tags/*performance)
+              echo "❌ Environment tag detected: $ref"
+              echo "   Environment tags must be created via Tag Assignment workflow"
+              exit 1
+              ;;
+          esac
+        done
+      skip:
+        - merge
+        - rebase
+
     # Validate GitHub Actions workflows
     validate-workflows:
       tags: validation
@@ -81,21 +99,55 @@ pre-push:
       run: |
         trufflehog git file://. --since-commit "$(git rev-parse @{u} 2>/dev/null || echo '')" --only-verified --fail --json 2>&1 | jq -r '.msg'
 
-# Commit-msg hook - enforce conventional commits (optional)
-# Uncomment to enforce commit message format
-# commit-msg:
-#   commands:
-#     conventional-commit:
-#       tags: commit-format
-#       run: |
-#         if ! grep -qE "^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .{1,}" "$1"; then
-#           echo "❌ Invalid commit message format!"
-#           echo "   Use conventional commits format:"
-#           echo "   feat: add new feature"
-#           echo "   fix: resolve bug"
-#           echo "   docs: update documentation"
-#           exit 1
-#         fi
+    # Protected environment tag protection
+    protect-environment-tags:
+      tags: tag-protection
+      run: |
+        if [ -f "scripts/hooks/pre-push-tag-protection.sh" ]; then
+          echo "Checking for protected environment tags..."
+          ./scripts/hooks/pre-push-tag-protection.sh
+        else
+          echo "⚠️  Tag protection script not found at scripts/hooks/pre-push-tag-protection.sh"
+        fi
+
+    # Shell script formatting check
+    check-shell-format:
+      tags: format
+      run: |
+        echo "Checking bash script formatting..."
+        if command -v shfmt >/dev/null 2>&1; then
+          find scripts/ -name '*.sh' -exec shfmt -d -i 2 -ci -sr {} + || true
+        else
+          echo "⚠️  shfmt not available, skipping format check"
+        fi
+
+# Commit-msg hook - enforce conventional commits
+commit-msg:
+  commands:
+    conventional-commit:
+      tags: commit-format
+      run: |
+        # Check if file path is provided, if not use standard git commit message file
+        COMMIT_MSG_FILE="${1:-.git/COMMIT_EDITMSG}"
+        if [ ! -f "$COMMIT_MSG_FILE" ]; then
+          # Try to find the commit message file in common locations
+          for file in ".git/COMMIT_EDITMSG" ".git/COMMITMSG"; do
+            if [ -f "$file" ]; then
+              COMMIT_MSG_FILE="$file"
+              break
+            fi
+          done
+        fi
+
+        # If still no file found, exit with error
+        if [ ! -f "$COMMIT_MSG_FILE" ]; then
+          echo "❌ Commit message file not found!"
+          echo "   Expected file: ${1:-.git/COMMIT_EDITMSG}"
+          exit 1
+        fi
+
+        # Run the validation script
+        ./scripts/hooks/pre-commit-message-check.sh "$COMMIT_MSG_FILE"
 
 # Post-checkout hook - remind about mise
 post-checkout:

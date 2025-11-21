@@ -1,0 +1,58 @@
+# SOPS (Secrets OPerationS) configuration
+# Encrypts/decrypts YAML/JSON files using age encryption
+# Docs: https://github.com/getsops/sops
+
+# Creation rules for different file patterns
+creation_rules:
+  # Environment secrets - encrypted with age
+  - path_regex: 'environments/.*/secrets\.enc$'
+    age: >-
+      age1ql3z7hjy54pw3hyww5p5v06xfjpxlcw0x8kqr9psd0gf874n74uqgqt5cu
+    encrypted_regex: '^(data|stringData)$'
+    mac_only: false
+
+  # Global configuration files
+  - path_regex: 'environments/global/.*\.enc$'
+    age: >-
+      age1ql3z7hjy54pw3hyww5p5v06xfjpxlcw0x8kqr9psd0gf874n74uqgqt5cu
+    encrypted_regex: '^(data|stringData)$'
+    mac_only: false
+
+  # CI/CD configuration with secrets
+  - path_regex: '\.github/workflows/.*\.ya?ml$'
+    age: >-
+      age1ql3z7hjy54pw3hyww5p5v06xfjpxlcw0x8kqr9psd0gf874n74uqgqt5cu
+    encrypted_regex: '^(secrets|env)$'
+    mac_only: false
+
+  # Default rule for any .enc files
+  - path_regex: '.*\.enc$'
+    age: >-
+      age1ql3z7hjy54pw3hyww5p5v06xfjpxlcw0x8kqr9psd0gf874n74uqgqt5cu
+    encrypted_regex: '^(data|stringData)$'
+    mac_only: false
+
+# Global settings
+key_groups:
+  - age:
+      - age1ql3z7hjy54pw3hyww5p5v06xfjpxlcw0x8kqr9psd0gf874n74uqgqt5cu
+
+# Version configuration
+version: "3.8.0"
+
+# Stores the encryption context in the file
+stores:
+  yaml:
+    indent: 2
+
+# Encryption method
+encryption_method: age
+
+# HMAC settings
+mac_only_encrypted: false
+
+# Unencrypted suffix
+unencrypted_suffix: _unencrypted
+
+# Encrypted suffix
+encrypted_suffix: _enc

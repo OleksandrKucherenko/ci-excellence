@@ -1,886 +1,549 @@
-# CI Excellence - Comprehensive CI/CD Pipeline Stubs
+# CI/CD Excellence Platform
 
-A production-ready, customizable CI/CD pipeline setup with stub implementations for long-term project excellence. This setup follows the philosophy of "reserve space, eliminate routine" - providing a complete pipeline framework that activates features through simple variable toggles.
+A comprehensive, production-ready CI/CD platform with advanced deployment control, multi-environment management, and automated quality gates.
 
-## 🎯 Philosophy
+## 🚀 Features
 
-- **Stub-based approach**: All scripts are stubs with commented examples, ready to be customized
-- **Variable-driven activation**: Jobs skip gracefully when not enabled (no failures)
-- **Zero routine tasks**: Major setup is done, you only provide specific configuration
-- **Production-ready**: Based on real-world CI/CD best practices
-- **Modular design**: Enable only what you need, when you need it
+### **Core Capabilities**
+- **🏗️ Complete CI/CD Pipeline** - Automated building, testing, linting, and deployment
+- **🌍 Multi-Environment Support** - Development, staging, and production configurations
+- **🔒 Security-First Design** - Encrypted secrets, security scanning, and compliance
+- **📊 Actionable Reports** - Pipeline success reports with one-click actions
+- **🔄 Safe Rollbacks** - Automated rollback with full tracking and validation
+- **🐛 Self-Healing** - Automatic code formatting and linting fixes
+- **📋 Git Tag Control** - Version, environment, and state-based deployment tags
 
-## 📋 Table of Contents
+### **Technology Stack**
+- **Runtime**: Bash 5.x, TypeScript/Bun
+- **CI/CD**: GitHub Actions with stateless pipelines
+- **Secret Management**: SOPS + age encryption
+- **Tool Management**: MISE (cross-platform package management)
+- **Git Hooks**: Lefthook for pre-commit quality gates
+- **Commit Standards**: Commitizen for conventional commits
+- **Security**: Gitleaks + Trufflehog for secret scanning
+- **Notifications**: Apprise for multi-channel alerts
 
-- [Prerequisites](#prerequisites)
-- [Quick Start](#quick-start)
-- [Local Development Setup (Mise)](#local-development-setup-mise)
-- [Architecture](#architecture)
-- [Workflows](#workflows)
-- [Configuration](#configuration)
-- [Customization Guide](#customization-guide)
-- [Notifications](#notifications)
-- [Best Practices](#best-practices)
-- [Troubleshooting](#troubleshooting)
+## 📁 Project Structure
 
-## ✅ Prerequisites
+```text
+ci-excellence/
+├── 📄 README.md                 # This file
+├── 🔧 mise.toml                # Tool configuration and tasks
+├── 🎣 .lefthook.yml            # Git hooks configuration
+├── 📜 commitizen.json          # Commit message standards
+├── 🔐 .sops.yaml               # SOPS encryption configuration
+├──
+├── 📁 scripts/                 # Core automation scripts
+│   ├── 📁 lib/                 # Shared utility libraries
+│   │   ├── common.sh           # Core functions and logging
+│   │   ├── tag-utils.sh        # Git tag management
+│   │   ├── secret-utils.sh     # SOPS secret handling
+│   │   └── config-utils.sh     # Environment configuration
+│   │
+│   ├── 📁 setup/               # Project setup and installation
+│   │   ├── 00-setup-folders.sh
+│   │   ├── 10-ci-install-deps.sh
+│   │   └── 20-ci-validate-env.sh
+│   │
+│   ├── 📁 build/               # Build and compilation
+│   │   ├── 10-ci-deps-install.sh
+│   │   ├── 20-ci-compile.sh
+│   │   └── 30-ci-security-scan.sh
+│   │
+│   ├── 📁 ci/                  # CI/CD pipeline scripts
+│   │   ├── 40-ci-lint.sh
+│   │   ├── 50-ci-test.sh
+│   │   ├── 60-ci-publish.sh
+│   │   ├── report-generator.sh
+│   │   ├── workflow-validator.sh
+│   │   └── config-manager.sh
+│   │
+│   ├── 📁 release/             # Deployment and release management
+│   │   ├── 50-ci-tag-assignment.sh
+│   │   ├── 60-ci-deploy.sh
+│   │   └── 70-ci-rollback.sh
+│   │
+│   └── 📁 hooks/               # Git hooks
+│       ├── pre-push-tag-protection.sh
+│       ├── pre-commit-format.sh
+│       ├── pre-commit-lint.sh
+│       ├── pre-commit-secret-scan.sh
+│       └── pre-commit-message-check.sh
+│
+├── 📁 config/                  # Environment configurations
+│   └── 📁 environments/
+│       ├── development.json
+│       ├── staging.json
+│       └── production.json
+│
+├── 📁 secrets/                 # Encrypted secrets (SOPS)
+│   ├── development.secrets.yaml
+│   ├── staging.secrets.yaml
+│   └── production.secrets.yaml
+│
+├── 📁 .github/                 # GitHub workflows
+│   └── 📁 workflows/
+│       ├── pre-release.yml
+│       ├── tag-assignment.yml
+│       └── self-healing.yml
+│
+└── 📁 spec/                    # Shell script tests
+    └── (shellspec test files)
+```
 
-**The ONLY requirement is [Mise](https://mise.jit.su)** - everything else installs automatically!
+## 🛠️ Quick Start
 
-### Install Mise
+### Prerequisites
+
+1. **Install MISE** (cross-platform package manager):
+   ```bash
+   curl https://mise.run | sh
+   ```
+
+2. **Install Required Tools**:
+   ```bash
+   # MISE will automatically install tools when needed
+   mise install
+   ```
+
+### Initial Setup
+
+1. **Clone and Setup**:
+   ```bash
+   git clone <repository-url>
+   cd ci-excellence
+   mise run setup
+   ```
+
+2. **Generate Age Key** (for secrets encryption):
+   ```bash
+   mise run generate-age-key
+   ```
+
+3. **Install Git Hooks**:
+   ```bash
+   mise run install-hooks
+   ```
+
+4. **Validate Environment**:
+   ```bash
+   mise run config-validate
+   ```
+
+## 🌍 Environment Management
+
+### Available Environments
+
+| Environment | Purpose | Security Level | Auto-Deploy |
+|-------------|---------|----------------|-------------|
+| **development** | Local development & testing | Low | ✅ Yes |
+| **staging** | Pre-production validation | Medium | ✅ Yes |
+| **production** | Live production traffic | High | ❌ Manual |
+
+### Environment Commands
 
 ```bash
-# Linux/macOS
-curl https://mise.run | sh
+# List all environments
+mise run config-list
 
-# Or using Homebrew
-brew install mise
+# Initialize specific environment
+mise run config-init production
 
-# Or using Cargo
-cargo install mise
+# Show environment configuration
+./scripts/ci/config-manager.sh show staging
+
+# Compare environments
+./scripts/ci/config-manager.sh compare staging production
+
+# Validate configuration
+mise run config-validate production
 ```
 
-### Activate Mise in Your Shell
+## 🚀 Deployment
 
-Add to your shell configuration file:
+### Deployment Workflow
 
-**Bash** (`~/.bashrc` or `~/.bash_profile`):
+1. **Push to Branch** → Automated CI runs
+2. **Create Tag** → Triggers deployment workflow
+3. **Manual Approval** → For production deployments
+4. **Deploy** → Automatic deployment with health checks
+5. **Monitor** → Real-time status and rollback options
+
+### Deployment Commands
+
 ```bash
-eval "$(mise activate bash)"
+# Deploy to staging (automatic)
+mise run deploy-staging
+
+# Deploy to production (requires approval)
+mise run deploy-production
+
+# Rollback deployment
+mise run deploy-rollback production
 ```
 
-**Zsh** (`~/.zshrc`):
+### Git Tag Management
+
 ```bash
-eval "$(mise activate zsh)"
+# Create version tag
+./scripts/release/50-ci-tag-assignment.sh --type version --version 1.2.3
+
+# Create environment tag
+./scripts/release/50-ci-tag-assignment.sh --type environment --environment production --state deployed
+
+# List deployment tags
+git tag -l "env-*" | sort -V
 ```
 
-**Fish** (`~/.config/fish/config.fish`):
-```fish
-mise activate fish | source
-```
+## 🧪 Testing and Quality
 
-**PowerShell** (`$PROFILE`):
-```powershell
-Invoke-Expression "$(mise activate powershell)"
-```
+### Run Tests
 
-Reload your shell:
 ```bash
-source ~/.bashrc  # or ~/.zshrc, etc.
+# Run all tests
+mise run test
+
+# Run tests with coverage
+mise run test-coverage
+
+# Run tests in watch mode
+mise run test-watch
 ```
 
-### Configure Git with Custom SSH Key (Optional)
+### Code Quality
 
-If you use a custom SSH key for this repository:
-
-**1. Generate SSH key (if needed):**
 ```bash
-ssh-keygen -t ed25519 -C "your_email@example.com" -f ~/.ssh/id_ed25519_ci_excellence
+# Run linting
+mise run lint
+
+# Format code
+mise run format
+
+# Check formatting without changes
+mise run format-check
 ```
 
-**2. Add SSH key to ssh-agent:**
+### Security Scanning
+
 ```bash
-eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/id_ed25519_ci_excellence
+# Scan for secrets in current code
+mise run scan-secrets
+
+# Scan git history for leaked secrets
+mise run scan-history
 ```
 
-**3. Add public key to GitHub:**
+## 🔐 Secrets Management
+
+### Encrypt Secrets
+
 ```bash
-cat ~/.ssh/id_ed25519_ci_excellence.pub
-# Copy output and add to: GitHub Settings > SSH and GPG keys > New SSH key
-```
-
-**4. Configure Git to use specific key:**
-
-**Option A: Using ~/.ssh/config (global approach)**
-```bash
-# Add to ~/.ssh/config
-cat >> ~/.ssh/config <<EOF
-
-Host github.com-ci-excellence
-  HostName github.com
-  User git
-  IdentityFile ~/.ssh/id_ed25519_ci_excellence
-  IdentitiesOnly yes
+# Create new secrets file
+cat > secrets/new-env.secrets.yaml <<EOF
+database:
+  host: ENC[...placeholder...]
+  password: ENC[...placeholder...]
 EOF
 
-# Clone using custom host
-git clone git@github.com-ci-excellence:YOUR-USERNAME/ci-excellence.git
-cd ci-excellence
+# Encrypt the file
+./scripts/ci/config-manager.sh encrypt secrets/new-env.secrets.yaml
+
+# Edit encrypted secrets
+sops secrets/new-env.secrets.yaml
 ```
 
-**Option B: Using local git config (project-specific approach)**
-```bash
-# Clone repository first
-git clone git@github.com:YOUR-USERNAME/ci-excellence.git
-cd ci-excellence
-
-# Configure line endings
-git config --local core.autocrlf false
-git config --local core.eol lf
-
-# Configure user identity for this project
-git config --local user.name "Your Name"
-git config --local user.email "your.email@example.com"
-
-# Configure project-specific SSH key
-# Place your SSH key in .secrets/ directory
-cp ~/.ssh/id_ed25519_ci_excellence .secrets/github-ssh-key
-chmod 400 .secrets/github-ssh-key
-
-# Configure git to use this key (auto-detects project path)
-git config --local core.sshCommand "ssh -o IdentitiesOnly=yes -i $(printf "%q\n" "$(pwd)")/.secrets/github-ssh-key -F /dev/null"
-```
-
-**WSL-specific chmod workaround (if needed):**
-```bash
-# If WSL has chmod issues with files in project directory
-cp .secrets/github-ssh-key ~/
-rm .secrets/github-ssh-key
-chmod 400 ~/github-ssh-key
-ln --symbolic ~/github-ssh-key .secrets/github-ssh-key
-
-# Update git config to use symlink
-git config --local core.sshCommand "ssh -o IdentitiesOnly=yes -i $(printf "%q\n" "$(pwd)")/.secrets/github-ssh-key -F /dev/null"
-```
-
-## 🚀 Quick Start
-
-### 1. Clone the Repository
+### Access Secrets
 
 ```bash
-# Standard clone
-git clone git@github.com:YOUR-USERNAME/ci-excellence.git
-cd ci-excellence
+# Load and decrypt secrets for environment
+./scripts/ci/config-manager.sh load production
 
-# Or with custom SSH key (see Prerequisites above)
-git clone git@github.com-ci-excellence:YOUR-USERNAME/ci-excellence.git
-cd ci-excellence
+# Get specific secret value
+./scripts/ci/config-manager.sh get-secret ".database.password" production
+
+# List all environments with secrets
+mise run config-list
 ```
 
-### 2. Let Mise Do Everything!
+## 🐳 Docker Environments
 
-When you enter the project directory, mise automatically:
-- ✅ **Installs all required tools** (gitleaks, trufflehog, lefthook, action-validator, age, sops)
-- ✅ **Configures git hooks** (secret detection, workflow validation)
-- ✅ **Sets up project folders** (.secrets, dist)
-- ✅ **Notifies about missing AGE key** (if secrets not configured)
+### Local Development
 
 ```bash
-cd ci-excellence
-# Mise runs automatically - just wait for setup to complete!
+# Start staging environment
+mise run compose-staging-up
+
+# Stop staging environment
+mise run compose-staging-down
+
+# Start production environment (for testing)
+mise run compose-production-up
+
+# View logs
+docker-compose -f docker-compose.staging.yml logs -f
 ```
 
-You'll see output like:
-```
-Setting up project folders...
-✓ Folders created
-Installing git hooks...
-✓ Git hooks installed
-⚠ Age encryption key not found
-  Run: mise run generate-age-key
-```
+### Environment Configurations
 
-### 3. Generate Age Encryption Key (First Time Only)
+- **Staging**: Moderate resources, monitoring, health checks
+- **Production**: High availability, clustering, SSL, comprehensive logging
+
+## 📊 Monitoring and Reporting
+
+### Pipeline Reports
+
+After each pipeline run, actionable reports are generated with:
+
+- **Deployment Links** - One-click deployment to different environments
+- **Rollback Options** - Instant rollback with version selection
+- **Health Checks** - Live status monitoring
+- **Troubleshooting** - Debug information and logs
+
+### Access Reports
 
 ```bash
-mise run generate-age-key
+# Reports are generated in .reports/ directory
+ls -la .reports/latest/
+
+# View pipeline summary
+cat .reports/latest/pipeline-summary.json
 ```
 
-This creates encryption keys for secure secret management.
+## 🔄 Self-Healing
 
-### 4. Configure GitHub Repository Variables
-
-Go to your repository settings: **Settings > Secrets and variables > Actions**
-
-Create these **Variables** (start with minimal setup):
-
-```
-ENABLE_COMPILE=true
-ENABLE_LINT=true
-ENABLE_UNIT_TESTS=true
-ENABLE_GITHUB_RELEASE=true
-ENABLE_NOTIFICATIONS=true
-```
-
-### 5. Add GitHub Secrets (as needed)
-
-Create these **Secrets** based on what you're using:
-
-```
-NPM_TOKEN=your_npm_token_here          # If publishing to NPM
-DOCKER_USERNAME=your_username          # If publishing Docker images
-DOCKER_PASSWORD=your_password          # If publishing Docker images
-APPRISE_URLS=slack://token@channel     # For notifications (optional)
-```
-
-### 6. Customize Scripts for Your Stack
-
-Edit the script stubs in `scripts/` to match your project:
+The platform includes automatic code fixing:
 
 ```bash
-# Example: Customize the build script
-vim scripts/build/compile.sh
+# Trigger self-healing workflow
+# (Available in GitHub Actions: .github/workflows/self-healing.yml)
 
-# Uncomment and modify the relevant sections for your stack
-# e.g., for TypeScript project:
-# npx tsc
+# Manual trigger with specific scope
+gh workflow run self-healing.yml -f scope=format
 ```
 
-### 7. Start Developing!
+### Self-Healing Features
+
+- **Automatic Formatting** - shellfmt for bash scripts
+- **Linting Fixes** - shellcheck auto-fix where possible
+- **Commit Creation** - Automatic commits with conventional message format
+- **Rollback Support** - Auto-generated rollback points
+
+## 📋 Git Workflow
+
+### Branch Protection
 
 ```bash
-# Make changes, commit, and push
-git add .
-git commit -m "feat: add new feature"
-git push
+# Production requires:
+# - 2 reviewer approval
+# - All status checks passing
+# - Up-to-date branch
+# - Code owner reviews
 
-# Git hooks automatically run:
-# - Secret detection (gitleaks)
-# - Credential scanning (trufflehog)
-# - Workflow validation (action-validator)
-# - Branch protection checks
+# Staging allows:
+# - 1 reviewer approval
+# - Most status checks
 ```
 
-**That's it!** The CI/CD pipeline is now active and will run based on your configured variables.
+### Commit Message Format
 
-## 💻 Local Development Setup (Mise)
-
-**Already done?** If you followed the [Prerequisites](#prerequisites) section, mise is already set up and working!
-
-### What Mise Provides
-
-Our [Mise](https://mise.jit.su) configuration handles:
-- **Automatic tool installation** (age, sops, gitleaks, trufflehog, lefthook, action-validator)
-- **Secret management** with SOPS and age encryption
-- **Environment variables** loaded automatically from `.env` and `.env.secrets.json`
-- **Pre-configured tasks** for common operations
-- **Git hooks** installed automatically on folder enter
-
-### Automatic Setup on Folder Enter
-
-Every time you `cd` into the project directory, mise runs:
-
-1. **`mise run setup`** - Creates `.secrets`, `dist` directories
-2. **`mise run install-hooks`** - Installs git hooks with lefthook
-3. **Checks for age key** - Warns if `.secrets/mise-age.txt` is missing
-
-This is configured in `mise.toml`:
-```toml
-[hooks]
-enter = ["mise run setup", "mise run install-hooks"]
-```
-
-### Secret Management Workflow
-
-**First time setup:**
 ```bash
-# 1. Generate encryption key pair
-mise run generate-age-key
+# Use conventional commits
+feat(pipeline): add automated deployment system
+fix(security): resolve credential exposure vulnerability
+docs(readme): update installation instructions
 
-# 2. Create encrypted secrets file
-cp config/.env.secrets.json.example .env.secrets.json.tmp
-vim .env.secrets.json.tmp  # Edit with your secrets
+# Use commitizen for guided commits
+git cz
+```
+
+### Pre-commit Hooks
+
+Automatic checks run before each commit:
+
+- **Secret Scanning** - Prevent committing sensitive data
+- **Code Formatting** - Auto-format bash scripts
+- **Linting** - shellcheck validation
+- **Message Validation** - Enforce conventional commits
+
+## 🔧 Configuration
+
+### Environment Variables
+
+```bash
+# Test modes for all scripts
+export CI_TEST_MODE=DRY_RUN      # Preview actions
+export CI_TEST_MODE=SIMULATE     # Simulate execution
+export CI_TEST_MODE=EXECUTE      # Actually run (default)
+
+# Configuration override
+export CONFIG_ENVIRONMENT=staging
+export DEPLOY_ENVIRONMENT=production
+
+# Feature flags
+export ENABLE_NOTIFICATIONS=true
+export AUTO_DEPLOY=false
+```
+
+### Custom Configuration
+
+```bash
+# Edit environment configuration
+vim config/environments/staging.json
+
+# Validate changes
+mise run config-validate staging
+
+# Compare with production
+mise run config-compare staging production
+```
+
+## 🛠️ MISE Tasks
+
+Complete list of available tasks:
+
+```bash
+# Configuration
+mise run config-init <env>
+mise run config-show <env>
+mise run config-compare <env1> <env2>
+mise run config-export-k8s <env>
+
+# Deployment
+mise run deploy-staging
+mise run deploy-production
+mise run deploy-rollback <env>
+
+# Docker
+mise run compose-staging-up
+mise run compose-production-up
+
+# Testing
+mise run test
+mise run test-coverage
+mise run lint
+mise run format
+
+# Security
+mise run scan-secrets
 mise run encrypt-secrets
-rm .env.secrets.json.tmp
-```
-
-**Editing secrets later:**
-```bash
-# Edit encrypted secrets directly (decrypts, opens editor, encrypts on save)
 mise run edit-secrets
+
+# CI/CD
+mise run validate-workflows
+mise run test-local-ci
 ```
 
-**Decrypting secrets (read-only):**
+## 📚 Troubleshooting
+
+### Common Issues
+
+**1. SOPS Decryption Failed**
 ```bash
-# View decrypted secrets
-mise run decrypt-secrets
+# Check age key file
+ls -la .secrets/mise-age.txt
+
+# Regenerate if missing
+mise run generate-age-key
 ```
 
-### Available Tasks
-
+**2. Git Hooks Not Working**
 ```bash
-mise tasks                    # List all tasks
-mise run setup               # Setup project folders
-mise run generate-age-key    # Generate encryption key
-mise run encrypt-secrets     # Encrypt secrets file
-mise run decrypt-secrets     # Decrypt secrets file
-mise run edit-secrets        # Edit encrypted secrets
-mise run install-hooks       # Install git hooks
-mise run scan-secrets        # Scan for secrets
-mise run scan-history        # Scan git history
-mise run validate-workflows  # Validate GitHub Actions workflows
+# Reinstall hooks
+mise run uninstall-hooks
+mise run install-hooks
+
+# Check hook permissions
+ls -la .git/hooks/
 ```
 
-### Why Mise?
-
-- ✅ **Consistent environment** across team members
-- ✅ **Encrypted secrets** safe to commit to git
-- ✅ **Auto-installs tools** (no manual setup)
-- ✅ **Secret detection** with gitleaks/trufflehog
-- ✅ **Git hooks** managed by lefthook
-- ✅ **Workflow validation** with action-validator
-
-**Full documentation:** [docs/MISE-SETUP.md](docs/MISE-SETUP.md) | [docs/GIT-HOOKS.md](docs/GIT-HOOKS.md)
-
-## 🏗️ Architecture
-
-### Workflow Overview
-
-```
-┌─────────────────┐
-│   Developer     │
-└────────┬────────┘
-         │
-    ┌────▼────┐
-    │   Push  │
-    └────┬────┘
-         │
-    ┌────▼──────────────────────────────┐
-    │   Pre-Release Pipeline            │
-    │  ✓ Setup & Install Dependencies   │
-    │  ✓ Compile/Build                  │
-    │  ✓ Lint                           │
-    │  ✓ Unit Tests                     │
-    │  ✓ Integration Tests              │
-    │  ✓ E2E Tests                      │
-    │  ✓ Security Scan                  │
-    │  ✓ Bundle/Package                 │
-    └────┬──────────────────────────────┘
-         │
-    ┌────▼──────────────────────────────┐
-    │   Release Pipeline                │
-    │  ✓ Determine Version              │
-    │  ✓ Update Version Files           │
-    │  ✓ Generate Changelog             │
-    │  ✓ Build Release Artifacts        │
-    │  ✓ Test Release                   │
-    │  ✓ Publish to NPM                 │
-    │  ✓ Create GitHub Release          │
-    │  ✓ Publish Docker Images          │
-    │  ✓ Publish Documentation          │
-    └────┬──────────────────────────────┘
-         │
-    ┌────▼──────────────────────────────┐
-    │   Post-Release Pipeline           │
-    │  ✓ Verify Deployment              │
-    │  ✓ Tag Stable/Unstable            │
-    │  ✓ Rollback (if needed)           │
-    └────┬──────────────────────────────┘
-         │
-    ┌────▼──────────────────────────────┐
-    │   Maintenance Pipeline (Cron)     │
-    │  ✓ Cleanup Old Artifacts          │
-    │  ✓ Sync Version Files             │
-    │  ✓ Deprecate Old Versions         │
-    │  ✓ Security Audit                 │
-    │  ✓ Dependency Updates             │
-    └───────────────────────────────────┘
-```
-
-### Directory Structure
-
-```
-.
-├── .github/
-│   └── workflows/
-│       ├── pre-release.yml      # PR checks, builds, tests
-│       ├── release.yml          # Version, publish, deploy
-│       ├── post-release.yml     # Verification, rollback
-│       └── maintenance.yml      # Cleanup, sync, security
-│
-├── scripts/
-│   ├── setup/                   # Installation scripts
-│   │   ├── install-tools.sh
-│   │   └── install-dependencies.sh
-│   │
-│   ├── build/                   # Build scripts
-│   │   ├── compile.sh
-│   │   ├── lint.sh
-│   │   ├── bundle.sh
-│   │   └── security-scan.sh
-│   │
-│   ├── test/                    # Test scripts
-│   │   ├── unit.sh
-│   │   ├── integration.sh
-│   │   ├── e2e.sh
-│   │   └── smoke.sh
-│   │
-│   ├── release/                 # Release scripts
-│   │   ├── determine-version.sh
-│   │   ├── update-version.sh
-│   │   ├── generate-changelog.sh
-│   │   ├── generate-release-notes.sh
-│   │   ├── publish-npm.sh
-│   │   ├── publish-docker.sh
-│   │   ├── build-docs.sh
-│   │   ├── publish-docs.sh
-│   │   ├── upload-assets.sh
-│   │   ├── rollback-npm.sh
-│   │   ├── rollback-github.sh
-│   │   └── rollback-docker.sh
-│   │
-│   └── maintenance/             # Maintenance scripts
-│       ├── cleanup-workflow-runs.sh
-│       ├── cleanup-artifacts.sh
-│       ├── cleanup-caches.sh
-│       ├── sync-version-files.sh
-│       ├── identify-deprecated-versions.sh
-│       ├── deprecate-npm-versions.sh
-│       ├── deprecate-github-releases.sh
-│       ├── security-audit.sh
-│       ├── update-dependencies.sh
-│       ├── verify-npm-deployment.sh
-│       ├── verify-github-release.sh
-│       └── verify-docker-deployment.sh
-│
-└── config/                      # Configuration templates
-    ├── package.json.template
-    ├── .env.template
-    ├── CHANGELOG.md.template
-    ├── .gitignore.template
-    ├── Dockerfile.template
-    └── docker-compose.yml.template
-```
-
-## 📝 Workflows
-
-### Pre-Release Pipeline (`pre-release.yml`)
-
-**Triggers:**
-- Pull requests to `main` or `develop`
-- Pushes to `develop`, `feature/*`, `fix/*` branches
-
-**Jobs:**
-1. **Setup** - Install tools and dependencies (always runs)
-2. **Compile** - Build the project
-3. **Lint** - Run code linters
-4. **Unit Tests** - Run unit tests with coverage
-5. **Integration Tests** - Run integration tests
-6. **E2E Tests** - Run end-to-end tests
-7. **Security Scan** - Run vulnerability scans
-8. **Bundle** - Create distribution packages
-9. **Summary** - Display pipeline results
-
-**Activation:**
+**3. Environment Validation Failed**
 ```bash
-# Enable jobs by setting GitHub Variables
-ENABLE_COMPILE=true
-ENABLE_LINT=true
-ENABLE_UNIT_TESTS=true
-ENABLE_INTEGRATION_TESTS=true
-ENABLE_E2E_TESTS=true
-ENABLE_SECURITY_SCAN=true
-ENABLE_BUNDLE=true
+# Check configuration syntax
+jq empty config/environments/production.json
+
+# Validate all environments
+for env in development staging production; do
+  mise run config-validate $env
+done
 ```
 
-### Release Pipeline (`release.yml`)
-
-**Triggers:**
-- Manual workflow dispatch with version type selection
-- Push to tags matching `v*.*.*`
-
-**Jobs:**
-1. **Prepare** - Determine version, update files, generate changelog
-2. **Build** - Build release artifacts
-3. **Test** - Test release build
-4. **Publish NPM** - Publish to NPM registry
-5. **Publish GitHub** - Create GitHub release
-6. **Publish Docker** - Build and push Docker images
-7. **Publish Documentation** - Build and deploy docs
-8. **Notify** - Send release notifications
-
-**Usage:**
-```bash
-# Trigger from GitHub Actions tab:
-# 1. Go to Actions > Release Pipeline
-# 2. Click "Run workflow"
-# 3. Select release type: major, minor, patch, etc.
-# 4. Choose if it's a pre-release
-# 5. Optionally enable dry-run
-```
-
-**Activation:**
-```bash
-ENABLE_NPM_PUBLISH=true
-ENABLE_GITHUB_RELEASE=true
-ENABLE_DOCKER_PUBLISH=true
-ENABLE_DOCUMENTATION=true
-```
-
-### Post-Release Pipeline (`post-release.yml`)
-
-**Triggers:**
-- Automatically after GitHub release published
-- Manual workflow dispatch for rollback or tagging
-
-**Jobs:**
-1. **Verify Deployment** - Check all deployment targets
-2. **Tag Stable** - Mark version as stable
-3. **Tag Unstable** - Mark version as unstable
-4. **Rollback** - Rollback a failed release
-
-**Usage:**
-```bash
-# For rollback:
-# 1. Go to Actions > Post-Release Pipeline
-# 2. Click "Run workflow"
-# 3. Select action: rollback
-# 4. Enter version to rollback
-```
-
-### Maintenance Pipeline (`maintenance.yml`)
-
-**Triggers:**
-- Scheduled: Daily at 2 AM UTC (cron)
-- Manual workflow dispatch
-
-**Jobs:**
-1. **Cleanup** - Remove old workflows, artifacts, caches
-2. **Sync Files** - Keep package.json and CHANGELOG.md in sync
-3. **Deprecate Old Versions** - Mark old versions as deprecated
-4. **Security Audit** - Run security audits
-5. **Dependency Update** - Update dependencies automatically
-
-**Activation:**
-```bash
-ENABLE_CLEANUP=true
-ENABLE_FILE_SYNC=true
-ENABLE_DEPRECATION=true
-ENABLE_SECURITY_AUDIT=true
-ENABLE_DEPENDENCY_UPDATE=true
-```
-
-## ⚙️ Configuration
-
-### GitHub Variables
-
-Set in: **Repository Settings > Secrets and variables > Actions > Variables**
-
-| Variable                         | Default | Description                                        |
-| -------------------------------- | ------- | -------------------------------------------------- |
-| `ENABLE_COMPILE`                 | `false` | Enable build/compilation step                      |
-| `ENABLE_LINT`                    | `false` | Enable linting                                     |
-| `ENABLE_UNIT_TESTS`              | `false` | Enable unit tests                                  |
-| `ENABLE_INTEGRATION_TESTS`       | `false` | Enable integration tests                           |
-| `ENABLE_E2E_TESTS`               | `false` | Enable end-to-end tests                            |
-| `ENABLE_BUNDLE`                  | `false` | Enable bundling/packaging                          |
-| `ENABLE_SECURITY_SCAN`           | `false` | Enable security scanning                           |
-| `ENABLE_NPM_PUBLISH`             | `false` | Enable NPM publishing                              |
-| `ENABLE_GITHUB_RELEASE`          | `false` | Enable GitHub releases                             |
-| `ENABLE_DOCKER_PUBLISH`          | `false` | Enable Docker publishing                           |
-| `ENABLE_DOCUMENTATION`           | `false` | Enable documentation publishing                    |
-| `ENABLE_ROLLBACK`                | `false` | Enable rollback capability                         |
-| `ENABLE_DEPLOYMENT_VERIFICATION` | `false` | Enable deployment verification                     |
-| `ENABLE_STABILITY_TAGGING`       | `false` | Enable stable/unstable tagging                     |
-| `ENABLE_CLEANUP`                 | `false` | Enable artifact cleanup                            |
-| `ENABLE_FILE_SYNC`               | `false` | Enable version file sync                           |
-| `ENABLE_DEPRECATION`             | `false` | Enable version deprecation                         |
-| `ENABLE_SECURITY_AUDIT`          | `false` | Enable security audits                             |
-| `ENABLE_DEPENDENCY_UPDATE`       | `false` | Enable dependency updates                          |
-| `ENABLE_NOTIFICATIONS`           | `false` | Enable pipeline notifications (Slack, Teams, etc.) |
-
-### GitHub Secrets
-
-Set in: **Repository Settings > Secrets and variables > Actions > Secrets**
-
-| Secret            | Required For      | Description                                                                       |
-| ----------------- | ----------------- | --------------------------------------------------------------------------------- |
-| `NPM_TOKEN`       | NPM Publishing    | NPM access token                                                                  |
-| `DOCKER_USERNAME` | Docker Publishing | Docker Hub username                                                               |
-| `DOCKER_PASSWORD` | Docker Publishing | Docker Hub password/token                                                         |
-| `APPRISE_URLS`    | Notifications     | Space-separated notification URLs (see [NOTIFICATIONS.md](docs/NOTIFICATIONS.md)) |
-| `GITHUB_TOKEN`    | All workflows     | Auto-provided by GitHub                                                           |
-
-## 🔧 Customization Guide
-
-### Step 1: Choose Your Stack
-
-Edit the relevant stub scripts based on your technology stack:
-
-#### For Node.js/TypeScript Projects
+### Debug Mode
 
 ```bash
-# scripts/setup/install-dependencies.sh
-npm ci
+# Enable verbose logging
+export VERBOSE=true
+export DEBUG=true
 
-# scripts/build/compile.sh
-npx tsc
+# Run in dry-run mode
+export CI_TEST_MODE=DRY_RUN
 
-# scripts/build/lint.sh
-npx eslint .
-
-# scripts/test/unit.sh
-npm test -- --coverage
+# Check configuration
+./scripts/ci/config-manager.sh show production
 ```
-
-#### For Python Projects
-
-```bash
-# scripts/setup/install-dependencies.sh
-pip install -r requirements.txt
-
-# scripts/build/lint.sh
-flake8 .
-pylint **/*.py
-
-# scripts/test/unit.sh
-pytest --cov --cov-report=xml
-```
-
-#### For Go Projects
-
-```bash
-# scripts/setup/install-dependencies.sh
-go mod download
-
-# scripts/build/compile.sh
-go build -v ./...
-
-# scripts/test/unit.sh
-go test -v -race -coverprofile=coverage.out ./...
-```
-
-### Step 2: Configure Version Management
-
-Edit `scripts/release/determine-version.sh` to read your version file:
-
-```bash
-# For package.json
-CURRENT_VERSION=$(jq -r '.version' package.json)
-
-# For setup.py
-CURRENT_VERSION=$(grep -oP 'version="\K[^"]+' setup.py)
-
-# For Cargo.toml
-CURRENT_VERSION=$(grep -oP '^version = "\K[^"]+' Cargo.toml)
-
-# For git tags
-CURRENT_VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
-```
-
-### Step 3: Customize Publishing
-
-#### NPM Publishing
-
-Edit `scripts/release/publish-npm.sh`:
-
-```bash
-# Uncomment and customize
-npm publish $TAG
-```
-
-Add `NPM_TOKEN` secret to repository.
-
-#### Docker Publishing
-
-Edit `scripts/release/publish-docker.sh`:
-
-```bash
-IMAGE_NAME="your-org/your-app"
-docker build -t "$IMAGE_NAME:$VERSION" .
-docker push "$IMAGE_NAME:$VERSION"
-```
-
-Add `DOCKER_USERNAME` and `DOCKER_PASSWORD` secrets.
-
-### Step 4: Set Up Documentation
-
-Edit `scripts/release/build-docs.sh` and `publish-docs.sh`:
-
-```bash
-# For Sphinx (Python)
-cd docs && make html
-
-# For TypeDoc (TypeScript)
-npx typedoc
-
-# For MkDocs
-mkdocs build
-
-# Publish to GitHub Pages
-npx gh-pages -d docs/_build/html
-```
-
-## 📬 Notifications
-
-Get real-time pipeline notifications in Slack, Teams, Discord, Telegram, Email, and 90+ other services!
-
-### Quick Setup
-
-1. **Enable notifications** (GitHub Variables):
-   ```
-   ENABLE_NOTIFICATIONS=true
-   ```
-
-2. **Add notification URL** (GitHub Secrets):
-   ```
-   APPRISE_URLS=slack://your/webhook/url
-   ```
-
-3. **Done!** You'll receive notifications for all pipeline events.
-
-### Supported Services
-
-- **Slack** - `slack://token_a/token_b/token_c`
-- **Microsoft Teams** - `msteams://webhook_url`
-- **Discord** - `discord://webhook_id/webhook_token`
-- **Telegram** - `tgram://bot_token/chat_id`
-- **Email** - `mailto://user:pass@domain.com`
-- **90+ more services** - See [NOTIFICATIONS.md](docs/NOTIFICATIONS.md)
-
-### Multiple Services
-
-Send to multiple services by separating URLs with spaces:
-
-```bash
-APPRISE_URLS=slack://T00/B00/XXX msteams://webhook/url discord://123/abc
-```
-
-### What Gets Notified
-
-- ✅ **Pre-Release**: Build/test pass/fail status
-- 🚀 **Release**: New version published
-- 🔄 **Post-Release**: Deployment verification, rollbacks
-- 🔧 **Maintenance**: Security audits, dependency updates
-
-**Full documentation**: [NOTIFICATIONS.md](docs/NOTIFICATIONS.md)
-
-## 📚 Best Practices
-
-### 1. Start Minimal, Scale Up
-
-```bash
-# Week 1: Basic CI
-ENABLE_COMPILE=true
-ENABLE_LINT=true
-ENABLE_UNIT_TESTS=true
-
-# Week 2: Add integration tests
-ENABLE_INTEGRATION_TESTS=true
-
-# Week 3: Add releases
-ENABLE_GITHUB_RELEASE=true
-
-# Week 4: Add publishing
-ENABLE_NPM_PUBLISH=true
-
-# Month 2: Add maintenance
-ENABLE_CLEANUP=true
-ENABLE_SECURITY_AUDIT=true
-
-# Month 3: Add notifications
-ENABLE_NOTIFICATIONS=true
-```
-
-### 2. Use Branch Protection Rules
-
-Configure in: **Settings > Branches > Branch protection rules**
-
-Required settings:
-- ✅ Require status checks before merging
-- ✅ Require branches to be up to date
-- ✅ Required checks: `setup`, `compile`, `lint`, `unit-tests`
-
-### 3. Semantic Versioning
-
-Follow [SemVer](https://semver.org/):
-- `MAJOR`: Breaking changes
-- `MINOR`: New features, backwards compatible
-- `PATCH`: Bug fixes
-
-### 4. Conventional Commits
-
-Use [Conventional Commits](https://www.conventionalcommits.org/):
-
-```
-feat: add new feature
-fix: resolve bug
-docs: update documentation
-chore: update dependencies
-refactor: improve code structure
-test: add tests
-ci: update CI configuration
-```
-
-### 5. Security Best Practices
-
-- ✅ Never commit secrets
-- ✅ Use GitHub Secrets for sensitive data
-- ✅ Enable security scanning
-- ✅ Keep dependencies updated
-- ✅ Review automated PRs carefully
-
-## 🐛 Troubleshooting
-
-### Pipeline Not Running
-
-**Check:**
-1. Workflows are in `.github/workflows/` directory
-2. YAML syntax is valid (use a YAML validator)
-3. Branch name matches workflow triggers
-
-### Job Skipped
-
-**This is normal!** Jobs skip when their `ENABLE_*` variable is not `true`.
-
-**To enable:**
-1. Go to Settings > Secrets and variables > Actions
-2. Add Variable with name `ENABLE_<JOB_NAME>`
-3. Set value to `true`
-
-### Script Permission Denied
-
-```bash
-# Make scripts executable
-chmod +x scripts/**/*.sh
-git add scripts/
-git commit -m "fix: make scripts executable"
-git push
-```
-
-### NPM Publishing Fails
-
-**Check:**
-1. `NPM_TOKEN` secret is set
-2. Token has publish permissions
-3. Package name is available
-4. You're not republishing same version
-
-### Docker Build Fails
-
-**Check:**
-1. Dockerfile exists
-2. `DOCKER_USERNAME` and `DOCKER_PASSWORD` secrets are set
-3. Image name follows format: `org/name`
-
-## 🎓 Learning Resources
-
-- [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [Semantic Versioning](https://semver.org/)
-- [Keep a Changelog](https://keepachangelog.com/)
-- [Conventional Commits](https://www.conventionalcommits.org/)
-- [CI/CD Best Practices](https://docs.github.com/en/actions/guides)
-
-## 📄 License
-
-This CI/CD setup is provided as-is under the MIT License. Feel free to customize and use in your projects.
 
 ## 🤝 Contributing
 
-Found a bug or have a suggestion? Please:
-1. Check existing issues
-2. Create a detailed issue
-3. Submit a pull request
+### Development Workflow
 
-## 📞 Support
+1. **Fork** the repository
+2. **Create feature branch**: `git checkout -b feature/new-feature`
+3. **Make changes** following the coding standards
+4. **Test locally**: `mise run test && mise run lint`
+5. **Commit**: `git cz` (use conventional commits)
+6. **Push**: `git push origin feature/new-feature`
+7. **Create Pull Request**
 
-- Documentation: This README
-- Examples: See `config/` directory for templates
-- Scripts: All scripts have inline comments explaining their purpose
+### Code Standards
+
+- **Shell Scripts**: Follow bash best practices, use shellcheck
+- **Configuration**: JSON format with proper validation
+- **Documentation**: Update README and inline comments
+- **Testing**: Write shellspec tests for new functionality
+- **Security**: No hardcoded secrets, use SOPS encryption
+
+### Testing Your Changes
+
+```bash
+# Run full test suite
+mise run test
+
+# Run security scan
+mise run scan-secrets
+
+# Validate workflows
+mise run validate-workflows
+
+# Test configuration changes
+for env in development staging production; do
+  mise run config-validate $env
+done
+```
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🙏 Acknowledgments
+
+- **MISE** - Cross-platform package management
+- **SOPS** - Secrets encryption
+- **GitHub Actions** - CI/CD platform
+- **Lefthook** - Git hooks management
+- **Commitizen** - Conventional commits
+- **ShellSpec** - Shell script testing
+- **Gitleaks/Trufflehog** - Secret scanning
 
 ---
 
-**Happy Building! 🚀**
+## 📞 Support
 
-Remember: Start simple, enable features as needed, and customize scripts for your specific use case.
+For questions, issues, or contributions:
+
+1. **Check the documentation** in this README
+2. **Search existing issues** in the repository
+3. **Create a new issue** with detailed information
+4. **Join our discussions** for community support
+
+---
+
+**Happy deploying! 🚀**

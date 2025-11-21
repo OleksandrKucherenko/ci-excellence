@@ -1,0 +1,71 @@
+# ShellSpec Configuration
+# BDD-style testing framework for shell scripts
+# Docs: https://github.com/shellspec/shellspec
+
+# Shell to use for running tests
+shell: bash
+
+# Include custom helper functions
+helper_path:
+  - "spec/spec_helper.sh"
+
+# Test file patterns
+spec_helper: "spec/spec_helper.sh"
+
+# Pattern for finding spec files
+path_pattern:
+  - "spec/**/*_spec.sh"
+
+# Exclude pattern
+exclude_pattern:
+  - "spec/fixtures/*"
+  - "spec/tmp/*"
+
+# Temporary directory for tests
+temp_dir: "spec/tmp"
+
+# Coverage settings
+coverage:
+  enabled: true
+  paths:
+    - "scripts/**/*.sh"
+  exclude_paths:
+    - "spec/**/*"
+    - "**/*_spec.sh"
+    - "node_modules/**/*"
+    - ".git/**/*"
+
+# Formatters
+formatter:
+  - documentation
+  - progress
+
+# Output settings
+verbose: true
+color: true
+quiet: false
+
+# Parallel execution (experimental)
+parallel: false
+
+# Execution timeout (seconds)
+timeout: 30
+
+# Keep temp directory after tests
+keep_tempdir: false
+
+# Failure handling
+fail_fast: false
+example_pending: false
+
+# Random order
+random: false
+
+# Seed for random execution (used when random: true)
+# seed: 1234
+
+# Dry run (show what would be executed without running)
+dry_run: false
+
+# Quick mode (skip some checks)
+quick: false

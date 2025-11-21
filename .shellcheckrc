@@ -1,0 +1,49 @@
+# ShellCheck Configuration
+# Shell script analysis tool
+# Docs: https://github.com/koalaman/shellcheck
+
+# Enable all optional checks
+enable=all
+
+# Disable specific warnings that are handled by testability framework
+exclude=SC2086,SC2155
+
+# Shell dialect: bash 5.x
+shell=bash
+
+# Source files to check by default
+source-path=scripts/
+
+# Exclude patterns
+exclude-dir-list=node_modules,.git,vendor,spec/tmp
+
+# Severity levels: error, warning, info, style
+severity=style
+
+# Color output
+color=always
+
+# Check sourced files
+check-sourced=true
+
+# Require double quotes around variables that might contain spaces
+require-double-quotes=true
+
+# Add custom directives for our testability framework
+external-sources=true
+
+# Follow source files
+source-path=scripts/lib
+
+# Additional checks for CI scripts
+# SC2086: Double quote to prevent globbing and word splitting
+# SC2155: Declare and assign separately to avoid masking return values
+
+# Allow shell parameter expansion in globs
+allow-globstar=true
+
+# Enable experimental features
+external-sources=true
+
+# Allow case patterns to be unquoted
+quote-case-patterns=false

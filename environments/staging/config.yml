@@ -1,0 +1,32 @@
+# Staging Environment Configuration
+environment: staging
+region: us-east
+
+# Deployment settings
+replicas: 2
+health_check_interval: 30s
+log_level: info
+
+# Service configuration
+api:
+  port: 8080
+  timeout: 30s
+  retries: 3
+
+# Database settings
+database:
+  host: staging-db.internal
+  port: 5432
+  ssl_mode: require
+
+# Cloud provider mappings
+cloud_mappings:
+  aws: us-east-1
+  azure: eastus
+  gcp: us-east1
+
+# Feature flags
+features:
+  new_ui: true
+  advanced_search: false
+  analytics: true

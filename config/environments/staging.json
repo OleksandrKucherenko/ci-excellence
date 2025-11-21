@@ -1,0 +1,184 @@
+{
+  "environment": {
+    "name": "staging",
+    "type": "staging",
+    "description": "Staging environment for testing and validation"
+  },
+  "deployment": {
+    "strategy": "rolling",
+    "timeout_seconds": 600,
+    "health_check": {
+      "endpoint": "/health",
+      "timeout_seconds": 30,
+      "retries": 3
+    },
+    "rollback": {
+      "enabled": true,
+      "automatic": false,
+      "keep_count": 5
+    }
+  },
+  "infrastructure": {
+    "platform": "kubernetes",
+    "namespace": "staging",
+    "resources": {
+      "cpu": {
+        "request": "100m",
+        "limit": "500m"
+      },
+      "memory": {
+        "request": "128Mi",
+        "limit": "512Mi"
+      }
+    },
+    "replicas": {
+      "min": 1,
+      "max": 3,
+      "default": 2
+    },
+    "auto_scaling": {
+      "enabled": true,
+      "target_cpu_utilization": 70,
+      "scale_up_cooldown": 300,
+      "scale_down_cooldown": 600
+    }
+  },
+  "application": {
+    "log_level": "info",
+    "debug": false,
+    "metrics": {
+      "enabled": true,
+      "port": 9090
+    },
+    "tracing": {
+      "enabled": true,
+      "sampling_rate": 0.1
+    }
+  },
+  "network": {
+    "ingress": {
+      "enabled": true,
+      "host": "staging.ci-excellence.example.com",
+      "tls": {
+        "enabled": true,
+        "secret_name": "staging-tls"
+      }
+    },
+    "ports": {
+      "http": 3000,
+      "https": 3001,
+      "metrics": 9090
+    }
+  },
+  "database": {
+    "host": "${STAGING_DB_HOST}",
+    "port": 5432,
+    "name": "ci_excellence_staging",
+    "ssl_mode": "require",
+    "pool": {
+      "min": 2,
+      "max": 10,
+      "idle_timeout": 300
+    },
+    "backup": {
+      "enabled": true,
+      "schedule": "0 2 * * *",
+      "retention_days": 7
+    }
+  },
+  "cache": {
+    "redis": {
+      "host": "${STAGING_REDIS_HOST}",
+      "port": 6379,
+      "db": 0,
+      "ttl_seconds": 3600
+    }
+  },
+  "storage": {
+    "type": "s3",
+    "bucket": "ci-excellence-staging",
+    "region": "us-east-1",
+    "encryption": {
+      "enabled": true,
+      "algorithm": "AES256"
+    }
+  },
+  "security": {
+    "cors": {
+      "enabled": true,
+      "origins": ["https://staging.ci-excellence.example.com", "http://localhost:3000"],
+      "methods": ["GET", "POST", "PUT", "DELETE"],
+      "max_age": 86400
+    },
+    "rate_limiting": {
+      "enabled": true,
+      "requests_per_minute": 1000,
+      "burst": 100
+    },
+    "authentication": {
+      "session_timeout": 3600,
+      "max_login_attempts": 5,
+      "lockout_duration": 900
+    }
+  },
+  "monitoring": {
+    "alerts": {
+      "enabled": true,
+      "channels": ["slack", "email"],
+      "thresholds": {
+        "error_rate": 0.05,
+        "response_time": 2000,
+        "cpu_usage": 80,
+        "memory_usage": 85
+      }
+    },
+    "dashboards": {
+      "enabled": true,
+      "refresh_interval": 30
+    }
+  },
+  "ci_cd": {
+    "branch_protection": {
+      "enabled": true,
+      "required_reviewers": 1,
+      "dismiss_stale_reviews": false,
+      "require_up_to_date": true,
+      "require_status_checks": true,
+      "status_checks": ["build", "test", "lint", "security-scan"]
+    },
+    "deployment_policy": {
+      "auto_deploy": true,
+      "required_checks": ["build-success", "test-pass", "security-clear"],
+      "approval_required": false
+    }
+  },
+  "features": {
+    "feature_flags": {
+      "experimental_api": false,
+      "new_ui": false,
+      "enhanced_logging": true,
+      "beta_features": false
+    }
+  },
+  "external_services": {
+    "payment": {
+      "provider": "stripe",
+      "mode": "test",
+      "webhook_secret": "${STAGING_STRIPE_WEBHOOK_SECRET}"
+    },
+    "email": {
+      "provider": "sendgrid",
+      "from_address": "noreply@staging.ci-excellence.example.com"
+    },
+    "analytics": {
+      "provider": "google-analytics",
+      "tracking_id": "${STAGING_GA_TRACKING_ID}"
+    }
+  },
+  "tags": {
+    "environment": "staging",
+    "managed_by": "ci-excellence",
+    "cost_center": "engineering",
+    "backup_policy": "daily"
+  }
+}

@@ -1,0 +1,45 @@
+# Production Environment Configuration
+environment: production
+region: us-east
+
+# Deployment settings
+replicas: 5
+health_check_interval: 15s
+log_level: warn
+
+# Service configuration
+api:
+  port: 8080
+  timeout: 30s
+  retries: 3
+  rate_limit: 1000/minute
+
+# Database settings
+database:
+  host: prod-db.internal
+  port: 5432
+  ssl_mode: require
+  max_connections: 100
+
+# Cloud provider mappings
+cloud_mappings:
+  aws: us-east-1
+  azure: eastus
+  gcp: us-east1
+
+# Feature flags
+features:
+  new_ui: true
+  advanced_search: true
+  analytics: true
+  caching: true
+
+# Security settings
+security:
+  tls_version: 1.3
+  cipher_suites:
+    - TLS_AES_256_GCM_SHA384
+    - TLS_CHACHA20_POLY1305_SHA256
+  headers:
+    hsts: true
+    csp: true

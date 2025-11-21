@@ -1,0 +1,35 @@
+# shfmt Configuration
+# Bash script formatter
+# Docs: https://github.com/mvdan/sh
+
+# Indentation: 2 spaces
+indent = 2
+
+# Binary operators on next line
+binary_next_line = true
+
+# Case indentation (switch statements)
+case_indent = true
+
+# Space redirects (operator spacing)
+space_redirects = true
+
+# Keep padding for function opening
+keep_padding = false
+
+# Simplify code
+simplify = true
+
+# Language variant: bash (4.0+)
+language = "bash"
+
+# Function patterns
+function_next_line = false
+
+# Ignore patterns (files to skip formatting)
+ignore = [
+  "node_modules/**",
+  ".git/**",
+  "vendor/**",
+  "spec/fixtures/**"
+]
