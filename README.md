@@ -105,7 +105,7 @@ Migrating from existing CI/CD systems is straightforward with our comprehensive 
 ### Migration Resources
 
 - 📖 **[Complete Migration Guide](docs/migration-guide.md)** - Step-by-step instructions for migrating from GitHub Actions, GitLab CI, Jenkins, and other systems
-- 🔧 **[Migration Templates](examples/)** - Ready-to-use configurations for different project types
+- 🔧 **[Migration Templates](config/templates/examples/)** - Ready-to-use configurations for different project types
 - ✅ **[Validation Checklist](docs/migration-guide.md#-validation-checklist)** - Ensure your migration is complete and working
 
 ### Supported Migrations
@@ -122,18 +122,18 @@ Get started quickly with our comprehensive integration examples:
 
 ### Available Examples
 
-- **[Node.js Express API](examples/nodejs-express/)** - REST API with MongoDB, Docker, JWT auth
-- **[Python FastAPI](examples/python-fastapi/)** - High-performance async API with PostgreSQL
-- **[Go Microservice](examples/go-microservice/)** - gRPC service with Prometheus metrics
-- **[React Frontend](examples/react-frontend/)** - SPA with TypeScript and E2E testing
-- **[Terraform Infrastructure](examples/terraform-infrastructure/)** - IaC with multi-environment support
-- **[Nx Monorepo](examples/monorepo-nx/)** - Complex monorepo with multiple applications
+- **[Node.js Express API](config/templates/examples/nodejs-express/)** - REST API with MongoDB, Docker, JWT auth
+- **[Python FastAPI](config/templates/examples/python-fastapi/)** - High-performance async API with PostgreSQL
+- **[Go Microservice](config/templates/examples/go-microservice/)** - gRPC service with Prometheus metrics
+- **[React Frontend](config/templates/examples/react-frontend/)** - SPA with TypeScript and E2E testing
+- **[Terraform Infrastructure](config/templates/examples/terraform-infrastructure/)** - IaC with multi-environment support
+- **[Nx Monorepo](config/templates/examples/monorepo-nx/)** - Complex monorepo with multiple applications
 
 ### Quick Start with Examples
 
 ```bash
 # Choose an example and copy it
-cp -r examples/nodejs-express/ /path/to/your-project/
+cp -r config/templates/examples/nodejs-express/ /path/to/your-project/
 cd /path/to/your-project
 
 # Customize for your needs
@@ -558,8 +558,11 @@ flowchart TB
 ├── .secrets/
 │   └── mise-age.txt             # Age key pair for SOPS encryption
 │
-├── spec/                        # ShellSpec tests
-├── templates/                   # Script templates
+├── tests/                       # ShellSpec tests
+├── config/
+│   ├── templates/               # Script and project templates
+│   │   └── examples/            # Example projects
+│   └── *.template               # Configuration templates
 └── docs/                        # Documentation
 ```
 
@@ -711,7 +714,7 @@ mise run test
 mise run test:coverage
 
 # Test specific file
-shellspec spec/scripts/build/compile_spec.sh
+shellspec tests/scripts/build/compile_spec.sh
 
 # Test scripts locally
 CI_TEST_MODE=DRY_RUN ./scripts/build/10-ci-compile.sh

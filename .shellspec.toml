@@ -1,5 +1,5 @@
 [shell]
-spec_helper = "spec/spec_helper.sh"
+spec_helper = "tests/spec_helper.sh"
 
 [formatter]
 color = true
@@ -25,7 +25,7 @@ jobs = 4
 
 [paths]
 lib = "lib"
-spec = "spec"
+spec = "tests"
 pattern = "*_spec.sh"
 
 [kcov]
@@ -40,5 +40,5 @@ default = true
 profiles = ["default", "ci"]
 
 [projects]
-default = "spec"
-ci = "spec --format documentation --coverage"
+default = "tests"
+ci = "tests --format documentation --coverage"

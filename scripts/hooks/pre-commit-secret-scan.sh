@@ -53,17 +53,27 @@ get_staged_files() {
   # Get only staged files that could contain secrets
   local staged_files
   staged_files=$(git diff --cached --name-only --diff-filter=ACM | \
-    grep -E '\.(env|ini|cfg|conf|key|pem|p12|pfx|crt|der|pem|jks|keystore|store)$| \
-    grep -v '^$' || true)
+    grep -E '\.(env|ini|cfg|conf|key|pem|p12|pfx|crt|der|jks|keystore|store)$' 2>/dev/null || true)
 
   # Add staged files with common secret patterns in content
   local additional_files
   additional_files=$(git diff --cached --name-only --diff-filter=ACM | \
-    grep -E '\.(sh|bash|zsh|fish|py|js|ts|php|rb|go|java|cs|vb|ps1|psm1|sql)$' || true)
+    grep -E '\.(sh|bash|zsh|fish|py|js|ts|php|rb|go|java|cs|vb|ps1|psm1|sql)$' 2>/dev/null || true)
 
   # Combine and deduplicate
   local all_files
-  all_files=$(printf '%s\n' "$staged_files" "$additional_files" | sort -u | grep -v '^$')
+  if [[ -n "$staged_files" && -n "$additional_files" ]]; then
+    all_files=$(printf '%s\n%s\n' "$staged_files" "$additional_files" | sort -u)
+  elif [[ -n "$staged_files" ]]; then
+    all_files="$staged_files"
+  elif [[ -n "$additional_files" ]]; then
+    all_files="$additional_files"
+  else
+    all_files=""
+  fi
+
+  # Remove empty lines
+  all_files=$(echo "$all_files" | grep -v '^$' 2>/dev/null || echo "$all_files")
 
   if [[ -z "$all_files" ]]; then
     return 0
@@ -352,6 +362,8 @@ main() {
   local start_time
   start_time=$(date +%s)
 
+  local overall_success=true
+
   log_info "Pre-commit Secret Scan Hook v$PRE_COMMIT_SECRET_SCAN_VERSION"
 
   case "$behavior" in
@@ -408,7 +420,6 @@ main() {
     log_info "Found $scanned_files staged files to scan"
 
     # Perform different types of scans
-    local overall_success=true
 
     # Quick pattern check first (fast)
     if ! quick_secret_scan "${files_array[@]}"; then

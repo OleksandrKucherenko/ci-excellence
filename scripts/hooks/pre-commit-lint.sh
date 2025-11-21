@@ -176,9 +176,10 @@ get_shellcheck_options() {
   fi
 
   # Check for .shellcheckrc configuration
-  if [[ -f "$PROJECT_ROOT/.shellcheckrc" ]]; then
-    options+=("--config-file=$PROJECT_ROOT/.shellcheckrc")
-  fi
+  # Note: Temporarily disabled due to parsing issues
+  # if [[ -f "$PROJECT_ROOT/.shellcheckrc" ]]; then
+  #   options+=("--rcfile=$PROJECT_ROOT/.shellcheckrc")
+  # fi
 
   echo "${options[*]}"
 }
