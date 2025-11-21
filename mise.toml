@@ -77,6 +77,34 @@ run = ["./scripts/profile/switch-profile.sh \"$@\""]
 description = "Show current profile status"
 run = ["./scripts/profile/show-profile.sh"]
 
+# Environment management tasks
+[tasks.env]
+description = "Environment management commands"
+
+[tasks.env.list]
+description = "List available environments"
+run = ["./scripts/profile/env-list.sh \"$@\""]
+
+[tasks.env.show]
+description = "Show detailed environment information"
+run = ["./scripts/profile/env-show.sh \"$@\""]
+
+[tasks.env.create]
+description = "Create new environment with inheritance"
+run = ["./scripts/profile/env-create.sh \"$@\""]
+
+[tasks.env.delete]
+description = "Delete environment (custom environments only)"
+run = ["./scripts/profile/env-delete.sh \"$@\""]
+
+[tasks.env.validate]
+description = "Validate environment configuration"
+run = ["./scripts/profile/env-validate.sh \"$@\""]
+
+[tasks.env.migrate-secrets]
+description = "Migrate .enc secrets to JSON format"
+run = ["./scripts/profile/env-migrate-secrets.sh \"$@\""]
+
 # Testing tasks
 [tasks.test]
 description = "Run all tests with ShellSpec"
