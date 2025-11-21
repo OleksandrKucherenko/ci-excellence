@@ -1,0 +1,94 @@
+# Commitizen Configuration
+# Conventional commit message standardization
+# Docs: https://commitizen-tools.github.io/commitizen/
+
+[tool]
+# Use the conventional changelog preset
+name = "cz-conventional-changelog"
+version = "1.0.0"
+type = "conventional"
+
+# Commit types configuration
+[tool.types]
+# A new feature
+feat = { description = "A new feature", title = "Features" }
+
+# A bug fix
+fix = { description = "A bug fix", title = "Bug Fixes" }
+
+# Documentation only changes
+docs = { description = "Documentation only changes", title = "Documentation" }
+
+# Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
+style = { description = "Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)", title = "Styles" }
+
+# A code change that neither fixes a bug nor adds a feature
+refactor = { description = "A code change that neither fixes a bug nor adds a feature", title = "Code Refactoring" }
+
+# A code change that improves performance
+perf = { description = "A code change that improves performance", title = "Performance Improvements" }
+
+# Adding missing tests or correcting existing tests
+test = { description = "Adding missing tests or correcting existing tests", title = "Tests" }
+
+# Changes that affect the build system or external dependencies (example scopes: gulp, broccoli, npm)
+build = { description = "Changes that affect the build system or external dependencies (example scopes: gulp, broccoli, npm)", title = "Builds" }
+
+# Changes to our CI configuration files and scripts (example scopes: Travis, Circle, BrowserStack, SauceLabs)
+ci = { description = "Changes to our CI configuration files and scripts (example scopes: Travis, Circle, BrowserStack, SauceLabs)", title = "Continuous Integrations" }
+
+# Other changes that don't modify src or test files
+chore = { description = "Other changes that don't modify src or test files", title = "Chores" }
+
+# Reverts a previous commit
+revert = { description = "Reverts a previous commit", title = "Reverts" }
+
+# Commit scopes for better organization
+[tool.scopes]
+# CI/CD related changes
+ci = ["github-actions", "workflows", "pipeline", "deployment", "security"]
+
+# Configuration files
+config = ["mise", "lefthook", "sops", "commitizen", "trufflehog"]
+
+# Scripts and automation
+scripts = ["setup", "build", "test", "release", "deployment", "maintenance", "hooks"]
+
+# Documentation
+docs = ["readme", "specification", "planning", "guides", "api"]
+
+# Development tools
+tools = ["shellcheck", "shfmt", "shellspec", "gitleaks", "environment"]
+
+# Breaking changes allowed for these types
+[tool.allowBreakingChanges]
+feat = true
+fix = true
+perf = true
+refactor = true
+
+# Interactive prompts configuration
+[tool.messages]
+type = "Select the type of change that you're committing"
+scope = "Denote the scope of this change"
+customScope = "Denote the scope of this change:"
+subject = "Write a short, imperative tense description of the change:\n"
+body = "Provide a longer description of the change:\n"
+breaking = "List any breaking changes:\n"
+footer = "Is this a breaking change? (y/n)"
+confirmCommit = "Are you sure you want to proceed with the commit above?"
+
+# Skip footer question to reduce friction
+[tool.skipQuestions]
+footer = true
+
+# Commit message validation patterns
+[tool.subjectPattern]
+pattern = "^(.*?)(?:\\(([^)]+)\\))?!?: .*$"
+errorMessage = "The commit message subject does not match the required format"
+
+# Formatting constraints
+[tool.formatting]
+maxSubjectLength = 50
+maxHeaderWidth = 100
+maxLineWidth = 100
