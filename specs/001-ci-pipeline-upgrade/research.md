@@ -65,30 +65,33 @@ This document captures the technical research and decision-making process for im
 - Tag assignment workflow moves environment tags using: `git tag -f <env-tag> <commit>` then `git push -f origin <env-tag>`
 - Document tag architecture and workflows in README
 
-### 3. Deployment Queue Management
+### 3. Deployment Conflict Management
 
-**Question**: What mechanism should be used to queue deployments to the same environment?
+**Question**: What mechanism should be used to handle concurrent deployments to the same environment while maintaining stateless pipeline principles?
 
-**Decision**: Use GitHub Actions concurrency groups with queue strategy
+**Decision**: Use GitHub Actions native concurrency groups with fail-fast approach
 
 **Rationale**:
-- GitHub Actions native `concurrency` feature provides FIFO queuing
+- **Constitution Compliance**: Stateless pipeline principles prohibit custom queue management with shared mutable state
+- GitHub Actions native `concurrency` provides deployment protection without external state
 - Syntax: `concurrency: { group: 'deploy-${{ inputs.environment }}', cancel-in-progress: false }`
-- When `cancel-in-progress: false`, queues jobs instead of canceling them
-- Queue position visible in GitHub Actions UI
+- When deployment conflicts occur, jobs fail immediately with clear error messaging
+- Report generator provides retry links with pre-filled parameters for manual resubmission
 - No external infrastructure required (Redis, database, etc.)
+- Supports constitution requirement for stateless, deterministic pipelines
 
 **Alternatives Considered**:
-- External queue (Redis/RabbitMQ): Rejected because requires additional infrastructure and credentials
-- File-based locking: Rejected because prone to race conditions and stale locks
-- Cancel-in-progress: Rejected because requirement specifies FIFO queue, not cancellation
-- Manual coordination: Rejected because error-prone and doesn't scale
+- **Custom FIFO queue**: Rejected because violates stateless pipeline principles (requires shared mutable state)
+- External queue (Redis/RabbitMQ): Rejected because requires additional infrastructure and violates statelessness
+- File-based locking: Rejected because prone to race conditions and requires shared state
+- Cancel-in-progress: Rejected because requirement specifies conflict detection with retry capability
 
 **Implementation Notes**:
 - Define concurrency group at workflow level for deployment jobs
 - Use dynamic group name based on environment parameter
 - Different environments use different groups (allows parallel deployments across environments)
-- Document queue behavior in workflow comments
+- Conflict detection job provides retry links with pre-filled parameters
+- Document conflict behavior in workflow comments
 
 ### 4. Rollback Version Selection Algorithm
 
@@ -172,7 +175,33 @@ This document captures the technical research and decision-making process for im
 - Generate links for: promote-release, rollback, assign-state (stable/unstable), maintenance-tasks
 - Call report generator as final step in notify jobs
 
-### 7. CI Script Testability Framework
+### 7. Feature Activation Strategy
+
+**Question**: How should features be activated without complex ENABLE_/DISABLE_ flag management?
+
+**Decision**: Script-level configuration detection with testability logic
+
+**Rationale**:
+- **Simplified Architecture**: Removes complex variable-driven activation while maintaining control
+- Scripts detect required configuration and skip gracefully with informative messages
+- CI_TEST_* variables provide comprehensive testability without feature flags
+- Reduces configuration burden - no need to maintain multiple ENABLE_* variables
+- Scripts implement idempotent behavior that handles missing configuration without pipeline failures
+- Aligns with clarifications to replace ENABLE_/DISABLE_ logic with testability logic
+
+**Alternatives Considered**:
+- **Variable-driven activation with ENABLE_* flags**: Rejected because adds complex flag management as identified in clarifications
+- **Pure auto-activation**: Rejected because reduces explicit control and makes behavior less predictable
+- **Hybrid approach with auto-setting flags**: Rejected because still complex and doesn't align with simplification goal
+
+**Implementation Notes**:
+- Scripts check for required prerequisites (credentials, configuration files, tools)
+- Graceful skip with clear messaging when prerequisites not met
+- CI_TEST_* variables override normal behavior for testing scenarios
+- Document script prerequisites in header comments
+- Use mise.toml for managing required tools and dependencies
+
+### 8. CI Script Testability Framework
 
 **Question**: What is the standard pattern for implementing testability in CI scripts?
 
@@ -252,7 +281,7 @@ CI_TEST_SECURITY_SCAN_BEHAVIOR=EXECUTE
 - Document all test modes in script header comments
 - Log which variable source was used for transparency
 
-### 8. Monorepo Sub-Project Detection
+### 9. Monorepo Sub-Project Detection
 
 **Question**: How to determine which sub-project is affected by a commit/tag?
 
@@ -276,42 +305,45 @@ CI_TEST_SECURITY_SCAN_BEHAVIOR=EXECUTE
 - Default to root project when ambiguous
 - Document sub-project detection logic in README
 
-### 9. Pipeline Independence & State Management
+### 10. Pipeline Independence & State Management
 
 **Question**: How should pipelines coordinate without shared mutable state?
 
 **Decision**: Stateless pipeline architecture with git tags as single source of truth
 
 **Rationale**:
+- **Constitution Compliance**: Stateless pipeline principles prohibit shared mutable state and execution order dependencies
 - **Concurrency safety**: Multiple pipeline runs execute simultaneously without race conditions
 - **Reliability**: No external dependencies that can fail or become inconsistent
 - **Reproducibility**: Re-running a pipeline produces the same result (given same commit and inputs)
 - **Testability**: Each pipeline run can be tested in isolation
 - **Simplicity**: No external state store to manage, secure, or back up
 - Git tags provide atomic, durable state (environment tags moved with force-push)
-- GitHub Actions concurrency groups handle queue coordination natively
+- GitHub Actions concurrency groups handle deployment conflict protection natively
 - GitHub Variables and Secrets are read-only configuration (not mutable runtime state)
 
 **Alternatives Considered**:
+- **Custom FIFO queue**: Rejected because violates stateless pipeline principles (requires shared mutable state and execution order dependencies)
 - **Shared state files in repository**: Rejected because requires commit+push during pipeline (creates noise, race conditions, conflicts)
-- **External database (Redis, PostgreSQL)**: Rejected because adds infrastructure dependency, credentials management, failure modes
+- **External database (Redis, PostgreSQL)**: Rejected because adds infrastructure dependency and violates statelessness
 - **GitHub Actions artifacts**: Rejected because artifacts are scoped to single workflow run (not shared across workflows)
 - **GitHub API (issues, discussions)**: Rejected because not designed for state coordination, rate limits apply
-- **Workflow dispatch with state passing**: Rejected because only works for caller→callee, not peer-to-peer coordination
 
 **Implementation Notes**:
-- Deployment queue uses GitHub Actions `concurrency` groups (native, no external state)
+- Deployment conflicts use GitHub Actions `concurrency` groups (native, no external state)
 - Environment tags moved atomically with `git tag -f && git push -f` (last write wins, no locks needed)
 - Version detection uses `git tag --points-at` (read-only, always current)
 - Pipeline metadata stored in GitHub Actions workflow runs (read-only historical data)
-- No coordination files (e.g., `.deployment-lock`, `current-version.txt`)
+- No coordination files (e.g., `.deployment-lock`, `current-version.txt`, queue state)
 - Scripts compute state from git tags on every run (idempotent)
+- Fail-fast approach with retry links instead of queued execution
 
 **Concurrency Guarantees**:
-- Same environment: Serialized via concurrency groups (FIFO queue)
+- Same environment: Conflict detection with fail-fast and retry links
 - Different environments: Fully concurrent (no blocking)
 - Tag creation: Atomic git operation (no partial writes)
 - Tag reading: Eventually consistent (git fetch may be stale by seconds)
+- Pipeline behavior: Deterministic and reproducible regardless of execution order or timing
 
 ## Technology Stack Validation
 

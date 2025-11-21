@@ -14,6 +14,11 @@
 - Q: What is the actual mechanism to detect and handle hung scripts during real pipeline execution? → A: Workflow-level timeout configured in GitHub Actions job definitions with process termination, with ability to override timeout via global environment variable
 - Q: What triggers the "self-healing" pipeline and what scope of changes can it make? → A: Triggered manually via one-click link provided in logs and summary (not automatic)
 - Q: Can deployments run concurrently across environments and within the same environment? → A: Allowed to different environments; same environment blocks with queue
+- Q: How should deployment conflicts be managed while maintaining stateless pipeline principles? → A: Use GitHub Actions native concurrency only - Deployments fail fast if concurrent, no queue tracking, provides retry links for manual resubmission
+- Q: How should feature activation be controlled without complex flag management? → A: Drop ENABLE_ and DISABLE_ logic, replaced by testability logic of each script
+- Q: How should performance requirements be specified across different projects? → A: Timeouts are safety guards, performance demands should be configured manually for each project
+- Q: When should administrators be allowed to bypass CI pipeline for tag operations? → A: Emergency override only with post-incident review and documented scenarios
+- Q: How should script size limits be balanced with documentation and functionality requirements? → A: Enforce strict 50 LOC limit requiring script refactoring or external helpers
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -49,7 +54,7 @@ As a deployment manager working with a monorepo containing multiple sub-projects
 2. **Given** I want to deploy the root project v2.0.0 to staging, **When** I assign environment tag "staging" to the commit tagged "v2.0.0" via pipeline, **Then** the root project deploys to staging environment
 3. **Given** I attempt to manually create an environment tag (production, staging, etc.), **When** I try to push the tag, **Then** git hooks prevent the push with a message directing me to use the CI pipeline
 4. **Given** I need to deploy the same version to multiple environments, **When** I assign environment tags "api/production", "api/staging", "api/canary" to the same commit (which has version tag "api/v1.0.0"), **Then** all three environment deployments trigger concurrently without blocking each other
-5. **Given** a deployment to production is in progress, **When** I trigger another deployment to production, **Then** the second deployment is queued and shows its queue position and estimated wait time
+5. **Given** a deployment to production is in progress, **When** I trigger another deployment to production, **Then** the second deployment fails immediately with a conflict error and provides a retry link with pre-filled parameters
 6. **Given** a version is deployed and tested, **When** I assign a state tag "api/v1.0.0-stable" to the commit, **Then** the version is marked as stable and prioritized for rollback operations
 
 ---
@@ -108,22 +113,6 @@ As a developer adopting this CI/CD framework, I want all scripts to be well-docu
 
 ---
 
-### User Story 6 - Minimalistic Auto-Activation Configuration (Priority: P3)
-
-As a team using this CI framework, I want features to auto-enable when sufficient configuration is provided so I don't have to maintain complex feature flags for simple integrations like notifications.
-
-**Why this priority**: Quality-of-life improvement that reduces configuration burden but doesn't block functionality. Can be added after core features are stable.
-
-**Independent Test**: Can be tested by adding a notification token to CI secrets and verifying that the next pipeline run automatically sends notifications without manually enabling a feature flag.
-
-**Acceptance Scenarios**:
-
-1. **Given** I add APPRISE_URL to GitHub Secrets, **When** the next pipeline runs, **Then** notifications are automatically sent without setting ENABLE_NOTIFICATIONS=true
-2. **Given** notification credentials are not configured, **When** pipeline runs, **Then** the notification step skips gracefully with a log message indicating missing configuration
-3. **Given** I want to explicitly disable a feature despite having credentials, **When** I set DISABLE_NOTIFICATIONS=true, **Then** notifications are skipped even with valid credentials
-
----
-
 ### User Story 7 - Enhanced Quality Gates and Security (Priority: P2)
 
 As a security-conscious team, I want all CI scripts to follow quality gates including secret rotation mechanisms, minimal dependencies, small focused scripts, stable versioning, and commit message enforcement so we maintain security and code quality standards.
@@ -147,8 +136,8 @@ As a security-conscious team, I want all CI scripts to follow quality gates incl
 
 - What happens when a tag assignment request specifies a non-existent sub-project path?
 - How does the system handle simultaneous tag assignments to the same commit for the same environment?
-- What happens when a queued deployment becomes invalid (e.g., newer version deployed while waiting in queue)?
-- How does the system handle deployment queue when a deployment fails or is cancelled?
+- What happens when a deployment fails due to concurrent deployment conflict?
+- How does the system handle deployment retry links when conflicts occur?
 - What occurs when deployment pipeline triggers but environment-specific configuration folder is missing?
 - How does rollback behave when no stable previous version exists (all prior versions are unstable or deprecated)?
 - How does rollback behave when the identified previous version's tag has been manually deleted?
@@ -161,6 +150,8 @@ As a security-conscious team, I want all CI scripts to follow quality gates incl
 - How does the system handle deployment to a region that doesn't exist in cloud provider mapping?
 - What happens when SOPS decryption fails due to missing or incorrect decryption keys?
 - How does the system handle SOPS-encrypted files that become corrupted or have invalid format?
+- What constitutes an emergency scenario that justifies administrator tag override?
+- How is post-incident review conducted for emergency tag overrides?
 
 ## Requirements *(mandatory)*
 
@@ -189,14 +180,14 @@ As a security-conscious team, I want all CI scripts to follow quality gates incl
 - **FR-012**: Git hooks MUST prevent developers from manually creating protected environment tags
 - **FR-013**: CI pipeline MUST validate and reject protected tag creation attempts
 - **FR-014**: System MUST allow tag assignment to commits in non-main branches
-- **FR-015**: System MUST allow administrators to modify tags directly when necessary
+- **FR-015**: System MUST allow administrator tag overrides only in documented emergency scenarios with post-incident review and audit logging
 
 #### Deployment Concurrency
 
 - **FR-067**: System MUST allow deployments to different environments to run concurrently
-- **FR-068**: System MUST queue deployments when multiple deployments target the same environment
-- **FR-069**: System MUST process queued deployments for the same environment sequentially in FIFO order
-- **FR-070**: System MUST display queue position and estimated wait time for queued deployments
+- **FR-068**: System MUST prevent concurrent deployments to the same environment using GitHub Actions native concurrency groups
+- **FR-069**: System MUST fail fast when deployment conflict occurs and provide retry links with pre-filled parameters
+- **FR-070**: System MUST detect deployment conflicts and suggest manual retry with clear error messaging
 
 #### Rollback Mechanism
 
@@ -231,7 +222,7 @@ As a security-conscious team, I want all CI scripts to follow quality gates incl
 - **FR-074**: Git tags are the ONLY permitted shared state mechanism (immutable once created, except environment tags moved atomically)
 - **FR-075**: Each pipeline run MUST be deterministic and reproducible given the same git commit and inputs
 - **FR-076**: Pipeline behavior MUST NOT depend on the execution order or timing of concurrent pipeline runs
-- **FR-077**: Deployment queue management MUST use GitHub Actions native concurrency groups (not external coordination)
+- **FR-077**: Deployment conflict management MUST use GitHub Actions native concurrency groups (not external coordination)
 - **FR-078**: Secrets and configuration variables are read-only inputs (not mutable shared state)
 
 #### CI Scripts Organization
@@ -276,17 +267,17 @@ As a security-conscious team, I want all CI scripts to follow quality gates incl
 - **FR-041**: Scripts MUST include commented examples for common scenarios
 - **FR-042**: Scripts MUST document all supported CI_TEST_* environment variables and their behaviors
 
-#### Minimalistic Configuration
+#### Script Configuration Detection
 
-- **FR-043**: Features MUST auto-enable when sufficient configuration is detected
-- **FR-044**: Features MUST skip gracefully when required configuration is missing
-- **FR-045**: Users MUST be able to explicitly disable auto-enabled features via DISABLE_* flags
+- **FR-043**: Scripts MUST detect required configuration and skip gracefully with informative log messages when prerequisites are not met
+- **FR-044**: Scripts MUST use CI_TEST_* variables for conditional execution and testing scenarios
+- **FR-045**: Scripts MUST implement idempotent behavior that handles missing configuration without pipeline failures
 
 #### Quality Gates
 
 - **FR-046**: CI scripts MUST NOT contain hardcoded credentials, tokens, or secrets
 - **FR-047**: System MUST provide secret rotation mechanisms documented per script in SECURITY.md
-- **FR-048**: CI scripts SHOULD be under 50 lines of code (excluding comments)
+- **FR-048**: CI scripts MUST be under 50 lines of code (excluding comments) requiring refactoring or external helpers when exceeding limit
 - **FR-049**: Scripts MUST have minimal dependencies with clear purpose
 - **FR-050**: All tool dependencies MUST use specific version tags (no "latest" or untagged versions)
 - **FR-051**: Git hooks MUST enforce linting, formatting, unit tests, security scans, and performance tests
@@ -306,27 +297,27 @@ As a security-conscious team, I want all CI scripts to follow quality gates incl
 - **CI Script**: Represents executable pipeline step with testability support
 - **Maintenance Task**: Represents automated maintenance operation (cleanup, sync-files, deprecate-old-versions, security-audit, dependency-update)
 - **Encrypted Secret**: Represents SOPS-encrypted credential file stored in environment-specific folders, decrypted via MISE during pipeline execution
-- **Deployment Queue**: Represents FIFO queue of pending deployments for a specific environment, with position tracking and wait time estimation
+- **Deployment Conflict Management**: Represents GitHub Actions native concurrency protection that prevents simultaneous deployments to the same environment, with retry link generation for conflicts
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
-- **SC-001**: Pipeline completion reports display all required action links within 5 seconds of completion
-- **SC-002**: Teams can promote a version from pre-release to release in under 30 seconds using direct links
-- **SC-003**: Deployment to any environment completes within 10 minutes for standard-sized projects
+- **SC-001**: Pipeline completion reports display all required action links with configurable timeout limits
+- **SC-002**: Teams can promote a version from pre-release to release using direct links without manual URL construction
+- **SC-003**: Deployment completion times are configurable per project with safety timeout guards
 - **SC-004**: 100% of protected tag creation attempts via manual git commands are blocked by hooks
-- **SC-005**: Environment profile switching completes in under 2 seconds
+- **SC-005**: Environment profile switching functions correctly with configurable performance expectations
 - **SC-006**: All CI scripts execute in DRY_RUN mode without errors, producing readable command previews
 - **SC-007**: 90% of CI scripts stay under 50 lines of code (excluding comments)
 - **SC-008**: Zero hardcoded secrets detected in any CI script file
 - **SC-009**: Teams can test any pipeline step locally without full CI environment setup
 - **SC-010**: New developers can understand and customize a CI script within 15 minutes using inline documentation
-- **SC-011**: Notification features auto-enable within one pipeline run after credentials are configured
+- **SC-011**: Scripts detect missing configuration and skip gracefully within one pipeline run
 - **SC-012**: 100% of non-conventional commits are blocked by git hooks before reaching repository
 - **SC-013**: Secret rotation procedures are documented for 100% of scripts using secrets
-- **SC-014**: Multi-region deployments to 3+ regions complete within 15 minutes in parallel
-- **SC-015**: Rollback to previous version completes within 5 minutes with automatic version identification
+- **SC-014**: Multi-region deployments complete in parallel with configurable performance targets per project
+- **SC-015**: Rollback to previous version completes with configurable timeout limits and automatic version identification
 
 ## Assumptions
 

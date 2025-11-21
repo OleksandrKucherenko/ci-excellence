@@ -59,6 +59,7 @@ pnpm-debug.log*
 *.bak
 *.orig
 *.old
+*.backup
 .cache/
 .parcel-cache/
 

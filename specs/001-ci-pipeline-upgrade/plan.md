@@ -7,7 +7,9 @@
 
 ## Summary
 
-This feature implements a comprehensive GitHub Actions CI/CD pipeline upgrade with advanced deployment control, multi-environment management, and testable DRY scripts. The system supports monorepo deployments with sub-project versioning, environment-specific git tags, deployment queuing, rollback capabilities, and SOPS-encrypted secrets managed via MISE. All pipeline logic is extracted into standalone testable scripts (Bash/TypeScript) with workflow-level timeout protection. Pipeline completion reports include actionable links for release promotion, rollback, state assignment, and maintenance tasks.
+This feature implements a comprehensive GitHub Actions CI/CD pipeline upgrade with advanced deployment control, multi-environment management, and testable DRY scripts. The system supports monorepo deployments with sub-project versioning, environment-specific git tags, deployment conflict management via GitHub Actions native concurrency, rollback capabilities, and SOPS-encrypted secrets managed via MISE. All pipeline logic is extracted into standalone testable scripts (Bash/TypeScript) with workflow-level timeout protection. Pipeline completion reports include actionable links for release promotion, rollback, state assignment, and maintenance tasks.
+
+Based on recent clarifications, the design eliminates queue management in favor of GitHub Actions native concurrency for stateless pipeline compliance, removes ENABLE_/DISABLE_ flag complexity in favor of script-level testability logic, and makes performance targets configurable per project rather than imposing specific time requirements.
 
 ## Technical Context
 
@@ -17,7 +19,7 @@ This feature implements a comprehensive GitHub Actions CI/CD pipeline upgrade wi
 **Testing**: Bash script testing via CI_TEST_MODE environment variables (PASS, FAIL, SKIP, TIMEOUT, DRY_RUN, EXECUTE), GitHub Actions workflow validation via action-validator
 **Target Platform**: GitHub Actions runners (ubuntu-latest), local development on Bash-compatible systems (Linux, macOS, WSL)
 **Project Type**: CI/CD framework (infrastructure) supporting Node.js monorepo applications
-**Performance Goals**: Pipeline completion reports < 5s after job finish, deployment queuing response < 2s, environment profile switching < 2s, rollback execution < 5 minutes
+**Performance Goals**: Pipeline completion reports with configurable timeout limits, deployment completion times configurable per project with safety timeout guards
 **Constraints**: GitHub Actions timeout limits (6 hours max per job, overridable via CI_JOB_TIMEOUT_MINUTES), workflow-level timeout for hung script detection, 100% secret scanning coverage (no hardcoded credentials), 90% of scripts < 50 LOC
 **Scale/Scope**: Support for monorepos with multiple sub-projects, 5+ environments (production, staging, canary, sandbox, performance), multi-region deployments (3+ regions), 10+ CI scripts across lifecycle phases
 
@@ -25,61 +27,25 @@ This feature implements a comprehensive GitHub Actions CI/CD pipeline upgrade wi
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-### I. Variable-Driven Activation ✅ PASS
+This implementation complies with all principles defined in `.specify/memory/constitution.md`:
 
-- All optional pipeline jobs (e2e tests, bundling, Docker publishing, notifications) use `ENABLE_*` flags
-- Jobs skip gracefully when disabled (no failures from missing configuration)
-- Documentation includes all available `ENABLE_*` flags
-- Dependent jobs handle skipped prerequisites correctly
+- **Variable-Driven Activation**: ✅ Clarified to use script-level testability logic instead of ENABLE_* flags, removing complex flag management while maintaining control over feature execution through CI_TEST_* variables
+- **Stub-Based Customization**: ✅ All CI scripts are transparent stubs with documented extension points and commented examples
+- **Security-First**: ✅ Security scanning runs unconditionally; secrets managed via SOPS + age with proper rotation procedures
+- **Graceful Degradation**: ✅ Dependent jobs handle skipped prerequisites using `always()` patterns; scripts skip gracefully with informative messages
+- **Monorepo-Ready Node.js/TypeScript Focus**: ✅ Workspace-aware with TypeScript-first support and Bash 5.x compatibility
+- **Stateless Pipeline Independence**: ✅ Uses GitHub Actions native concurrency for conflict management; no shared mutable state; git tags as single source of truth
 
-### II. Stub-Based Customization ✅ PASS
+*Refer to `.specify/memory/constitution.md` for complete principle definitions and requirements.*
 
-- All CI scripts in `/scripts/` are stubs with inline documentation
-- Scripts include commented examples for Node.js/TypeScript
-- No magic behavior - all logic is transparent and editable
-- Custom implementations are copy-paste-ready
-
-### III. Security-First ✅ PASS
-
-- Security scanning runs unconditionally (not guarded by enable flags)
-- Git hooks enforce secret scanning locally (Gitleaks + Trufflehog)
-- SOPS + age used for secret encryption at rest
-- GitHub Secrets used for CI credentials (never variables)
-- Action syntax validated with action-validator
-
-### IV. Graceful Degradation ✅ PASS
-
-- Dependent jobs use `if: always() && needs.PREREQ.result != 'failure'` pattern
-- Setup job always runs as foundation
-- Test jobs treat skipped compile as success
-- Notification job runs on all outcomes
-
-### V. Monorepo-Ready Node.js/TypeScript Focus ✅ PASS
-
-- Caching hashes `**/package*.json`, `**/yarn.lock`, `**/pnpm-lock.yaml`
-- Support for workspace-scoped operations
-- Version determination reads from `package.json`
-- Artifact collection includes `dist/`, `build/`, `out/`
-- TypeScript examples provided for all customization points
-
-### VI. Stateless Pipeline Independence ✅ PASS
-
-- Pipelines act independently without shared mutable state
-- No external state stores, shared files, or coordination databases
-- Git tags are single source of truth for deployment state
-- GitHub Actions concurrency groups for queue management (no external coordination)
-- Each pipeline run is deterministic and reproducible
-- State derived from git tags on every run (not cached)
-- Secrets and configuration are read-only inputs
-
-**GATE RESULT: ✅ ALL PRINCIPLES SATISFIED - Proceed to Phase 0**
+**Post-Phase 1 Validation**: All design decisions maintain constitution compliance. No violations detected.
 
 ## Project Structure
 
 ### Documentation (this feature)
 
 ```text
-specs/[###-feature]/
+specs/001-ci-pipeline-upgrade/
 ├── plan.md              # This file (/speckit.plan command output)
 ├── research.md          # Phase 0 output (/speckit.plan command)
 ├── data-model.md        # Phase 1 output (/speckit.plan command)
@@ -96,7 +62,11 @@ specs/[###-feature]/
 │   ├── pre-release.yml         # PR and dev branch CI
 │   ├── release.yml             # Version tag triggered releases
 │   ├── post-release.yml        # Post-deployment verification
-│   └── maintenance.yml         # Cron-based background tasks
+│   ├── maintenance.yml         # Cron-based background tasks
+│   ├── tag-assignment.yml      # Environment tag management
+│   ├── deployment.yml          # Environment deployments with native concurrency
+│   ├── rollback.yml            # Rollback workflows
+│   └── self-healing.yml        # Code formatting and linting fixes
 └── actions/                    # Reusable composite actions (if needed)
 
 scripts/
@@ -128,6 +98,12 @@ scripts/
 │   ├── 20-ci-security-audit.sh
 │   ├── 30-ci-dependency-update.sh
 │   └── 40-ci-deprecate-versions.sh
+├── hooks/                      # Git hooks for Lefthook
+│   ├── pre-push-tag-protection.sh
+│   ├── pre-commit-secret-scan.sh
+│   ├── pre-commit-format.sh
+│   ├── pre-commit-lint.sh
+│   └── pre-commit-message-check.sh
 └── ci/                         # CI utilities
     ├── report-generator.sh     # Generate actionable links
     ├── workflow-validator.sh   # Validate action syntax
@@ -161,11 +137,3 @@ commitizen.json                 # Commit message enforcement
 
 **Structure Decision**: CI/CD framework structure supporting monorepo applications. The repository is organized around the four-stage pipeline architecture (pre-release, release, post-release, maintenance) with scripts grouped by lifecycle phase. Environment configuration uses folder hierarchy for multi-region support. All infrastructure code lives in `.github/workflows/` and `scripts/`, while environment-specific data lives in `environments/`.
 
-## Complexity Tracking
-
-> **Fill ONLY if Constitution Check has violations that must be justified**
-
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
