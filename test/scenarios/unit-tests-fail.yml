@@ -1,0 +1,24 @@
+# Unit Tests Failure Scenario
+# All jobs succeed except unit tests which fail
+
+name: Unit Tests Failure
+description: Simulate unit tests failing while other jobs pass
+
+# Global settings
+MOCK_ENABLED: true
+MOCK_MODE: ok
+MOCK_DELAY: 1
+MOCK_VERBOSE: true
+
+# Specific job overrides
+MOCK_MODE_UNIT_TESTS: failed
+MOCK_EXIT_CODE: 1
+MOCK_DELAY_UNIT_TESTS: 3
+
+# Feature flags
+ENABLE_COMPILE: true
+ENABLE_LINT: true
+ENABLE_UNIT_TESTS: true
+ENABLE_INTEGRATION_TESTS: true
+ENABLE_E2E_TESTS: false
+ENABLE_BUNDLE: true

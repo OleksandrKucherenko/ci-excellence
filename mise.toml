@@ -66,6 +66,18 @@ run = [
   "fi"
 ]
 
+[tasks.commit]
+description = "Create a commit with guided conventional commit message"
+run = ["cz commit"]
+
+[tasks.changelog]
+description = "Generate or update CHANGELOG.md"
+run = ["cz changelog"]
+
+[tasks.bump]
+description = "Bump version and update changelog"
+run = ["cz bump"]
+
 [hooks]
 enter = ["mise run setup", "mise run install-hooks"]
 
@@ -81,5 +93,7 @@ lefthook = "latest"
 action-validator = "latest"
 # Notification tool
 "pipx:apprise" = "latest"
+# Commit message formatting and validation
+"pipx:commitizen" = "latest"
 # TypeScript runtime
 bun = "latest"

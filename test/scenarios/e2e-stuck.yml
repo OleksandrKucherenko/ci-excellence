@@ -1,0 +1,23 @@
+# E2E Tests Stuck Scenario
+# E2E tests get stuck and timeout
+
+name: E2E Tests Stuck
+description: Simulate E2E tests hanging and requiring timeout
+
+# Global settings
+MOCK_ENABLED: true
+MOCK_MODE: ok
+MOCK_DELAY: 1
+MOCK_VERBOSE: true
+
+# Specific job overrides
+MOCK_MODE_E2E_TESTS: stuck
+MOCK_STUCK_DURATION: 60  # Stuck for 60 seconds before timeout
+
+# Feature flags
+ENABLE_COMPILE: true
+ENABLE_LINT: true
+ENABLE_UNIT_TESTS: true
+ENABLE_INTEGRATION_TESTS: true
+ENABLE_E2E_TESTS: true
+ENABLE_BUNDLE: false

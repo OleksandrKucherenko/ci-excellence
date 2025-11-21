@@ -1,0 +1,24 @@
+# Release with Publish Failure
+# Build succeeds but NPM publish fails
+
+name: Release Publish Failure
+description: Simulate successful build but failed NPM publishing
+
+# Global settings
+MOCK_ENABLED: true
+MOCK_MODE: ok
+MOCK_DELAY: 2
+MOCK_VERBOSE: true
+
+# Specific job overrides
+MOCK_MODE_PUBLISH_NPM: failed
+MOCK_EXIT_CODE: 1
+
+# Release settings
+VERSION_TYPE: minor
+ENABLE_COMPILE: true
+ENABLE_TESTS: true
+ENABLE_NPM_PUBLISH: true
+ENABLE_GITHUB_RELEASE: false  # Won't run if NPM fails
+ENABLE_DOCKER_PUBLISH: false
+ENABLE_DOCUMENTATION: false

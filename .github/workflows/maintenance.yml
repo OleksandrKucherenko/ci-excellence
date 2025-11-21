@@ -30,6 +30,7 @@ jobs:
   cleanup:
     name: Cleanup Old Artifacts
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: |
       github.event_name == 'schedule' ||
       github.event.inputs.action == 'cleanup' ||
@@ -72,6 +73,7 @@ jobs:
   sync-files:
     name: Sync Repository Files
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     if: |
       github.event_name == 'schedule' ||
       github.event.inputs.action == 'sync-files' ||
@@ -133,6 +135,7 @@ jobs:
   deprecate-old-versions:
     name: Deprecate Old Versions
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     if: |
       github.event_name == 'schedule' ||
       github.event.inputs.action == 'deprecate-old-versions' ||
@@ -179,6 +182,7 @@ jobs:
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: |
       github.event_name == 'schedule' ||
       github.event.inputs.action == 'security-audit' ||
@@ -227,6 +231,7 @@ jobs:
   dependency-update:
     name: Update Dependencies
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: |
       github.event_name == 'schedule' ||
       github.event.inputs.action == 'dependency-update' ||
@@ -298,6 +303,7 @@ jobs:
     name: Maintenance Summary
     runs-on: ubuntu-latest
     needs: [cleanup, sync-files, deprecate-old-versions, security-audit, dependency-update]
+    timeout-minutes: 5
     if: always()
     steps:
       - name: Generate summary

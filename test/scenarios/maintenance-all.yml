@@ -1,0 +1,24 @@
+# Full Maintenance Run
+# All maintenance tasks enabled and succeed
+
+name: Full Maintenance
+description: Run all maintenance tasks successfully
+
+# Global settings
+MOCK_ENABLED: true
+MOCK_MODE: ok
+MOCK_DELAY: 2
+MOCK_VERBOSE: true
+
+# Maintenance settings
+ENABLE_CLEANUP: true
+ENABLE_FILE_SYNC: true
+ENABLE_DEPRECATION: true
+ENABLE_SECURITY_AUDIT: true
+ENABLE_DEPENDENCY_UPDATE: true
+ENABLE_NOTIFICATIONS: false
+
+# Cleanup settings
+CLEANUP_DAYS_ARTIFACTS: 7
+CLEANUP_DAYS_WORKFLOWS: 30
+CLEANUP_DAYS_CACHES: 7

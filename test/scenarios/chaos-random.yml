@@ -1,0 +1,21 @@
+# Chaos Testing - Random States
+# Jobs randomly succeed, fail, or get stuck
+
+name: Chaos Testing - Random States
+description: Simulate unpredictable CI behavior for stress testing
+
+# Global settings
+MOCK_ENABLED: true
+MOCK_MODE: random
+MOCK_DELAY: 2
+MOCK_VERBOSE: true
+MOCK_RANDOM_SEED: 42  # For reproducible randomness
+MOCK_STUCK_DURATION: 30  # Short stuck duration for testing
+
+# Feature flags
+ENABLE_COMPILE: true
+ENABLE_LINT: true
+ENABLE_UNIT_TESTS: true
+ENABLE_INTEGRATION_TESTS: true
+ENABLE_E2E_TESTS: true
+ENABLE_BUNDLE: true

@@ -1,0 +1,21 @@
+# Major Release Scenario
+# Successful major version release
+
+name: Major Release
+description: Simulate a successful major version release (e.g., 1.0.0 -> 2.0.0)
+
+# Global settings
+MOCK_ENABLED: true
+MOCK_MODE: ok
+MOCK_DELAY: 3
+MOCK_VERBOSE: true
+
+# Release settings
+VERSION_TYPE: major
+ENABLE_COMPILE: true
+ENABLE_TESTS: true
+ENABLE_NPM_PUBLISH: true
+ENABLE_GITHUB_RELEASE: true
+ENABLE_DOCKER_PUBLISH: true
+ENABLE_DOCUMENTATION: true
+ENABLE_NOTIFICATIONS: true

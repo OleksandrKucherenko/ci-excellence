@@ -1,0 +1,20 @@
+# Happy Path Scenario
+# All jobs succeed quickly
+
+name: Happy Path - All Jobs Succeed
+description: Simulate a perfect CI run where everything passes
+
+# Global mock settings
+MOCK_ENABLED: true
+MOCK_MODE: ok
+MOCK_DELAY: 2
+MOCK_VERBOSE: true
+
+# Feature flags
+ENABLE_COMPILE: true
+ENABLE_LINT: true
+ENABLE_UNIT_TESTS: true
+ENABLE_INTEGRATION_TESTS: true
+ENABLE_E2E_TESTS: true
+ENABLE_BUNDLE: true
+ENABLE_NOTIFICATIONS: false  # Skip notifications in tests
