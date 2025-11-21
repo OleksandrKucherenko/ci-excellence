@@ -1,10 +1,17 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version Change: Initial → 1.0.0
-Created: 2025-11-21
+Version Change: 1.0.0 → 1.1.0
+Updated: 2025-11-21
 
-Added Sections:
+Changes:
+- Added Core Principle VI: Stateless Pipeline Independence (NON-NEGOTIABLE)
+  - Mandates independent pipelines without shared mutable state
+  - Git tags as single source of truth
+  - Prohibits external state stores, shared files, coordination databases
+  - Ensures concurrency safety and reproducibility
+
+Previous Version (1.0.0):
 - Core Principles (5 principles established)
   I. Variable-Driven Activation
   II. Stub-Based Customization
@@ -137,6 +144,27 @@ Node.js projects and requires special handling for compilation and type checking
 - Documentation MUST provide TypeScript-specific examples for all customization points
 - Support for other languages MUST be via clearly documented stub customization, not default behavior
 
+### VI. Stateless Pipeline Independence (NON-NEGOTIABLE)
+
+**Principle**: All pipeline workflows MUST act independently without shared mutable state
+(except read-only secrets). Pipelines MUST NOT coordinate via external state stores, shared
+files, or mutable variables. Git tags are the single source of truth for deployment state.
+
+**Rationale**: Shared mutable state creates race conditions, makes pipelines non-deterministic,
+and introduces external dependencies that reduce reliability. Stateless pipelines enable safe
+concurrency, reproducible builds, and independent testability. This principle is critical for
+production reliability at scale.
+
+**Requirements**:
+- Pipelines MUST NOT read or write shared state files, databases, or external coordination services
+- Pipelines MUST NOT use GitHub Variables for runtime state coordination (configuration only)
+- Git tags are the ONLY permitted shared state (immutable once created, except environment tags moved atomically)
+- Deployment queue management MUST use GitHub Actions native concurrency groups
+- Each pipeline run MUST be deterministic and reproducible given same commit and inputs
+- Pipeline behavior MUST NOT depend on execution order or timing of concurrent runs
+- State computation MUST derive current state from git tags on every run (no cached state)
+- Secrets and configuration files are read-only inputs (not mutable runtime state)
+
 ## Pipeline Architecture & Standards
 
 ### Four-Stage Workflow Design
@@ -255,4 +283,4 @@ For Claude Code or other AI agents assisting with this project, refer to
 All planning, specification, and implementation tasks MUST align with the principles defined
 herein.
 
-**Version**: 1.0.0 | **Ratified**: 2025-11-21 | **Last Amended**: 2025-11-21
+**Version**: 1.1.0 | **Ratified**: 2025-11-21 | **Last Amended**: 2025-11-21

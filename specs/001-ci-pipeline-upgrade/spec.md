@@ -45,12 +45,12 @@ As a deployment manager working with a monorepo containing multiple sub-projects
 
 **Acceptance Scenarios**:
 
-1. **Given** I want to deploy version v1.0.0 of sub-project "api" to production, **When** I trigger the tag assignment pipeline with parameters (sub-project=api, version=v1.0.0, environment=production), **Then** the system creates tag "api/v1.0.0-production" and triggers production deployment for api only
-2. **Given** I want to deploy the root project v2.0.0 to staging, **When** I assign tag "v2.0.0-staging" via pipeline, **Then** the root project deploys to staging environment
+1. **Given** I want to deploy version v1.0.0 of sub-project "api" to production, **When** I trigger the tag assignment pipeline with parameters (sub-project=api, version=v1.0.0, environment=production), **Then** the system creates or moves tag "api/production" to the commit tagged "api/v1.0.0" and triggers production deployment for api only
+2. **Given** I want to deploy the root project v2.0.0 to staging, **When** I assign environment tag "staging" to the commit tagged "v2.0.0" via pipeline, **Then** the root project deploys to staging environment
 3. **Given** I attempt to manually create an environment tag (production, staging, etc.), **When** I try to push the tag, **Then** git hooks prevent the push with a message directing me to use the CI pipeline
-4. **Given** I need to deploy the same version to multiple environments, **When** I assign tags "v1.0.0-production", "v1.0.0-staging", "v1.0.0-canary" to the same commit, **Then** all three environment deployments trigger concurrently without blocking each other
+4. **Given** I need to deploy the same version to multiple environments, **When** I assign environment tags "api/production", "api/staging", "api/canary" to the same commit (which has version tag "api/v1.0.0"), **Then** all three environment deployments trigger concurrently without blocking each other
 5. **Given** a deployment to production is in progress, **When** I trigger another deployment to production, **Then** the second deployment is queued and shows its queue position and estimated wait time
-6. **Given** a version is deployed and tested, **When** I assign a "-stable" suffix tag (e.g., "api/v1.0.0-stable"), **Then** the version is marked as stable in deployment tracking
+6. **Given** a version is deployed and tested, **When** I assign a state tag "api/v1.0.0-stable" to the commit, **Then** the version is marked as stable and prioritized for rollback operations
 
 ---
 
@@ -179,9 +179,12 @@ As a security-conscious team, I want all CI scripts to follow quality gates incl
 #### Git Tags & Deployment Control
 
 - **FR-007**: System MUST support monorepo deployments with multiple sub-projects
-- **FR-008**: System MUST use tag pattern `<path>/<version>` where path is sub-project path (empty for root) and version follows semver
-- **FR-009**: System MUST support environment-specific tag suffixes (e.g., `-production`, `-staging`, `-canary`, `-sandbox`, `-performance`)
-- **FR-010**: System MUST support state tag suffixes (`-stable`, `-unstable`, `-deprecated`) following same path/version pattern
+- **FR-008**: System MUST use three types of git tags:
+  - **Version tags**: `<path>/v<semver>` (e.g., `api/v1.0.0`, `v2.0.0`) - immutable version markers
+  - **Environment tags**: `<path>/<environment>` (e.g., `api/production`, `staging`) - movable pointers indicating deployed commit
+  - **State tags**: `<path>/v<semver>-<state>` (e.g., `api/v1.0.0-stable`) - mark version stability for rollback prioritization
+- **FR-009**: Environment tags MUST be movable (can be deleted and recreated on different commits) to track current deployment
+- **FR-010**: Version tags and state tags MUST be immutable once created (never moved or deleted except by administrators)
 - **FR-011**: System MUST allow tag assignment only through CI pipeline (not manual git commands)
 - **FR-012**: Git hooks MUST prevent developers from manually creating protected environment tags
 - **FR-013**: CI pipeline MUST validate and reject protected tag creation attempts
@@ -220,6 +223,17 @@ As a security-conscious team, I want all CI scripts to follow quality gates incl
 - **FR-056**: System MUST use MISE for controlling secret access and decryption operations
 - **FR-057**: CI scripts MUST decrypt SOPS-encrypted secrets via MISE tasks during pipeline execution
 
+#### Pipeline Independence & Concurrency
+
+- **FR-071**: All pipeline workflows MUST act independently without shared mutable state
+- **FR-072**: Pipelines MUST NOT read or write shared state files, databases, or external state stores
+- **FR-073**: Pipelines MUST NOT use GitHub Variables for mutable runtime state coordination (Variables are for configuration only)
+- **FR-074**: Git tags are the ONLY permitted shared state mechanism (immutable once created, except environment tags moved atomically)
+- **FR-075**: Each pipeline run MUST be deterministic and reproducible given the same git commit and inputs
+- **FR-076**: Pipeline behavior MUST NOT depend on the execution order or timing of concurrent pipeline runs
+- **FR-077**: Deployment queue management MUST use GitHub Actions native concurrency groups (not external coordination)
+- **FR-078**: Secrets and configuration variables are read-only inputs (not mutable shared state)
+
 #### CI Scripts Organization
 
 - **FR-024**: Pipeline workflows MUST remain DRY with minimal inline logic
@@ -232,14 +246,21 @@ As a security-conscious team, I want all CI scripts to follow quality gates incl
 
 #### Script Testability
 
-- **FR-031**: All CI scripts MUST support testability through global environment variables
-- **FR-032**: Scripts MUST listen to CI_TEST_MODE environment variable to control execution behavior
+- **FR-031**: All CI scripts MUST support testability through hierarchical environment variables
+- **FR-032**: Scripts MUST implement variable precedence hierarchy (most specific to least specific):
+  1. `CI_TEST_<PIPELINE>_<SCRIPT>_BEHAVIOR` (pipeline + script specific)
+  2. `CI_TEST_<SCRIPT>_BEHAVIOR` (script specific)
+  3. `CI_TEST_MODE` (global default)
+  4. `EXECUTE` (hardcoded default)
 - **FR-033**: Scripts MUST support test behaviors: FAIL, PASS, SKIP, TIMEOUT, DRY_RUN, EXECUTE
 - **FR-034**: Scripts in DRY_RUN mode MUST print planned commands without executing state modifications
 - **FR-035**: Scripts in DRY_RUN mode MAY read data but MUST NOT modify state
-- **FR-036**: Scripts MUST support per-script environment variables to define specific test behaviors
-- **FR-037**: System MUST enable pipeline testing via configuration matrices covering all execution paths
-- **FR-038**: System MUST support manual and webhook-triggered pipeline execution with optional access restrictions
+- **FR-036**: Pipeline name in variable MUST be uppercase, alphanumeric with underscores (e.g., `PRE_RELEASE`, `DEPLOYMENT_PRODUCTION`)
+- **FR-037**: Script name in variable MUST be uppercase, derived from script filename without prefix (e.g., `COMPILE`, `DEPLOY`, `PUBLISH_NPM`)
+- **FR-038**: System MUST enable testing individual scripts in production pipelines without affecting other scripts
+- **FR-039**: System MUST enable testing same script differently across different pipelines (e.g., DRY_RUN in staging, EXECUTE in production)
+- **FR-040**: System MUST enable pipeline testing via configuration matrices covering all execution paths
+- **FR-041**: System MUST support manual and webhook-triggered pipeline execution with optional access restrictions
 
 #### Timeout Management
 
