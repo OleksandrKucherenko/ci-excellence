@@ -68,6 +68,45 @@ run = [
   "fi",
 ]
 
+
+[tasks.claude-zai]
+description = "🤖 Launch Claude CLI with z.ai configuration"
+run = """
+#!/bin/bash
+set -e
+
+echo "🚀 Launching Claude CLI with z.ai configuration..."
+
+# Check if ZAI_AUTH_TOKEN is set
+if [[ -z "$ZAI_AUTH_TOKEN" ]]; then
+  echo "❌ ZAI_AUTH_TOKEN environment variable is not set!"
+  echo ""
+  echo "💡 To fix this:"
+  echo "   1. Add ZAI_AUTH_TOKEN to your .env file"
+  echo "   2. Or export it manually: export ZAI_AUTH_TOKEN=\"your-token-here\""
+  echo "   3. Or add it to .env.secrets.json using: mise run secrets-edit"
+  echo ""
+  exit 1
+fi
+
+# Set environment variables for z.ai (these override ~/.claude/settings.json)
+export ANTHROPIC_AUTH_TOKEN="$ZAI_AUTH_TOKEN"
+export ANTHROPIC_BASE_URL="https://api.z.ai/api/anthropic"
+export API_TIMEOUT_MS="3000000"
+export ANTHROPIC_DEFAULT_HAIKU_MODEL="glm-4.5-air"
+export ANTHROPIC_DEFAULT_SONNET_MODEL="glm-4.6"
+export ANTHROPIC_DEFAULT_OPUS_MODEL="glm-4.6"
+
+echo "✅ Environment configured for z.ai"
+echo "🔗 Base URL: $ANTHROPIC_BASE_URL"
+echo "🤖 Models: Haiku=$ANTHROPIC_DEFAULT_HAIKU_MODEL, Sonnet=$ANTHROPIC_DEFAULT_SONNET_MODEL, Opus=$ANTHROPIC_DEFAULT_OPUS_MODEL"
+echo "🔑 Token: ${ANTHROPIC_AUTH_TOKEN:0:20}..."
+echo ""
+
+# Launch Claude CLI with the configured environment
+exec claude --dangerously-skip-permissions
+"""
+
 [hooks]
 enter = ["mise run setup", "mise run install-hooks"]
 

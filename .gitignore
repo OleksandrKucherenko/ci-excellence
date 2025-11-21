@@ -55,6 +55,10 @@ pnpm-debug.log*
 # Temporary files
 *.tmp
 *.temp
+*.~*~
+*.bak
+*.orig
+*.old
 .cache/
 .parcel-cache/
 
@@ -94,3 +98,7 @@ desktop.ini
 # Reports
 gitleaks-report.json
 trufflehog-report.json
+
+## AI Coding
+.mcp.json
+.claude/settings.json
