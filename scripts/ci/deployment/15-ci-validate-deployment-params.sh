@@ -44,6 +44,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../../lib/config.sh"
 source "${SCRIPT_DIR}/../../lib/logging.sh"
 source "${SCRIPT_DIR}/../../lib/validation.sh"
+source "${SCRIPT_DIR}/../../lib/environment.sh"
 
 # Input parameters (from GitHub Actions)
 INPUT_TAG_NAME="${INPUT_TAG_NAME:-}"
@@ -116,19 +117,10 @@ validate_tag_name() {
 
 # Validate environment
 validate_environment() {
-    local valid_environments=("staging" "production" "development" "testing" "uat")
-    local is_valid=false
-
-    for env in "${valid_environments[@]}"; do
-        if [[ "$ENVIRONMENT" == "$env" ]]; then
-            is_valid=true
-            break
-        fi
-    done
-
-    if [[ "$is_valid" != "true" ]]; then
-        log_error "❌ Invalid environment: $ENVIRONMENT"
-        log_error "Valid environments: ${valid_environments[*]}"
+    # Use dynamic environment discovery
+    if ! validate_environment_exists "$ENVIRONMENT"; then
+        log_error "❌ Environment validation failed"
+        log_info "Create new environments with: mise run env create <name> --from <base>"
         exit 1
     fi
 

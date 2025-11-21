@@ -48,6 +48,7 @@ source "${SCRIPT_DIR}/../lib/config.sh"
 source "${SCRIPT_DIR}/../lib/logging.sh"
 source "${SCRIPT_DIR}/../lib/validation.sh"
 source "${SCRIPT_DIR}/../lib/deployment.sh"
+source "${SCRIPT_DIR}/../lib/environment.sh"
 
 # Rollback strategies
 declare -a rollback_strategies=(
@@ -95,11 +96,10 @@ validate_rollback_inputs() {
 
     log_info "Validating rollback inputs"
 
-    # Validate environment
-    local valid_environments=("staging" "production")
-    if [[ ! " ${valid_environments[*]} " =~ " $environment " ]]; then
-        log_error "Invalid environment: $environment"
-        log_info "Valid environments: ${valid_environments[*]}"
+    # Validate environment using dynamic discovery
+    if ! validate_environment_exists "$environment"; then
+        log_error "Rollback validation failed - environment '$environment' does not exist"
+        log_info "Available environments: $(discover_environments | tr '\n' ' ')"
         exit 1
     fi
 

@@ -48,6 +48,7 @@ source "${SCRIPT_DIR}/../lib/config.sh"
 source "${SCRIPT_DIR}/../lib/logging.sh"
 source "${SCRIPT_DIR}/../lib/validation.sh"
 source "${SCRIPT_DIR}/../lib/git.sh"
+source "${SCRIPT_DIR}/../lib/environment.sh"
 
 # Function to validate tag name format
 validate_tag_name() {
@@ -205,10 +206,16 @@ move_environment_tag() {
     log_info "Moving environment tag: $tag_name"
 
     # Validate environment name
-    local valid_environments=("staging" "production" "rollback-staging" "rollback-production" "candidate")
-    if [[ ! " ${valid_environments[*]} " =~ " $environment " ]]; then
+    # Allow special tag environments and real environments
+    local special_environments=("rollback-staging" "rollback-production" "candidate")
+
+    # Check if it's a special tag environment
+    if [[ " ${special_environments[*]} " =~ " $environment " ]]; then
+        log_info "Using special tag environment: $environment"
+    # Check if it's a real environment using dynamic discovery
+    elif ! validate_environment_exists "$environment"; then
         log_error "Invalid environment: $environment"
-        log_info "Valid environments: ${valid_environments[*]}"
+        log_info "Valid environments: $(discover_environments | tr '\n' ' ') or special tags: ${special_environments[*]}"
         return 1
     fi
 
