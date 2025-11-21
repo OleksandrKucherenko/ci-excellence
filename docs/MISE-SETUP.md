@@ -73,7 +73,7 @@ This creates:
 **Create secrets file:**
 ```bash
 # Copy example
-cp .env.secrets.json.example .env.secrets.json.tmp
+cp config/.env.secrets.json.example .env.secrets.json.tmp
 
 # Edit with your actual secrets
 vim .env.secrets.json.tmp
@@ -188,13 +188,13 @@ sops secrets.enc.json
 
 Mise automatically installs these tools:
 
-| Tool | Purpose | Version |
-|------|---------|---------|
-| **age** | Encryption for secrets | latest |
-| **sops** | Secret encryption/decryption | latest |
-| **gitleaks** | Detect secrets in git | latest |
-| **trufflehog** | Find leaked credentials | latest |
-| **lefthook** | Git hooks manager | latest |
+| Tool           | Purpose                      | Version |
+| -------------- | ---------------------------- | ------- |
+| **age**        | Encryption for secrets       | latest  |
+| **sops**       | Secret encryption/decryption | latest  |
+| **gitleaks**   | Detect secrets in git        | latest  |
+| **trufflehog** | Find leaked credentials      | latest  |
+| **lefthook**   | Git hooks manager            | latest  |
 
 Check installed tools:
 ```bash
@@ -213,7 +213,7 @@ mise upgrade
 ├── mise.toml                    # Mise configuration
 ├── .env                         # Local environment (not committed)
 ├── .env.secrets.json           # Encrypted secrets (safe to commit)
-├── .env.secrets.json.example   # Example secrets file
+├── config/.env.secrets.json.example   # Example secrets file
 ├── .secrets/                   # Private keys directory
 │   ├── .gitkeep               # Keeps directory in git
 │   ├── mise-age.txt           # Private key (NEVER COMMIT!)

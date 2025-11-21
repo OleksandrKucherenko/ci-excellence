@@ -34,7 +34,9 @@ run = ["trufflehog git file://. --only-verified"]
 
 [tasks.encrypt-secrets]
 description = "Encrypt secrets file with SOPS"
-run = ["sops --encrypt --input-type json --output-type json .env.secrets.json.example > .env.secrets.json"]
+run = [
+  "sops --encrypt --input-type json --output-type json config/.env.secrets.json.example > .env.secrets.json",
+]
 
 [tasks.decrypt-secrets]
 description = "Decrypt secrets file with SOPS"
@@ -63,7 +65,7 @@ run = [
   "  action-validator .github/workflows/*.yml .github/workflows/*.yaml 2>/dev/null || true",
   "else",
   "  echo 'No workflows found in .github/workflows'",
-  "fi"
+  "fi",
 ]
 
 [hooks]

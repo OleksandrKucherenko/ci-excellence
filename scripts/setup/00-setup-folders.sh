@@ -54,15 +54,17 @@ if [ ! -f ".env" ]; then
     fi
 fi
 
+EXAMPLE_SECRETS_PATH="config/.env.secrets.json.example"
+
 # Check if .env.secrets.json exists
 if [ ! -f ".env.secrets.json" ]; then
-    if [ -f ".env.secrets.json.example" ]; then
+    if [ -f "$EXAMPLE_SECRETS_PATH" ]; then
         echo ""
         echo "⚠️  No encrypted secrets file found!"
         echo ""
         echo "To create encrypted secrets:"
         echo "  1. Copy the example file:"
-        echo "     cp .env.secrets.json.example .env.secrets.json.tmp"
+        echo "     cp $EXAMPLE_SECRETS_PATH .env.secrets.json.tmp"
         echo ""
         echo "  2. Edit with your actual secrets:"
         echo "     vim .env.secrets.json.tmp"

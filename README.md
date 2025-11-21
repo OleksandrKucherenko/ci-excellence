@@ -279,7 +279,7 @@ enter = ["mise run setup", "mise run install-hooks"]
 mise run generate-age-key
 
 # 2. Create encrypted secrets file
-cp .env.secrets.json.example .env.secrets.json.tmp
+cp config/.env.secrets.json.example .env.secrets.json.tmp
 vim .env.secrets.json.tmp  # Edit with your secrets
 mise run encrypt-secrets
 rm .env.secrets.json.tmp
@@ -557,40 +557,40 @@ ENABLE_DEPENDENCY_UPDATE=true
 
 Set in: **Repository Settings > Secrets and variables > Actions > Variables**
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ENABLE_COMPILE` | `false` | Enable build/compilation step |
-| `ENABLE_LINT` | `false` | Enable linting |
-| `ENABLE_UNIT_TESTS` | `false` | Enable unit tests |
-| `ENABLE_INTEGRATION_TESTS` | `false` | Enable integration tests |
-| `ENABLE_E2E_TESTS` | `false` | Enable end-to-end tests |
-| `ENABLE_BUNDLE` | `false` | Enable bundling/packaging |
-| `ENABLE_SECURITY_SCAN` | `false` | Enable security scanning |
-| `ENABLE_NPM_PUBLISH` | `false` | Enable NPM publishing |
-| `ENABLE_GITHUB_RELEASE` | `false` | Enable GitHub releases |
-| `ENABLE_DOCKER_PUBLISH` | `false` | Enable Docker publishing |
-| `ENABLE_DOCUMENTATION` | `false` | Enable documentation publishing |
-| `ENABLE_ROLLBACK` | `false` | Enable rollback capability |
-| `ENABLE_DEPLOYMENT_VERIFICATION` | `false` | Enable deployment verification |
-| `ENABLE_STABILITY_TAGGING` | `false` | Enable stable/unstable tagging |
-| `ENABLE_CLEANUP` | `false` | Enable artifact cleanup |
-| `ENABLE_FILE_SYNC` | `false` | Enable version file sync |
-| `ENABLE_DEPRECATION` | `false` | Enable version deprecation |
-| `ENABLE_SECURITY_AUDIT` | `false` | Enable security audits |
-| `ENABLE_DEPENDENCY_UPDATE` | `false` | Enable dependency updates |
-| `ENABLE_NOTIFICATIONS` | `false` | Enable pipeline notifications (Slack, Teams, etc.) |
+| Variable                         | Default | Description                                        |
+| -------------------------------- | ------- | -------------------------------------------------- |
+| `ENABLE_COMPILE`                 | `false` | Enable build/compilation step                      |
+| `ENABLE_LINT`                    | `false` | Enable linting                                     |
+| `ENABLE_UNIT_TESTS`              | `false` | Enable unit tests                                  |
+| `ENABLE_INTEGRATION_TESTS`       | `false` | Enable integration tests                           |
+| `ENABLE_E2E_TESTS`               | `false` | Enable end-to-end tests                            |
+| `ENABLE_BUNDLE`                  | `false` | Enable bundling/packaging                          |
+| `ENABLE_SECURITY_SCAN`           | `false` | Enable security scanning                           |
+| `ENABLE_NPM_PUBLISH`             | `false` | Enable NPM publishing                              |
+| `ENABLE_GITHUB_RELEASE`          | `false` | Enable GitHub releases                             |
+| `ENABLE_DOCKER_PUBLISH`          | `false` | Enable Docker publishing                           |
+| `ENABLE_DOCUMENTATION`           | `false` | Enable documentation publishing                    |
+| `ENABLE_ROLLBACK`                | `false` | Enable rollback capability                         |
+| `ENABLE_DEPLOYMENT_VERIFICATION` | `false` | Enable deployment verification                     |
+| `ENABLE_STABILITY_TAGGING`       | `false` | Enable stable/unstable tagging                     |
+| `ENABLE_CLEANUP`                 | `false` | Enable artifact cleanup                            |
+| `ENABLE_FILE_SYNC`               | `false` | Enable version file sync                           |
+| `ENABLE_DEPRECATION`             | `false` | Enable version deprecation                         |
+| `ENABLE_SECURITY_AUDIT`          | `false` | Enable security audits                             |
+| `ENABLE_DEPENDENCY_UPDATE`       | `false` | Enable dependency updates                          |
+| `ENABLE_NOTIFICATIONS`           | `false` | Enable pipeline notifications (Slack, Teams, etc.) |
 
 ### GitHub Secrets
 
 Set in: **Repository Settings > Secrets and variables > Actions > Secrets**
 
-| Secret | Required For | Description |
-|--------|-------------|-------------|
-| `NPM_TOKEN` | NPM Publishing | NPM access token |
-| `DOCKER_USERNAME` | Docker Publishing | Docker Hub username |
-| `DOCKER_PASSWORD` | Docker Publishing | Docker Hub password/token |
-| `APPRISE_URLS` | Notifications | Space-separated notification URLs (see [NOTIFICATIONS.md](docs/NOTIFICATIONS.md)) |
-| `GITHUB_TOKEN` | All workflows | Auto-provided by GitHub |
+| Secret            | Required For      | Description                                                                       |
+| ----------------- | ----------------- | --------------------------------------------------------------------------------- |
+| `NPM_TOKEN`       | NPM Publishing    | NPM access token                                                                  |
+| `DOCKER_USERNAME` | Docker Publishing | Docker Hub username                                                               |
+| `DOCKER_PASSWORD` | Docker Publishing | Docker Hub password/token                                                         |
+| `APPRISE_URLS`    | Notifications     | Space-separated notification URLs (see [NOTIFICATIONS.md](docs/NOTIFICATIONS.md)) |
+| `GITHUB_TOKEN`    | All workflows     | Auto-provided by GitHub                                                           |
 
 ## 🔧 Customization Guide
 

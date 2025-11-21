@@ -22,7 +22,7 @@ exclude-paths:
   # Config templates
   - "config/*.template"
   - "*.example"
-  - ".env.secrets.json.example"
+  - "config/.env.secrets.json.example"
 
   # Documentation
   - "docs/**/*.md"
