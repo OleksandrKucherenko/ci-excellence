@@ -45,7 +45,15 @@ LOG_LEVEL="${LOG_LEVEL:-info}"
 SHELL_INTEGRATION_HOME="${SHELL_INTEGRATION_HOME:-$HOME/.ci-excellence}"
 
 # Source libraries and utilities
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Detect script directory
+if [ -n "${ZSH_VERSION:-}" ]; then
+    SCRIPT_PATH="${(%):-%x}"
+elif [ -n "${BASH_SOURCE:-}" ]; then
+    SCRIPT_PATH="${BASH_SOURCE[0]}"
+else
+    SCRIPT_PATH="$0"
+fi
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 source "${SCRIPT_DIR}/../lib/config.sh"
 source "${SCRIPT_DIR}/../lib/logging.sh"
 
@@ -134,21 +142,44 @@ setup_zsh_integration() {
 
     local zshrc="$HOME/.zshrc"
     local zsh_plugin_dir="$SHELL_INTEGRATION_HOME/plugins"
+    local omz_custom_dir="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
+    local omz_installed=false
 
-    # Create plugin directory
-    mkdir -p "$zsh_plugin_dir"
-
-    # Copy MISE profile plugin
-    if [[ -f "${SCRIPT_DIR}/mise-profile.plugin.zsh" ]]; then
-        cp "${SCRIPT_DIR}/mise-profile.plugin.zsh" "$zsh_plugin_dir/"
-        log_debug "MISE profile plugin copied to $zsh_plugin_dir"
+    # Check for Oh My Zsh
+    if [[ -d "$HOME/.oh-my-zsh" ]]; then
+        omz_installed=true
+        log_info "Oh My Zsh detected"
     fi
 
-    # Add integration to .zshrc if not already present
-    if ! grep -q "# CI Excellence Shell Integration" "$zshrc" 2>/dev/null; then
-        log_info "Adding integration to .zshrc"
+    if [[ "$omz_installed" == "true" ]]; then
+        # Install as OMZ custom plugin
+        local plugin_name="ci-excellence"
+        local omz_plugin_path="$omz_custom_dir/plugins/$plugin_name"
+        
+        mkdir -p "$omz_plugin_path"
+        
+        if [[ -f "${SCRIPT_DIR}/mise-profile.plugin.zsh" ]]; then
+            cp "${SCRIPT_DIR}/mise-profile.plugin.zsh" "$omz_plugin_path/$plugin_name.plugin.zsh"
+            log_success "Plugin installed to $omz_plugin_path"
+            log_info "Please add '$plugin_name' to your plugins list in .zshrc"
+            log_info "To see the profile in your prompt, add '\$(mise_profile_prompt)' to your PROMPT or RPROMPT in .zshrc or your theme."
+            log_info "For Powerlevel10k: Add 'ci_excellence' to POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS in ~/.p10k.zsh"
+        fi
+    else
+        # Standard installation
+        mkdir -p "$zsh_plugin_dir"
 
-        cat >> "$zshrc" << 'EOF'
+        # Copy MISE profile plugin
+        if [[ -f "${SCRIPT_DIR}/mise-profile.plugin.zsh" ]]; then
+            cp "${SCRIPT_DIR}/mise-profile.plugin.zsh" "$zsh_plugin_dir/"
+            log_debug "MISE profile plugin copied to $zsh_plugin_dir"
+        fi
+
+        # Add integration to .zshrc if not already present
+        if ! grep -q "# CI Excellence Shell Integration" "$zshrc" 2>/dev/null; then
+            log_info "Adding integration to .zshrc"
+
+            cat >> "$zshrc" << 'EOF'
 
 # CI Excellence Shell Integration
 if [[ -f "$HOME/.ci-excellence/plugins/mise-profile.plugin.zsh" ]]; then
@@ -167,9 +198,10 @@ fi
 
 EOF
 
-        log_debug "Integration added to .zshrc"
-    else
-        log_info "Integration already present in .zshrc"
+            log_debug "Integration added to .zshrc"
+        else
+            log_info "Integration already present in .zshrc"
+        fi
     fi
 
     # Setup additional features

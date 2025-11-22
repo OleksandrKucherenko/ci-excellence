@@ -10,7 +10,8 @@ MISE_SOPS_AGE_KEY_FILE = ".secrets/mise-age.txt"
 SOPS_AGE_KEY_FILE = "{{env.MISE_SOPS_AGE_KEY_FILE}}"
 
 [[env]]
-_.file = [".env.secrets.json", ".env"]
+# load local overrides, then secrets, then default env setup
+_.file = [".env.local", ".env.secrets.json", ".env"]
 
 [tasks.setup]
 description = "Pre-configure project folders"
@@ -71,7 +72,7 @@ run = [
 # Profile management tasks
 [tasks.switch-profile]
 description = "Switch MISE profile for environment context"
-run = ["./scripts/profile/switch-profile.sh \"$@\""]
+run = ["./scripts/profile/deploy-profile.sh \"$@\""]
 
 [tasks.profile-status]
 description = "Show current profile status"
@@ -133,7 +134,7 @@ run = ["./scripts/tools/verify-tools.sh"]
 
 [tasks.test-local-ci]
 description = "Run workflows locally with act in DRY_RUN mode"
-run = ["act --dry-run"]
+run = ["act --dryrun"]
 
 # Secret management tasks
 [tasks.secrets-init]
@@ -218,33 +219,39 @@ exec claude --dangerously-skip-permissions
 """
 
 [hooks]
-enter = ["mise run setup", "mise run install-hooks"]
+enter = [
+  "mise run setup",
+  "mise run install-hooks",
+  "mise x -- uv tool install commitizen",
+]
 
 [tools]
-# Core runtime
-bun = "latest"
-node = "20"
+# JS/TS runtimes, v: 1.3.2
+bun = "1.3.2"
+node = "24"
+
+# Python tools
+uv = "latest"
 
 # Security and encryption
-age = "latest"
-sops = "latest"
-gitleaks = "latest"
-trufflehog = "latest"
+age = "1.2.1"
+sops = "3.10.2"
+gitleaks = "8.28.0"
+trufflehog = "3.91.0"
 
-# Git hooks and commit management
-lefthook = "latest"
-# commitizen = "latest"  # Disabled - not in mise registry
+# Git hooks and commit management, v: 2.0.4
+lefthook = "2.0.4"
 
 # Shell development and testing
-shellspec = "latest"
-shellcheck = "latest"
-shfmt = "latest"
+shellspec = "0.28.1"
+shellcheck = "0.11.0"
+shfmt = "3.12.0"
 
-# Local CI testing
-act = "latest"
+# Local CI testing, v: 0.2.82
+act = "0.2.82"
 
-# GitHub Actions validation
-action-validator = "latest"
+# GitHub Actions validation, v: 0.8.0
+action-validator = "0.8.0"
 
-# Notifications
+# Notifications, v: 1.9.5
 "pipx:apprise" = "latest"

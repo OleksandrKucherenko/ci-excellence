@@ -41,7 +41,7 @@ load_yaml_config() {
     fi
 
     # Use yq if available, otherwise provide basic fallback
-    if command -v yq &> /dev/null; then
+    if command -v yq &>/dev/null; then
         log_debug "Parsing YAML configuration with yq"
 
         # Extract environment variables
@@ -54,7 +54,7 @@ load_yaml_config() {
                 export "$key"="$value"
                 log_debug "Exported $key from config"
             fi
-        done <<< "$env_vars"
+        done <<<"$env_vars"
 
         # Extract cloud provider settings
         local cloud_provider
@@ -109,30 +109,30 @@ get_environment_url() {
 
     local base_url
     case "$environment" in
-        "staging")
-            base_url="https://staging-${region}.example.com"
-            ;;
-        "production")
-            base_url="https://${region}.example.com"
-            ;;
-        "development")
-            base_url="https://dev-${region}.example.com"
-            ;;
-        *)
-            base_url="https://${environment}-${region}.example.com"
-            ;;
+    "staging")
+        base_url="https://staging-${region}.example.com"
+        ;;
+    "production")
+        base_url="https://${region}.example.com"
+        ;;
+    "development")
+        base_url="https://dev-${region}.example.com"
+        ;;
+    *)
+        base_url="https://${environment}-${region}.example.com"
+        ;;
     esac
 
     case "$service" in
-        "api")
-            echo "${base_url/api/api-}"
-            ;;
-        "web")
-            echo "$base_url"
-            ;;
-        *)
-            echo "${base_url}/${service}"
-            ;;
+    "api")
+        echo "${base_url/api/api-}"
+        ;;
+    "web")
+        echo "$base_url"
+        ;;
+    *)
+        echo "${base_url}/${service}"
+        ;;
     esac
 }
 
@@ -147,23 +147,23 @@ check_environment_health() {
 
     log_info "Checking environment health: $health_url"
 
-    if command -v curl &> /dev/null; then
+    if command -v curl &>/dev/null; then
         local response
         response=$(curl -s -o /dev/null -w "%{http_code}" --max-time "$timeout" "$health_url" 2>/dev/null || echo "000")
 
         case "$response" in
-            "200")
-                log_success "Environment health check passed (200)"
-                return 0
-                ;;
-            "000")
-                log_error "Environment health check failed - connection timeout"
-                return 1
-                ;;
-            *)
-                log_error "Environment health check failed - HTTP $response"
-                return 1
-                ;;
+        "200")
+            log_success "Environment health check passed (200)"
+            return 0
+            ;;
+        "000")
+            log_error "Environment health check failed - connection timeout"
+            return 1
+            ;;
+        *)
+            log_error "Environment health check failed - HTTP $response"
+            return 1
+            ;;
         esac
     else
         log_warn "curl not available, skipping health check"
@@ -229,6 +229,7 @@ list_environments() {
 discover_environments() {
     local environments=()
     local environments_dir="${PROJECT_ROOT}/environments"
+    local IFS
 
     if [[ ! -d "$environments_dir" ]]; then
         log_error "Environments directory '$environments_dir' does not exist"
@@ -245,8 +246,7 @@ discover_environments() {
     done
 
     # Sort environments for consistent output
-    IFS=$'\n' environments=($(sort <<<"${environments[*]}"))
-    unset IFS
+    mapfile -t environments < <(sort <<<"${environments[*]}")
 
     printf '%s\n' "${environments[@]}"
 }
@@ -328,24 +328,24 @@ set_environment_defaults() {
     local environment="$1"
 
     case "$environment" in
-        "staging")
-            export SKIP_TESTS="${SKIP_TESTS:-false}"
-            export CREATE_BACKUP="${CREATE_BACKUP:-false}"
-            export REQUIRE_APPROVAL="${REQUIRE_APPROVAL:-false}"
-            export ROLLBACK_ON_FAILURE="${ROLLBACK_ON_FAILURE:-true}"
-            ;;
-        "production")
-            export SKIP_TESTS="${SKIP_TESTS:-false}"
-            export CREATE_BACKUP="${CREATE_BACKUP:-true}"
-            export REQUIRE_APPROVAL="${REQUIRE_APPROVAL:-true}"
-            export ROLLBACK_ON_FAILURE="${ROLLBACK_ON_FAILURE:-true}"
-            export PRODUCTION_SAFE_MODE="${PRODUCTION_SAFE_MODE:-true}"
-            ;;
-        "development")
-            export SKIP_TESTS="${SKIP_TESTS:-true}"
-            export CREATE_BACKUP="${CREATE_BACKUP:-false}"
-            export REQUIRE_APPROVAL="${REQUIRE_APPROVAL:-false}"
-            export ROLLBACK_ON_FAILURE="${ROLLBACK_ON_FAILURE:-false}"
-            ;;
+    "staging")
+        export SKIP_TESTS="${SKIP_TESTS:-false}"
+        export CREATE_BACKUP="${CREATE_BACKUP:-false}"
+        export REQUIRE_APPROVAL="${REQUIRE_APPROVAL:-false}"
+        export ROLLBACK_ON_FAILURE="${ROLLBACK_ON_FAILURE:-true}"
+        ;;
+    "production")
+        export SKIP_TESTS="${SKIP_TESTS:-false}"
+        export CREATE_BACKUP="${CREATE_BACKUP:-true}"
+        export REQUIRE_APPROVAL="${REQUIRE_APPROVAL:-true}"
+        export ROLLBACK_ON_FAILURE="${ROLLBACK_ON_FAILURE:-true}"
+        export PRODUCTION_SAFE_MODE="${PRODUCTION_SAFE_MODE:-true}"
+        ;;
+    "development")
+        export SKIP_TESTS="${SKIP_TESTS:-true}"
+        export CREATE_BACKUP="${CREATE_BACKUP:-false}"
+        export REQUIRE_APPROVAL="${REQUIRE_APPROVAL:-false}"
+        export ROLLBACK_ON_FAILURE="${ROLLBACK_ON_FAILURE:-false}"
+        ;;
     esac
 }

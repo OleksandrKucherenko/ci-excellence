@@ -84,7 +84,7 @@ find_bash_scripts() {
         continue
       fi
     fi
-  done <<< "$staged_files"
+  done <<<"$staged_files"
 
   if [[ ${#bash_files[@]} -eq 0 ]]; then
     return 0
@@ -172,7 +172,10 @@ get_shellcheck_options() {
 
   # Add custom options from environment
   if [[ -n "${SHELLCHECK_OPTIONS:-}" ]]; then
-    options+=($SHELLCHECK_OPTIONS)
+    # Split options robustly to avoid word splitting
+    while IFS= read -r -d '' option; do
+      options+=("$option")
+    done < <(printf '%s\0' "$SHELLCHECK_OPTIONS")
   fi
 
   # Check for .shellcheckrc configuration
@@ -205,7 +208,7 @@ check_files_lint() {
       failed_files+=("$file")
       # Count issues (rough estimate)
       local issue_count
-      issue_count=$(shellcheck $(get_shellcheck_options) "$file" 2>&1 | wc -l || echo "0")
+      issue_count=$(shellcheck $(get_shellcheck_options) "$file" 2>&1 | wc -l | tr -dc '0-9')
       total_issues=$((total_issues + issue_count))
     fi
   done
@@ -256,12 +259,12 @@ generate_lint_fixes() {
 
     if [[ -n "$diff_output" ]]; then
       local patch_file="$file.lint.patch"
-      echo "$diff_output" > "$patch_file"
+      echo "$diff_output" >"$patch_file"
       log_info "Generated fix patch: $patch_file"
 
       # Apply patch automatically if requested
       if [[ "${AUTO_APPLY_FIXES:-false}" == "true" ]]; then
-        if patch -p1 < "$patch_file" 2>/dev/null; then
+        if patch -p1 <"$patch_file" 2>/dev/null; then
           log_success "✓ Applied fixes to $file"
           rm -f "$patch_file"
           fixed_files+=("$file")
@@ -310,7 +313,7 @@ process_staged_files() {
   local files_array=()
   while IFS= read -r file; do
     files_array+=("$file")
-  done <<< "$bash_files"
+  done <<<"$bash_files"
 
   log_info "Checking ${#files_array[@]} bash files"
 
@@ -332,7 +335,7 @@ validate_all_bash_files() {
   local files_array=()
   while IFS= read -r file; do
     files_array+=("$file")
-  done <<< "$bash_files"
+  done <<<"$bash_files"
 
   log_info "Found ${#files_array[@]} bash files"
 
@@ -346,32 +349,32 @@ run_lint_check() {
   behavior=$(get_behavior_mode)
 
   case "$behavior" in
-    "DRY_RUN")
-      echo "🔍 DRY RUN: Would check lint"
-      if [[ ${#files[@]} -gt 0 ]]; then
-        echo "Would check: ${files[*]}"
-      else
-        echo "Would check staged bash files"
-      fi
-      return 0
-      ;;
-    "PASS")
-      log_success "PASS MODE: Lint check simulated successfully"
-      return 0
-      ;;
-    "FAIL")
-      log_error "FAIL MODE: Simulating lint check failure"
-      return 1
-      ;;
-    "SKIP")
-      log_info "SKIP MODE: Lint check skipped"
-      return 0
-      ;;
-    "TIMEOUT")
-      log_info "TIMEOUT MODE: Simulating lint check timeout"
-      sleep 5
-      return 124
-      ;;
+  "DRY_RUN")
+    echo "🔍 DRY RUN: Would check lint"
+    if [[ ${#files[@]} -gt 0 ]]; then
+      echo "Would check: ${files[*]}"
+    else
+      echo "Would check staged bash files"
+    fi
+    return 0
+    ;;
+  "PASS")
+    log_success "PASS MODE: Lint check simulated successfully"
+    return 0
+    ;;
+  "FAIL")
+    log_error "FAIL MODE: Simulating lint check failure"
+    return 1
+    ;;
+  "SKIP")
+    log_info "SKIP MODE: Lint check skipped"
+    return 0
+    ;;
+  "TIMEOUT")
+    log_info "TIMEOUT MODE: Simulating lint check timeout"
+    sleep 5
+    return 124
+    ;;
   esac
 
   # EXECUTE mode - Actual lint checking
@@ -400,7 +403,7 @@ generate_lint_report() {
   # Create report directory
   mkdir -p "$(dirname "$report_file")"
 
-  cat > "$report_file" << EOF
+  cat >"$report_file" <<EOF
 # 🔍 ShellCheck Lint Report
 
 **Generated**: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -421,25 +424,26 @@ EOF
       lint_output=$(shellcheck $(get_shellcheck_options) "$file" 2>&1 || true)
 
       if [[ -n "$lint_output" ]]; then
-        echo "### $(basename "$file")" >> "$report_file"
-        echo '```' >> "$report_file"
-        echo "$lint_output" >> "$report_file"
-        echo '```' >> "$report_file"
-        echo "" >> "$report_file"
+        echo "### $(basename "$file")" >>"$report_file"
+        echo '```' >>"$report_file"
+        echo "$lint_output" >>"$report_file"
+        echo '```' >>"$report_file"
+        echo "" >>"$report_file"
 
-        file_issues=$(echo "$lint_output" | wc -l)
+        local file_issues
+        file_issues=$(wc -l <<<"$lint_output" | tr -dc '0-9')
         total_issues=$((total_issues + file_issues))
       fi
     fi
   done
 
   if [[ $total_issues -eq 0 ]]; then
-    echo "✅ **All files passed lint check**" >> "$report_file"
+    echo "✅ **All files passed lint check**" >>"$report_file"
   else
-    echo "❌ **$total_issues lint issues found**" >> "$report_file"
+    echo "❌ **$total_issues lint issues found**" >>"$report_file"
   fi
 
-  cat >> "$report_file" << EOF
+  cat >>"$report_file" <<EOF
 
 ## 🛠️ Fix Options
 
@@ -480,9 +484,10 @@ generate_report() {
   local report_dir="$PROJECT_ROOT/.github/pre-commit-reports"
   mkdir -p "$report_dir"
 
-  local report_file="$report_dir/lint-check-$(date +%Y%m%d-%H%M%S).md"
+  local report_file
+  report_file="$report_dir/lint-check-$(date +%Y%m%d-%H%M%S).md"
 
-  cat > "$report_file" << EOF
+  cat >"$report_file" <<EOF
 # 🔍 Pre-commit Lint Check Report
 
 **Generated**: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -496,14 +501,14 @@ generate_report() {
 EOF
 
   if [[ "$status" == "success" ]]; then
-    cat >> "$report_file" << EOF
+    cat >>"$report_file" <<EOF
 ✅ **Pre-commit lint check passed**
 - All bash scripts passed ShellCheck validation
 - Safe to proceed with commit
 
 EOF
   else
-    cat >> "$report_file" << EOF
+    cat >>"$report_file" <<EOF
 ❌ **Pre-commit lint check failed**
 - Some bash scripts have lint issues
 - Commit blocked for code quality reasons
@@ -535,7 +540,7 @@ shellcheck --shell=bash script.sh
 EOF
   fi
 
-  cat >> "$report_file" << EOF
+  cat >>"$report_file" <<EOF
 
 ---
 *This report was generated by the pre-commit lint check hook*
@@ -555,27 +560,27 @@ main() {
   log_info "Pre-commit Lint Check Hook v$PRE_COMMIT_LINT_VERSION"
 
   case "$behavior" in
-    "DRY_RUN")
-      echo "🔍 DRY RUN: Would check bash script linting"
-      return 0
-      ;;
-    "PASS")
-      log_success "PASS MODE: Pre-commit lint check simulated successfully"
-      return 0
-      ;;
-    "FAIL")
-      log_error "FAIL MODE: Simulating pre-commit lint check failure"
-      return 1
-      ;;
-    "SKIP")
-      log_info "SKIP MODE: Pre-commit lint check skipped"
-      return 0
-      ;;
-    "TIMEOUT")
-      log_info "TIMEOUT MODE: Simulating pre-commit lint check timeout"
-      sleep 5
-      return 124
-      ;;
+  "DRY_RUN")
+    echo "🔍 DRY RUN: Would check bash script linting"
+    return 0
+    ;;
+  "PASS")
+    log_success "PASS MODE: Pre-commit lint check simulated successfully"
+    return 0
+    ;;
+  "FAIL")
+    log_error "FAIL MODE: Simulating pre-commit lint check failure"
+    return 1
+    ;;
+  "SKIP")
+    log_info "SKIP MODE: Pre-commit lint check skipped"
+    return 0
+    ;;
+  "TIMEOUT")
+    log_info "TIMEOUT MODE: Simulating pre-commit lint check timeout"
+    sleep 5
+    return 124
+    ;;
   esac
 
   # EXECUTE mode - Actual lint checking
@@ -604,7 +609,7 @@ main() {
     while IFS= read -r line; do
       files_array+=("$line")
       checked_files=$((checked_files + 1))
-    done <<< "$bash_files"
+    done <<<"$bash_files"
 
     log_info "Found $checked_files bash files to check"
 
@@ -637,8 +642,8 @@ main() {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   # Parse command line arguments
   case "${1:-}" in
-    "help"|"--help"|"-h")
-      cat << EOF
+  "help" | "--help" | "-h")
+    cat <<EOF
 Pre-commit Lint Check Hook v$PRE_COMMIT_LINT_VERSION
 
 This hook validates bash script linting using ShellCheck before allowing commits.
@@ -700,47 +705,47 @@ Integration:
   - ShellCheck for bash static analysis
   - GitHub Actions for CI pipeline linting
 EOF
-      exit 0
-      ;;
-    "check")
-      # Check mode
-      if [[ $# -lt 2 ]]; then
-        echo "Usage: $0 check <file1> [file2] ..."
-        exit 1
-      fi
-      shift
-      run_lint_check "$@"
-      exit $?
-      ;;
-    "fix")
-      # Fix mode
-      if [[ $# -lt 2 ]]; then
-        echo "Usage: $0 fix <file1> [file2] ..."
-        exit 1
-      fi
-      shift
-      generate_lint_fixes "$@"
-      exit $?
-      ;;
-    "report")
-      # Report mode
-      if [[ $# -lt 2 ]]; then
-        echo "Usage: $0 report <file1> [file2] ..."
-        exit 1
-      fi
-      shift
-      generate_lint_report "" "$@"
-      exit $?
-      ;;
-    "validate")
-      # Validation mode for testing
-      echo "Validating pre-commit hook setup..."
-      check_shellcheck_available
-      validate_git_repository
-      echo "✅ Pre-commit hook validation completed"
-      ;;
-    *)
-      main "$@"
-      ;;
+    exit 0
+    ;;
+  "check")
+    # Check mode
+    if [[ $# -lt 2 ]]; then
+      echo "Usage: $0 check <file1> [file2] ..."
+      exit 1
+    fi
+    shift
+    run_lint_check "$@"
+    exit $?
+    ;;
+  "fix")
+    # Fix mode
+    if [[ $# -lt 2 ]]; then
+      echo "Usage: $0 fix <file1> [file2] ..."
+      exit 1
+    fi
+    shift
+    generate_lint_fixes "$@"
+    exit $?
+    ;;
+  "report")
+    # Report mode
+    if [[ $# -lt 2 ]]; then
+      echo "Usage: $0 report <file1> [file2] ..."
+      exit 1
+    fi
+    shift
+    generate_lint_report "" "$@"
+    exit $?
+    ;;
+  "validate")
+    # Validation mode for testing
+    echo "Validating pre-commit hook setup..."
+    check_shellcheck_available
+    validate_git_repository
+    echo "✅ Pre-commit hook validation completed"
+    ;;
+  *)
+    main "$@"
+    ;;
   esac
 fi

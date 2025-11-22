@@ -36,14 +36,22 @@ CI_ZSH_PLUGIN_TEST_MODE="${CI_ZSH_PLUGIN_TEST_MODE:-false}"
 typeset -gA PROFILE_COLORS=(
     [staging]="yellow"
     [production]="red"
+    [canary]="magenta"
+    [performance]="cyan"
+    [sandbox]="blue"
+    [local]="green"
     [development]="green"
     [default]="blue"
-    [unknown]="magenta"
+    [unknown]="white"
 )
 
 typeset -gA PROFILE_SYMBOLS=(
     [staging]="🚀"
     [production]="🔒"
+    [canary]="🐤"
+    [performance]="⚡"
+    [sandbox]="🥪"
+    [local]="💻"
     [development]="🛠️"
     [default]="💼"
     [unknown]="❓"
@@ -191,37 +199,74 @@ detect_mise_profile() {
     local current_dir
     current_dir="$(pwd)"
 
-    # Check directory name against known patterns
+    # 1. Hardcoded checks for Production and Staging
     case "$(basename "$current_dir")" in
         *prod*|*production*|*live*)
             echo "production"
+            return
             ;;
         *stg*|*staging*|*qa*|*test*)
             echo "staging"
-            ;;
-        *dev*|*develop*|*local*)
-            echo "development"
-            ;;
-        *)
-            # Check for environment indicators in file structure
-            if [[ -d ".env/production" ]] || [[ -f ".env.production" ]]; then
-                echo "production"
-            elif [[ -d ".env/staging" ]] || [[ -f ".env.staging" ]]; then
-                echo "staging"
-            elif [[ -d ".env/development" ]] || [[ -f ".env.development" ]]; then
-                echo "development"
-            else
-                echo "default"
-            fi
+            return
             ;;
     esac
+
+    # 2. Dynamic detection from environments/ folder
+    # Look for .../environments/<profile>/...
+    if [[ "$current_dir" =~ /environments/([^/]+) ]]; then
+        local profile="${match[1]}"
+        # Filter reserved names
+        if [[ "$profile" != "global" && "$profile" != "default" && "$profile" != "defaults" ]]; then
+            echo "$profile"
+            return
+        fi
+    fi
+
+    # 3. Check for environment indicators (Files) - Hardcoded for Staging/Prod only
+    if [[ -d ".env/production" ]] || [[ -f ".env.production" ]]; then
+        echo "production"
+        return
+    elif [[ -d ".env/staging" ]] || [[ -f ".env.staging" ]]; then
+        echo "staging"
+        return
+    fi
+
+    # 4. Project Root -> 'local'
+    if [[ -f "mise.toml" ]] || [[ -f ".mise.toml" ]] || [[ -d ".git" ]]; then
+        echo "local"
+        return
+    fi
+
+    # Not in a recognized profile environment
+    echo ""
 }
 
 # Update current MISE profile information
 update_current_mise_profile() {
-    # Try to get active profile from MISE
+    # 1. Check environment variable provided by MISE (loaded from .env.local)
+    if [[ -n "$DEPLOYMENT_PROFILE" ]]; then
+        CURRENT_MISE_PROFILE="$DEPLOYMENT_PROFILE"
+        export CURRENT_MISE_PROFILE
+        return
+    fi
+
+    # 2. Try to get active profile from MISE command (legacy/fallback)
     if command -v mise &> /dev/null; then
-        CURRENT_MISE_PROFILE=$(mise profile current 2>/dev/null || echo "unknown")
+        local mise_current
+        mise_current=$(mise profile current 2>/dev/null)
+        
+        if [[ -n "$mise_current" ]]; then
+            CURRENT_MISE_PROFILE="$mise_current"
+        else
+            # 3. Fallback to detection if mise profile not set
+            local detected
+            detected=$(detect_mise_profile)
+            if [[ -n "$detected" ]]; then
+                CURRENT_MISE_PROFILE="$detected"
+            else
+                CURRENT_MISE_PROFILE="unknown"
+            fi
+        fi
         export CURRENT_MISE_PROFILE
     else
         CURRENT_MISE_PROFILE="unknown"
@@ -286,9 +331,21 @@ get_environment_status() {
 
 # Enhanced profile prompt
 mise_profile_prompt() {
+    # Dont show in home dir
+    [[ "$PWD" != ~ ]] || return
+
     if [[ "$CI_ZSH_PLUGIN_TEST_MODE" == "true" ]]; then
         echo "(test-mode)"
         return
+    fi
+
+    # Return if no profile active or default/unknown if desired (optional)
+    # For now we show it if it's not unknown
+    if [[ "$CURRENT_MISE_PROFILE" == "unknown" ]]; then
+         if [[ "$MISE_DEBUG" == "true" ]]; then
+             echo "DEBUG: mise_profile_prompt returning early (unknown profile)" >&2
+         fi
+         return
     fi
 
     local profile_color
@@ -301,7 +358,38 @@ mise_profile_prompt() {
     profile_name="$CURRENT_MISE_PROFILE"
     status_symbol=$(get_environment_status "$CURRENT_MISE_PROFILE")
 
-    echo "%{$profile_color%}$profile_symbol $profile_name $status_symbol%f"
+    local prompt_str="%{$profile_color%}$profile_symbol $profile_name $status_symbol%f"
+    if [[ "$MISE_DEBUG" == "true" ]]; then
+        echo "DEBUG: Generated prompt: $prompt_str" >&2
+    fi
+    echo "$prompt_str"
+}
+
+# Powerlevel10k segment for CI Excellence
+prompt_ci_excellence() {
+  # Ensure p10k is loaded
+  (( $+functions[p10k] )) || return
+
+  local text
+  text=$(mise_profile_prompt)
+  [[ -n "$text" ]] || return
+  
+  # Extract color from the profile settings for p10k compatibility
+  local p10k_color="blue"
+  case "$CURRENT_MISE_PROFILE" in
+      "production") p10k_color="red" ;;
+      "staging") p10k_color="yellow" ;;
+      "development") p10k_color="green" ;;
+      "default") p10k_color="blue" ;;
+      *) p10k_color="magenta" ;;
+  esac
+
+  # Strip Zsh color codes (%F{...} and %f) and %{...%} wrappers from text for p10k display
+  # We want just the symbols and text: "🚀 staging ✅"
+  local clean_text
+  clean_text=$(echo "$text" | sed 's/%{[^}]*}//g' | sed 's/%F{[^}]*}//g' | sed 's/%f//g')
+
+  p10k segment -b default -f "$p10k_color" -t "$clean_text"
 }
 
 # Quick profile info
@@ -380,24 +468,16 @@ mise_profile_health_check() {
     done
 }
 
-# Custom prompt setup (extension point)
-customize_profile_prompt() {
-    # Override this function to customize the profile prompt
-    # Example: add additional indicators, change format, etc.
-
-    # Default implementation uses mise_profile_prompt
-    RPROMPT='$(mise_profile_prompt) '"$RPROMPT"'
-}
-
 # Initialize the plugin
 mise_profile_plugin_init
 
 # Export useful functions
 if [[ "$CI_ZSH_PLUGIN_TEST_MODE" != "true" ]]; then
-    export -f mise_profile_prompt
-    export -f mise_profile_info
-    export -f mise_quick_switch
-    export -f mise_profile_health_check
-    export -f get_profile_color
-    export -f get_profile_symbol
+    # Functions are already available in the current shell scope
+    : # No-op
+fi
+
+# Install prompt if not already present
+if [[ "$SHOW_MISE_PROMPT" != false && "$RPROMPT" != *'$(mise_profile_prompt)'* ]]; then
+  RPROMPT='$(mise_profile_prompt)'"$RPROMPT"
 fi

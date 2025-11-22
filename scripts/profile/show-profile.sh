@@ -6,7 +6,7 @@ set -euo pipefail
 
 # Source common utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_ROOT/../.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "$PROJECT_ROOT/scripts/lib/common.sh" 2>/dev/null || {
   echo "Failed to source common utilities" >&2
   exit 1
@@ -51,33 +51,33 @@ show_profile_status() {
   behavior=$(get_behavior_mode)
 
   case "$behavior" in
-    "DRY_RUN")
-      echo "🔍 DRY RUN: Would show profile status"
-      return 0
-      ;;
-    "PASS")
-      log_success "PASS MODE: Profile status displayed successfully"
-      return 0
-      ;;
-    "FAIL")
-      log_error "FAIL MODE: Simulating profile status display failure"
-      return 1
-      ;;
-    "SKIP")
-      log_info "SKIP MODE: Profile status display skipped"
-      return 0
-      ;;
-    "TIMEOUT")
-      log_info "TIMEOUT MODE: Simulating profile status display timeout"
-      sleep 3
-      return 124
-      ;;
+  "DRY_RUN")
+    echo "🔍 DRY RUN: Would show profile status"
+    return 0
+    ;;
+  "PASS")
+    log_success "PASS MODE: Profile status displayed successfully"
+    return 0
+    ;;
+  "FAIL")
+    log_error "FAIL MODE: Simulating profile status display failure"
+    return 1
+    ;;
+  "SKIP")
+    log_info "SKIP MODE: Profile status display skipped"
+    return 0
+    ;;
+  "TIMEOUT")
+    log_info "TIMEOUT MODE: Simulating profile status display timeout"
+    sleep 3
+    return 124
+    ;;
   esac
 
   # EXECUTE mode - Show actual status
   local profile_info
   profile_info=$(get_profile_info "$profile" "$region")
-  IFS=':' read -r current_profile current_region <<< "$profile_info"
+  IFS=':' read -r current_profile current_region <<<"$profile_info"
 
   log_info "🔍 Deployment Profile Status"
   echo ""
@@ -103,7 +103,10 @@ show_profile_status() {
     done < <(find "$profile_dir" -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null || true)
 
     if [[ ${#subdirs[@]} -gt 0 ]]; then
-      printf "  %-25s %s\n" "Subdirectories:" "$(IFS=', '; echo "${subdirs[*]}")"
+      printf "  %-25s %s\n" "Subdirectories:" "$(
+        IFS=', '
+        echo "${subdirs[*]}"
+      )"
     fi
   else
     printf "  %-25s %s\n" "Profile Directory:" "❌ Not found: $profile_dir"
@@ -235,7 +238,7 @@ show_summary_status() {
 
   local profile_info
   profile_info=$(get_profile_info "$profile" "$region")
-  IFS=':' read -r current_profile current_region <<< "$profile_info"
+  IFS=':' read -r current_profile current_region <<<"$profile_info"
 
   # Build status line
   local status_line="["
@@ -330,24 +333,24 @@ main() {
   shift || true
 
   case "$action" in
-    "status")
-      show_profile_status "$@"
-      ;;
-    "summary")
-      show_summary_status "$@"
-      ;;
-    "validate")
-      validate_profile "$@"
-      ;;
-    "config")
-      if [[ $# -lt 1 ]]; then
-        log_error "Usage: $0 config <profile>"
-        exit 1
-      fi
-      show_profile_status "$1" "${2:-}" "true"
-      ;;
-    "help"|"--help"|"-h")
-      cat << EOF
+  "status")
+    show_profile_status "$@"
+    ;;
+  "summary")
+    show_summary_status "$@"
+    ;;
+  "validate")
+    validate_profile "$@"
+    ;;
+  "config")
+    if [[ $# -lt 1 ]]; then
+      log_error "Usage: $0 config <profile>"
+      exit 1
+    fi
+    show_profile_status "$1" "${2:-}" "true"
+    ;;
+  "help" | "--help" | "-h")
+    cat <<EOF
 Profile Status Display v$PROFILE_STATUS_VERSION
 
 Usage: $0 <action> [options]
@@ -370,13 +373,13 @@ Testability Examples:
   CI_TEST_MODE=DRY_RUN $0 status
   CI_PROFILE_STATUS_BEHAVIOR=FAIL $0 validate
 EOF
-      exit 0
-      ;;
-    *)
-      log_error "Unknown action: $action"
-      echo "Use '$0 help' for usage information"
-      exit 1
-      ;;
+    exit 0
+    ;;
+  *)
+    log_error "Unknown action: $action"
+    echo "Use '$0 help' for usage information"
+    exit 1
+    ;;
   esac
 }
 

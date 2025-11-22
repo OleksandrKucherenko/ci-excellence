@@ -200,7 +200,10 @@ environments/local.*
 # Git hooks temporary files
 .git/hooks/*.tmp
 .lefthook.local.*
+.github/pre-commit-reports/
 
 ## AI Coding
 .mcp.json
 .claude/settings.json
+.gemini/
+gha-creds-*.json

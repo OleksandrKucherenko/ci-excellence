@@ -1,0 +1,5 @@
+-P ubuntu-latest=nektos/act-ubuntu:20.04
+-P ubuntu-22.04=nektos/act-ubuntu:22.04
+-s GITHUB_TOKEN=dummy
+--secret-file .secrets/act-secrets
+--env-file .secrets/act-env

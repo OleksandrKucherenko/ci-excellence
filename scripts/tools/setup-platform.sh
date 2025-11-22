@@ -6,7 +6,7 @@ set -euo pipefail
 
 # Source common utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_ROOT/../.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "$PROJECT_ROOT/scripts/lib/common.sh" 2>/dev/null || {
   echo "Failed to source common utilities" >&2
   exit 1
@@ -23,34 +23,34 @@ detect_platform() {
 
   # Detect OS
   case "$(uname -s)" in
-    Linux*)
-      os="linux"
-      ;;
-    Darwin*)
-      os="macos"
-      ;;
-    CYGWIN*|MINGW*|MSYS*)
-      os="windows"
-      ;;
-    *)
-      os="unknown"
-      ;;
+  Linux*)
+    os="linux"
+    ;;
+  Darwin*)
+    os="macos"
+    ;;
+  CYGWIN* | MINGW* | MSYS*)
+    os="windows"
+    ;;
+  *)
+    os="unknown"
+    ;;
   esac
 
   # Detect architecture
   case "$(uname -m)" in
-    x86_64|amd64)
-      arch="x64"
-      ;;
-    arm64|aarch64)
-      arch="arm64"
-      ;;
-    i386|i686)
-      arch="x86"
-      ;;
-    *)
-      arch="unknown"
-      ;;
+  x86_64 | amd64)
+    arch="x64"
+    ;;
+  arm64 | aarch64)
+    arch="arm64"
+    ;;
+  i386 | i686)
+    arch="x86"
+    ;;
+  *)
+    arch="unknown"
+    ;;
   esac
 
   platform="${os}-${arch}"
@@ -72,27 +72,27 @@ setup_shell_integration() {
   log_info "Setting up shell integration for: $shell"
 
   case "$behavior" in
-    "DRY_RUN")
-      echo "🔍 DRY RUN: Would set up shell integration"
-      return 0
-      ;;
-    "PASS")
-      log_success "PASS MODE: Shell integration setup simulated successfully"
-      return 0
-      ;;
-    "FAIL")
-      log_error "FAIL MODE: Simulating shell integration setup failure"
-      return 1
-      ;;
-    "SKIP")
-      log_info "SKIP MODE: Shell integration setup skipped"
-      return 0
-      ;;
-    "TIMEOUT")
-      log_info "TIMEOUT MODE: Simulating shell integration setup timeout"
-      sleep 2
-      return 124
-      ;;
+  "DRY_RUN")
+    echo "🔍 DRY RUN: Would set up shell integration"
+    return 0
+    ;;
+  "PASS")
+    log_success "PASS MODE: Shell integration setup simulated successfully"
+    return 0
+    ;;
+  "FAIL")
+    log_error "FAIL MODE: Simulating shell integration setup failure"
+    return 1
+    ;;
+  "SKIP")
+    log_info "SKIP MODE: Shell integration setup skipped"
+    return 0
+    ;;
+  "TIMEOUT")
+    log_info "TIMEOUT MODE: Simulating shell integration setup timeout"
+    sleep 2
+    return 124
+    ;;
   esac
 
   # EXECUTE mode - Actual shell integration setup
@@ -102,13 +102,13 @@ setup_shell_integration() {
   fi
 
   case "$shell" in
-    "bash"|"zsh"|"fish")
-      log_info "Setting up integration for $shell"
-      ;;
-    *)
-      log_warn "Shell integration not supported for: $shell"
-      return 0
-      ;;
+  "bash" | "zsh" | "fish")
+    log_info "Setting up integration for $shell"
+    ;;
+  *)
+    log_warn "Shell integration not supported for: $shell"
+    return 0
+    ;;
   esac
 
   # Create shell integration script
@@ -121,34 +121,14 @@ setup_shell_integration() {
   # Make script executable
   chmod +x "$integration_script"
 
-  # Add to shell configuration
-  local shell_config=""
-  local integration_line="source '$PROJECT_ROOT/scripts/shell/setup-shell-integration.sh'"
-
-  case "$shell" in
-    "bash")
-      shell_config="$HOME/.bashrc"
-      if [[ -f "$HOME/.bash_profile" ]]; then
-        shell_config="$HOME/.bash_profile"
-      fi
-      ;;
-    "zsh")
-      shell_config="$HOME/.zshrc"
-      ;;
-    "fish")
-      shell_config="$HOME/.config/fish/config.fish"
-      ;;
-  esac
-
-  if [[ -n "$shell_config" && -f "$shell_config" ]]; then
-    if ! grep -q "setup-shell-integration.sh" "$shell_config" 2>/dev/null; then
-      echo "" >> "$shell_config"
-      echo "# CI Pipeline Excellence shell integration" >> "$shell_config"
-      echo "$integration_line" >> "$shell_config"
-      log_success "✅ Added shell integration to: $shell_config"
-    else
-      log_info "Shell integration already configured in: $shell_config"
-    fi
+  # Execute shell integration setup script
+  log_info "Executing shell integration setup script..."
+  # The setup script handles updating the shell configuration files
+  if "$integration_script" "$shell"; then
+    log_success "✅ Shell integration setup script executed"
+  else
+    log_error "❌ Shell integration setup script failed"
+    return 1
   fi
 
   log_success "✅ Shell integration completed"
@@ -163,44 +143,44 @@ setup_platform_tools() {
   log_info "Setting up platform-specific tools for: $platform"
 
   case "$behavior" in
-    "DRY_RUN")
-      echo "🔍 DRY RUN: Would set up platform tools for $platform"
-      return 0
-      ;;
-    "PASS")
-      log_success "PASS MODE: Platform tools setup simulated successfully"
-      return 0
-      ;;
-    "FAIL")
-      log_error "FAIL MODE: Simulating platform tools setup failure"
-      return 1
-      ;;
-    "SKIP")
-      log_info "SKIP MODE: Platform tools setup skipped"
-      return 0
-      ;;
-    "TIMEOUT")
-      log_info "TIMEOUT MODE: Simulating platform tools setup timeout"
-      sleep 3
-      return 124
-      ;;
+  "DRY_RUN")
+    echo "🔍 DRY RUN: Would set up platform tools for $platform"
+    return 0
+    ;;
+  "PASS")
+    log_success "PASS MODE: Platform tools setup simulated successfully"
+    return 0
+    ;;
+  "FAIL")
+    log_error "FAIL MODE: Simulating platform tools setup failure"
+    return 1
+    ;;
+  "SKIP")
+    log_info "SKIP MODE: Platform tools setup skipped"
+    return 0
+    ;;
+  "TIMEOUT")
+    log_info "TIMEOUT MODE: Simulating platform tools setup timeout"
+    sleep 3
+    return 124
+    ;;
   esac
 
   # EXECUTE mode - Actual platform tools setup
   case "$platform" in
-    "linux-x64"|"linux-arm64")
-      setup_linux_tools
-      ;;
-    "macos-x64"|"macos-arm64")
-      setup_macos_tools
-      ;;
-    "windows-x64")
-      setup_windows_tools
-      ;;
-    *)
-      log_warn "Unknown platform: $platform"
-      return 0
-      ;;
+  "linux-x64" | "linux-arm64")
+    setup_linux_tools
+    ;;
+  "macos-x64" | "macos-arm64")
+    setup_macos_tools
+    ;;
+  "windows-x64")
+    setup_windows_tools
+    ;;
+  *)
+    log_warn "Unknown platform: $platform"
+    return 0
+    ;;
   esac
 
   log_success "✅ Platform tools setup completed"
@@ -272,27 +252,27 @@ setup_environment() {
   log_info "Setting up environment variables"
 
   case "$behavior" in
-    "DRY_RUN")
-      echo "🔍 DRY RUN: Would set up environment variables"
-      return 0
-      ;;
-    "PASS")
-      log_success "PASS MODE: Environment setup simulated successfully"
-      return 0
-      ;;
-    "FAIL")
-      log_error "FAIL MODE: Simulating environment setup failure"
-      return 1
-      ;;
-    "SKIP")
-      log_info "SKIP MODE: Environment setup skipped"
-      return 0
-      ;;
-    "TIMEOUT")
-      log_info "TIMEOUT MODE: Simulating environment setup timeout"
-      sleep 2
-      return 124
-      ;;
+  "DRY_RUN")
+    echo "🔍 DRY RUN: Would set up environment variables"
+    return 0
+    ;;
+  "PASS")
+    log_success "PASS MODE: Environment setup simulated successfully"
+    return 0
+    ;;
+  "FAIL")
+    log_error "FAIL MODE: Simulating environment setup failure"
+    return 1
+    ;;
+  "SKIP")
+    log_info "SKIP MODE: Environment setup skipped"
+    return 0
+    ;;
+  "TIMEOUT")
+    log_info "TIMEOUT MODE: Simulating environment setup timeout"
+    sleep 2
+    return 124
+    ;;
   esac
 
   # EXECUTE mode - Actual environment setup
@@ -301,7 +281,7 @@ setup_environment() {
 
   # Create or update .env.local with required variables
   if [[ ! -f "$env_file" ]]; then
-    cat > "$env_file" << EOF
+    cat >"$env_file" <<EOF
 # Local environment variables
 # Generated by platform setup script
 # Created: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -331,7 +311,7 @@ EOF
   local script_count=0
   while IFS= read -r -d '' script_file; do
     chmod +x "$script_file"
-    ((script_count++))
+    ((script_count += 1))
   done < <(find "$PROJECT_ROOT/scripts" -name "*.sh" -print0 2>/dev/null || true)
 
   log_success "✅ Set executable permissions on $script_count scripts"
@@ -345,27 +325,27 @@ setup_git_config() {
   log_info "Setting up git configuration"
 
   case "$behavior" in
-    "DRY_RUN")
-      echo "🔍 DRY RUN: Would set up git configuration"
-      return 0
-      ;;
-    "PASS")
-      log_success "PASS MODE: Git configuration simulated successfully"
-      return 0
-      ;;
-    "FAIL")
-      log_error "FAIL MODE: Simulating git configuration failure"
-      return 1
-      ;;
-    "SKIP")
-      log_info "SKIP MODE: Git configuration skipped"
-      return 0
-      ;;
-    "TIMEOUT")
-      log_info "TIMEOUT MODE: Simulating git configuration timeout"
-      sleep 2
-      return 124
-      ;;
+  "DRY_RUN")
+    echo "🔍 DRY RUN: Would set up git configuration"
+    return 0
+    ;;
+  "PASS")
+    log_success "PASS MODE: Git configuration simulated successfully"
+    return 0
+    ;;
+  "FAIL")
+    log_error "FAIL MODE: Simulating git configuration failure"
+    return 1
+    ;;
+  "SKIP")
+    log_info "SKIP MODE: Git configuration skipped"
+    return 0
+    ;;
+  "TIMEOUT")
+    log_info "TIMEOUT MODE: Simulating git configuration timeout"
+    sleep 2
+    return 124
+    ;;
   esac
 
   # EXECUTE mode - Actual git configuration
@@ -381,7 +361,7 @@ setup_git_config() {
 
   # Configure git attributes if not set
   if [[ ! -f "$PROJECT_ROOT/.gitattributes" ]]; then
-    cat > "$PROJECT_ROOT/.gitattributes" << EOF
+    cat >"$PROJECT_ROOT/.gitattributes" <<EOF
 # Git attributes for CI/CD pipeline
 
 # Handle line endings
@@ -469,30 +449,30 @@ main() {
   log_info "Platform detected: $platform"
 
   case "$scope" in
-    "tools")
-      setup_platform_tools "$platform"
-      ;;
-    "shell")
-      setup_shell_integration "auto"
-      ;;
-    "env")
-      setup_environment
-      ;;
-    "git")
-      setup_git_config
-      ;;
-    "validate")
-      validate_setup
-      ;;
-    "all")
-      setup_platform_tools "$platform"
-      setup_shell_integration "auto"
-      setup_environment
-      setup_git_config
-      validate_setup
-      ;;
-    "help"|"--help"|"-h")
-      cat << EOF
+  "tools")
+    setup_platform_tools "$platform"
+    ;;
+  "shell")
+    setup_shell_integration "auto"
+    ;;
+  "env")
+    setup_environment
+    ;;
+  "git")
+    setup_git_config
+    ;;
+  "validate")
+    validate_setup
+    ;;
+  "all")
+    setup_platform_tools "$platform"
+    setup_shell_integration "auto"
+    setup_environment
+    setup_git_config
+    validate_setup
+    ;;
+  "help" | "--help" | "-h")
+    cat <<EOF
 Platform Setup Script v$PLATFORM_VERSION
 
 Usage: $0 <scope>
@@ -519,13 +499,13 @@ Testability Examples:
   CI_TEST_MODE=DRY_RUN $0
   CI_PLATFORM_SETUP_BEHAVIOR=FAIL $0 tools
 EOF
-      exit 0
-      ;;
-    *)
-      log_error "Unknown scope: $scope"
-      echo "Use '$0 help' for usage information"
-      exit 1
-      ;;
+    exit 0
+    ;;
+  *)
+    log_error "Unknown scope: $scope"
+    echo "Use '$0 help' for usage information"
+    exit 1
+    ;;
   esac
 
   log_success "✅ Platform setup completed successfully"

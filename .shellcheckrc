@@ -1,0 +1,4 @@
+# ShellCheck Configuration
+disable=SC2034  # unused variables (often false positives in sourced files)
+disable=SC1090  # unable to follow non-constant source
+

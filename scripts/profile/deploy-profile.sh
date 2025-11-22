@@ -6,7 +6,7 @@ set -euo pipefail
 
 # Source common utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_ROOT/../.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "$PROJECT_ROOT/scripts/lib/common.sh" 2>/dev/null || {
   echo "Failed to source common utilities" >&2
   exit 1
@@ -27,9 +27,30 @@ get_behavior_mode() {
 validate_profile() {
   local profile="$1"
 
-  if ! array_contains "$profile" "${SUPPORTED_PROFILES[@]}"; then
+  # Check if profile is in supported list OR exists as a directory
+  local is_valid=false
+  if array_contains "$profile" "${SUPPORTED_PROFILES[@]}"; then
+    is_valid=true
+  elif [[ -d "$PROFILES_DIR/$profile" ]]; then
+    is_valid=true
+  fi
+
+  if [[ "$is_valid" == "false" ]]; then
     log_error "Invalid profile: $profile"
-    log_info "Supported profiles: ${SUPPORTED_PROFILES[*]}"
+
+    # Get list of all available profiles (supported + directories)
+    local available_profiles=("${SUPPORTED_PROFILES[@]}")
+    if [[ -d "$PROFILES_DIR" ]]; then
+      while IFS= read -r -d '' dir; do
+        local dirname
+        dirname=$(basename "$dir")
+        if ! array_contains "$dirname" "${SUPPORTED_PROFILES[@]}"; then
+          available_profiles+=("$dirname")
+        fi
+      done < <(find "$PROFILES_DIR" -mindepth 1 -maxdepth 1 -type d -not -name "global" -not -name "default*" -print0)
+    fi
+
+    log_info "Available profiles: ${available_profiles[*]}"
     return 1
   fi
 
@@ -56,19 +77,6 @@ set_profile_env() {
   # Set deployment profile
   export DEPLOYMENT_PROFILE="$profile"
 
-  # Set environment context
-  case "$profile" in
-    "local")
-      export ENVIRONMENT_CONTEXT="development"
-      ;;
-    "staging")
-      export ENVIRONMENT_CONTEXT="staging"
-      ;;
-    "production"|"canary"|"sandbox"|"performance")
-      export ENVIRONMENT_CONTEXT="production"
-      ;;
-  esac
-
   # Set region if provided
   if [[ -n "$region" ]]; then
     export DEPLOYMENT_REGION="$region"
@@ -81,6 +89,8 @@ set_profile_env() {
     set -a
     source "$env_file"
     set +a
+    # Keep DEPLOYMENT_PROFILE as the source of truth, overriding anything in the env file
+    export DEPLOYMENT_PROFILE="$profile"
   fi
 
   log_success "✅ Profile environment configured: $profile"
@@ -95,48 +105,55 @@ update_shell_prompt() {
     return 0
   fi
 
-  # Only update if running in interactive shell
-  if [[ $- != *i* ]]; then
-    return 0
-  fi
-
-  local current_ps1="${PS1:-}"
-  local profile_indicator="[$profile]"
-
-  # Remove existing profile indicator
-  current_ps1=$(echo "$current_ps1" | sed 's/\[[^]]*\] *//')
-
-  # Add new profile indicator
-  export PS1="$profile_indicator $current_ps1"
+  # Prompt update is handled by the shell plugin via MISE environment reload
+  return 0
 }
 
 # Save profile preference
 save_profile_preference() {
   local profile="$1"
   local region="${2:-}"
+  local env_local="$PROJECT_ROOT/.env.local"
 
-  local preference_file="$PROJECT_ROOT/.current_profile"
-  cat > "$preference_file" << EOF
-# Current deployment profile preference
-DEPLOYMENT_PROFILE="$profile"
-DEPLOYMENT_REGION="$region"
-ENVIRONMENT_CONTEXT="$ENVIRONMENT_CONTEXT"
-# Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
-EOF
+  # Ensure .env.local exists
+  if [[ ! -f "$env_local" ]]; then
+    touch "$env_local"
+    echo "# Local environment overrides" >"$env_local"
+  fi
 
-  log_debug "Profile preference saved: $preference_file"
+  # Update DEPLOYMENT_PROFILE
+  if grep -q "^DEPLOYMENT_PROFILE=" "$env_local"; then
+    # Use a temp file to avoid issues with sed on some systems
+    local temp_file
+    temp_file=$(mktemp)
+    sed "s|^DEPLOYMENT_PROFILE=.*|DEPLOYMENT_PROFILE=\"$profile\"|" "$env_local" >"$temp_file"
+    mv "$temp_file" "$env_local"
+  else
+    echo "DEPLOYMENT_PROFILE=\"$profile\"" >>"$env_local"
+  fi
+
+  # Update DEPLOYMENT_REGION
+  if grep -q "^DEPLOYMENT_REGION=" "$env_local"; then
+    local temp_file
+    temp_file=$(mktemp)
+    sed "s|^DEPLOYMENT_REGION=.*|DEPLOYMENT_REGION=\"$region\"|" "$env_local" >"$temp_file"
+    mv "$temp_file" "$env_local"
+  else
+    echo "DEPLOYMENT_REGION=\"$region\"" >>"$env_local"
+  fi
+
+  log_debug "Profile preference saved to: $env_local"
 }
 
 # Load profile preference
 load_profile_preference() {
-  local preference_file="$PROJECT_ROOT/.current_profile"
+  # Rely on MISE loading .env.local
+  local env_local="$PROJECT_ROOT/.env.local"
 
-  if [[ -f "$preference_file" ]]; then
-    log_debug "Loading profile preference: $preference_file"
-    set -a
-    source "$preference_file"
-    set +a
-    return 0
+  if [[ -f "$env_local" ]]; then
+    if grep -q "DEPLOYMENT_PROFILE" "$env_local"; then
+      return 0
+    fi
   fi
 
   return 1
@@ -149,7 +166,6 @@ show_profile_status() {
 
   log_info "Current Profile Status:"
   echo "  Profile: $profile"
-  echo "  Environment Context: ${ENVIRONMENT_CONTEXT:-unknown}"
   echo "  Region: ${region:-default}"
   echo "  Configuration Directory: $PROFILES_DIR/$profile"
 
@@ -159,7 +175,11 @@ show_profile_status() {
     echo "  Config File: $config_file"
     if command -v yq >/dev/null 2>&1; then
       echo "  Config Preview:"
-      yq '.' "$config_file" 2>/dev/null | head -10 | sed 's/^/    /'
+      # Disable pipefail to avoid SIGPIPE error when head closes the pipe early
+      (
+        set +o pipefail
+        yq '.' "$config_file" 2>/dev/null | head -10 | sed 's/^/    /'
+      )
     fi
   fi
 
@@ -190,27 +210,27 @@ switch_profile() {
   log_info "Switching to profile: $profile${region:+ (region: $region)} (mode: $behavior)"
 
   case "$behavior" in
-    "DRY_RUN")
-      echo "🔍 DRY RUN: Would switch to profile: $profile"
-      return 0
-      ;;
-    "PASS")
-      log_success "PASS MODE: Profile switch simulated successfully"
-      return 0
-      ;;
-    "FAIL")
-      log_error "FAIL MODE: Simulating profile switch failure"
-      return 1
-      ;;
-    "SKIP")
-      log_info "SKIP MODE: Profile switch skipped"
-      return 0
-      ;;
-    "TIMEOUT")
-      log_info "TIMEOUT MODE: Simulating profile switch timeout"
-      sleep 3
-      return 124
-      ;;
+  "DRY_RUN")
+    echo "🔍 DRY RUN: Would switch to profile: $profile"
+    return 0
+    ;;
+  "PASS")
+    log_success "PASS MODE: Profile switch simulated successfully"
+    return 0
+    ;;
+  "FAIL")
+    log_error "FAIL MODE: Simulating profile switch failure"
+    return 1
+    ;;
+  "SKIP")
+    log_info "SKIP MODE: Profile switch skipped"
+    return 0
+    ;;
+  "TIMEOUT")
+    log_info "TIMEOUT MODE: Simulating profile switch timeout"
+    sleep 3
+    return 124
+    ;;
   esac
 
   # EXECUTE mode - Actual profile switch
@@ -307,41 +327,52 @@ init_profile_system() {
 # Main execution
 main() {
   local action="${1:-switch}"
-  shift || true
+
+  # Check if the first argument is a known action
+  if [[ "$action" == "status" || "$action" == "list" || "$action" == "current" || "$action" == "validate" || "$action" == "init" || "$action" == "help" || "$action" == "--help" || "$action" == "-h" || "$action" == "switch" ]]; then
+    shift || true
+  else
+    # If not a known action, assume it's a profile name implies 'switch' action
+    # But only if we actually have arguments, otherwise default to 'switch' (which will show usage)
+    if [[ -n "$action" ]]; then
+      action="switch"
+      # Do not shift here, so the profile name remains as $1
+    fi
+  fi
 
   # Initialize profile system
   init_profile_system
 
   case "$action" in
-    "switch")
-      if [[ $# -lt 1 ]]; then
-        log_error "Usage: $0 switch <profile> [region]"
-        exit 1
-      fi
-      switch_profile "$@"
-      ;;
-    "status")
-      show_profile_status "$@"
-      ;;
-    "list")
-      list_profiles
-      ;;
-    "current")
-      get_current_profile
-      ;;
-    "validate")
-      if [[ $# -lt 1 ]]; then
-        log_error "Usage: $0 validate <profile>"
-        exit 1
-      fi
-      validate_profile "$1"
-      ;;
-    "init")
-      init_profile_system
-      log_success "✅ Profile system initialized"
-      ;;
-    "help"|"--help"|"-h")
-      cat << EOF
+  "switch")
+    if [[ $# -lt 1 ]]; then
+      log_error "Usage: $0 switch <profile> [region]"
+      exit 1
+    fi
+    switch_profile "$@"
+    ;;
+  "status")
+    show_profile_status "$@"
+    ;;
+  "list")
+    list_profiles
+    ;;
+  "current")
+    get_current_profile
+    ;;
+  "validate")
+    if [[ $# -lt 1 ]]; then
+      log_error "Usage: $0 validate <profile>"
+      exit 1
+    fi
+    validate_profile "$1"
+    ;;
+  "init")
+    init_profile_system
+    log_success "✅ Profile system initialized"
+    ;;
+  "help" | "--help" | "-h")
+    cat <<EOF
 MISE Profile Switcher v$PROFILE_VERSION
 
 Usage: $0 <action> [options]
@@ -375,13 +406,13 @@ Testability Examples:
   CI_TEST_MODE=DRY_RUN $0 switch staging
   CI_PROFILE_SWITCHER_BEHAVIOR=FAIL $0 switch production
 EOF
-      exit 0
-      ;;
-    *)
-      log_error "Unknown action: $action"
-      echo "Use '$0 help' for usage information"
-      exit 1
-      ;;
+    exit 0
+    ;;
+  *)
+    log_error "Unknown action: $action"
+    echo "Use '$0 help' for usage information"
+    exit 1
+    ;;
   esac
 }
 

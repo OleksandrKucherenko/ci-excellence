@@ -6,7 +6,7 @@ set -euo pipefail
 
 # Source common utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_ROOT/../.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "$PROJECT_ROOT/scripts/lib/common.sh" 2>/dev/null || {
   echo "Failed to source common utilities" >&2
   exit 1
@@ -96,7 +96,7 @@ decrypt_file() {
     sops_args+=("--output-type" "$format")
   fi
 
-  if sops "${sops_args[@]}" "$input_file" > "$output_file" 2>/dev/null; then
+  if sops "${sops_args[@]}" "$input_file" >"$output_file" 2>/dev/null; then
     log_success "✅ File decrypted successfully: $output_file"
     return 0
   else
@@ -137,7 +137,7 @@ encrypt_file() {
     sops_args+=("--output-type" "$format")
   fi
 
-  if sops "${sops_args[@]}" "$input_file" > "$output_file" 2>/dev/null; then
+  if sops "${sops_args[@]}" "$input_file" >"$output_file" 2>/dev/null; then
     log_success "✅ File encrypted successfully: $output_file"
     return 0
   else
@@ -205,7 +205,7 @@ load_env_file() {
   while IFS= read -r line; do
     # Skip comments and empty lines
     [[ "$line" =~ ^[[:space:]]*# ]] && continue
-    [[ -z "${line// }" ]] && continue
+    [[ -z "${line// /}" ]] && continue
 
     # Parse key-value pairs
     if [[ "$line" =~ ^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
@@ -225,7 +225,7 @@ load_env_file() {
       ((loaded_count++))
       log_debug "Loaded: $key"
     fi
-  done < "$env_file"
+  done <"$env_file"
 
   # Cleanup temp file
   if [[ -n "${temp_env_file:-}" ]]; then
@@ -264,21 +264,21 @@ get_secret() {
 
   local value
   case "$file" in
-    *.json)
-      value=$(get_json_value "$(cat "$file")" "$key" || echo "$default")
-      ;;
-    *.yaml|*.yml)
-      if command -v yq >/dev/null 2>&1; then
-        value=$(yq ".$key" "$file" 2>/dev/null || echo "$default")
-      else
-        log_warn "yq not available, cannot parse YAML file"
-        value="$default"
-      fi
-      ;;
-    *)
-      # Treat as simple key=value file
-      value=$(grep "^${key}=" "$file" 2>/dev/null | cut -d'=' -f2- | tr -d '"' || echo "$default")
-      ;;
+  *.json)
+    value=$(get_json_value "$(cat "$file")" "$key" || echo "$default")
+    ;;
+  *.yaml | *.yml)
+    if command -v yq >/dev/null 2>&1; then
+      value=$(yq ".$key" "$file" 2>/dev/null || echo "$default")
+    else
+      log_warn "yq not available, cannot parse YAML file"
+      value="$default"
+    fi
+    ;;
+  *)
+    # Treat as simple key=value file
+    value=$(grep "^${key}=" "$file" 2>/dev/null | cut -d'=' -f2- | tr -d '"' || echo "$default")
+    ;;
   esac
 
   # Cleanup temp file
@@ -318,26 +318,26 @@ set_secret() {
   fi
 
   case "$file" in
-    *.json)
-      # Update JSON file
-      if command -v jq >/dev/null 2>&1; then
-        jq ".${key} = \"${value}\"" "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
-      else
-        log_error "jq not available, cannot update JSON file"
-        return 1
-      fi
-      ;;
-    *)
-      # Update simple key=value file
-      if grep -q "^${key}=" "$file" 2>/dev/null; then
-        # Update existing key
-        sed -i.bak "s|^${key}=.*|${key}=\"${value}\"|" "$file"
-        rm -f "${file}.bak"
-      else
-        # Add new key
-        echo "${key}=\"${value}\"" >> "$file"
-      fi
-      ;;
+  *.json)
+    # Update JSON file
+    if command -v jq >/dev/null 2>&1; then
+      jq ".${key} = \"${value}\"" "$file" >"${file}.tmp" && mv "${file}.tmp" "$file"
+    else
+      log_error "jq not available, cannot update JSON file"
+      return 1
+    fi
+    ;;
+  *)
+    # Update simple key=value file
+    if grep -q "^${key}=" "$file" 2>/dev/null; then
+      # Update existing key
+      sed -i.bak "s|^${key}=.*|${key}=\"${value}\"|" "$file"
+      rm -f "${file}.bak"
+    else
+      # Add new key
+      echo "${key}=\"${value}\"" >>"$file"
+    fi
+    ;;
   esac
 
   # Re-encrypt if needed
@@ -381,42 +381,42 @@ list_secrets() {
   fi
 
   case "$file" in
-    *.json)
-      if command -v jq >/dev/null 2>&1; then
-        if [[ "$show_values" == "true" ]]; then
-          jq -r 'to_entries[] | "\(.key): \(.value)"' "$file"
-        else
-          jq -r 'keys[]' "$file"
-        fi
+  *.json)
+    if command -v jq >/dev/null 2>&1; then
+      if [[ "$show_values" == "true" ]]; then
+        jq -r 'to_entries[] | "\(.key): \(.value)"' "$file"
       else
-        log_warn "jq not available, cannot parse JSON file"
+        jq -r 'keys[]' "$file"
       fi
-      ;;
-    *.yaml|*.yml)
-      if command -v yq >/dev/null 2>&1; then
-        if [[ "$show_values" == "true" ]]; then
-          yq 'to_entries | .[] | "\(.key): \(.value)"' "$file"
-        else
-          yq 'keys[]' "$file"
-        fi
+    else
+      log_warn "jq not available, cannot parse JSON file"
+    fi
+    ;;
+  *.yaml | *.yml)
+    if command -v yq >/dev/null 2>&1; then
+      if [[ "$show_values" == "true" ]]; then
+        yq 'to_entries | .[] | "\(.key): \(.value)"' "$file"
       else
-        log_warn "yq not available, cannot parse YAML file"
+        yq 'keys[]' "$file"
       fi
-      ;;
-    *)
-      # Simple key=value file
-      while IFS= read -r line; do
-        if [[ "$line" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
-          local key="${line%%=*}"
-          if [[ "$show_values" == "true" ]]; then
-            local value="${line#*=}"
-            echo "$key: $(sed 's/^["'\'']//' | sed 's/["'\'']$//' <<< "$value")"
-          else
-            echo "$key"
-          fi
+    else
+      log_warn "yq not available, cannot parse YAML file"
+    fi
+    ;;
+  *)
+    # Simple key=value file
+    while IFS= read -r line; do
+      if [[ "$line" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
+        local key="${line%%=*}"
+        if [[ "$show_values" == "true" ]]; then
+          local value="${line#*=}"
+          echo "$key: $(echo "$value" | sed 's/^["'\'']*//' | sed 's/["'\'']*$//')"
+        else
+          echo "$key"
         fi
-      done < "$file"
-      ;;
+      fi
+    done <"$file"
+    ;;
   esac
 
   # Cleanup temp file
@@ -436,7 +436,8 @@ rotate_keys() {
   key_file=$(get_age_key_file)
 
   # Backup current key
-  local backup_file="${key_file}.backup.$(date +%s)"
+  local backup_file
+  backup_file="${key_file}.backup.$(date +%s)"
   cp "$key_file" "$backup_file"
   log_info "Backup key saved: $backup_file"
 
@@ -465,35 +466,35 @@ main() {
   shift || true
 
   case "$action" in
-    "decrypt")
-      decrypt_file "$@"
-      ;;
-    "encrypt")
-      encrypt_file "$@"
-      ;;
-    "edit")
-      edit_file "$@"
-      ;;
-    "load-env")
-      load_env_file "$@"
-      ;;
-    "get")
-      get_secret "$@"
-      ;;
-    "set")
-      set_secret "$@"
-      ;;
-    "list")
-      list_secrets "$@"
-      ;;
-    "rotate")
-      rotate_keys "$@"
-      ;;
-    "validate")
-      validate_age_key_file
-      ;;
-    "help"|"--help"|"-h")
-      cat << EOF
+  "decrypt")
+    decrypt_file "$@"
+    ;;
+  "encrypt")
+    encrypt_file "$@"
+    ;;
+  "edit")
+    edit_file "$@"
+    ;;
+  "load-env")
+    load_env_file "$@"
+    ;;
+  "get")
+    get_secret "$@"
+    ;;
+  "set")
+    set_secret "$@"
+    ;;
+  "list")
+    list_secrets "$@"
+    ;;
+  "rotate")
+    rotate_keys "$@"
+    ;;
+  "validate")
+    validate_age_key_file
+    ;;
+  "help" | "--help" | "-h")
+    cat <<EOF
 Secret Utilities v$SECRET_UTILS_VERSION
 
 Usage: $0 <action> [options]
@@ -517,13 +518,13 @@ Examples:
   $0 set .env.secrets.json API_KEY "new-value"
   $0 list .env.secrets.json true
 EOF
-      exit 0
-      ;;
-    *)
-      log_error "Unknown action: $action"
-      echo "Use '$0 help' for usage information" >&2
-      exit 1
-      ;;
+    exit 0
+    ;;
+  *)
+    log_error "Unknown action: $action"
+    echo "Use '$0 help' for usage information" >&2
+    exit 1
+    ;;
   esac
 }
 

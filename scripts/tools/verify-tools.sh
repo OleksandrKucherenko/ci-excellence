@@ -6,9 +6,13 @@ set -euo pipefail
 
 # Source common utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "$PROJECT_ROOT/scripts/lib/config.sh" 2>/dev/null || {
   echo "Failed to source configuration utilities" >&2
+  exit 1
+}
+source "$PROJECT_ROOT/scripts/lib/secret-utils.sh" 2>/dev/null || {
+  echo "Failed to source secret utilities" >&2
   exit 1
 }
 
@@ -48,45 +52,45 @@ get_tool_version() {
   local version_output=""
 
   case "$tool" in
-    "age")
-      version_output=$(age -version 2>/dev/null | head -1 || echo "unknown")
-      ;;
-    "sops")
-      version_output=$(sops --version 2>/dev/null | head -1 || echo "unknown")
-      ;;
-    "gitleaks")
-      version_output=$(gitleaks version 2>/dev/null | head -1 || echo "unknown")
-      ;;
-    "trufflehog")
-      version_output=$(trufflehog --version 2>/dev/null | head -1 || echo "unknown")
-      ;;
-    "lefthook")
-      version_output=$(lefthook version 2>/dev/null | head -1 || echo "unknown")
-      ;;
-    "commitizen")
-      version_output=$(cz --version 2>/dev/null | head -1 || echo "unknown")
-      ;;
-    "shellspec")
-      version_output=$(shellspec --version 2>/dev/null | head -1 || echo "unknown")
-      ;;
-    "shellcheck")
-      version_output=$(shellcheck --version 2>/dev/null | head -1 || echo "unknown")
-      ;;
-    "shfmt")
-      version_output=$(shfmt --version 2>/dev/null | head -1 || echo "unknown")
-      ;;
-    "act")
-      version_output=$(act --version 2>/dev/null | head -1 || echo "unknown")
-      ;;
-    "bun")
-      version_output=$(bun --version 2>/dev/null | head -1 || echo "unknown")
-      ;;
-    "node")
-      version_output=$(node --version 2>/dev/null | head -1 || echo "unknown")
-      ;;
-    *)
-      version_output=$(timeout 5 "$tool" --version 2>/dev/null | head -1 || echo "unknown")
-      ;;
+  "age")
+    version_output=$(age -version 2>/dev/null | head -1 || echo "unknown")
+    ;;
+  "sops")
+    version_output=$(sops --version 2>/dev/null | head -1 || echo "unknown")
+    ;;
+  "gitleaks")
+    version_output=$(gitleaks version 2>/dev/null | head -1 || echo "unknown")
+    ;;
+  "trufflehog")
+    version_output=$(trufflehog --version 2>/dev/null | head -1 || echo "unknown")
+    ;;
+  "lefthook")
+    version_output=$(lefthook version 2>/dev/null | head -1 || echo "unknown")
+    ;;
+  "commitizen")
+    version_output=$(cz --version 2>/dev/null | head -1 || echo "unknown")
+    ;;
+  "shellspec")
+    version_output=$(shellspec --version 2>/dev/null | head -1 || echo "unknown")
+    ;;
+  "shellcheck")
+    version_output=$(shellcheck --version 2>/dev/null | head -1 || echo "unknown")
+    ;;
+  "shfmt")
+    version_output=$(shfmt --version 2>/dev/null | head -1 || echo "unknown")
+    ;;
+  "act")
+    version_output=$(act --version 2>/dev/null | head -1 || echo "unknown")
+    ;;
+  "bun")
+    version_output=$(bun --version 2>/dev/null | head -1 || echo "unknown")
+    ;;
+  "node")
+    version_output=$(node --version 2>/dev/null | head -1 || echo "unknown")
+    ;;
+  *)
+    version_output=$(timeout 5 "$tool" --version 2>/dev/null | head -1 || echo "unknown")
+    ;;
   esac
 
   echo "$version_output"
@@ -99,7 +103,7 @@ version_compare() {
 
   # Handle "latest" requirement
   if [[ "$required" == "latest" ]]; then
-    return 0  # Assume any version is acceptable for "latest"
+    return 0 # Assume any version is acceptable for "latest"
   fi
 
   # Handle LTS requirements
@@ -135,27 +139,27 @@ verify_tool() {
   log_info "Verifying tool: $tool"
 
   case "$behavior" in
-    "DRY_RUN")
-      echo "🔍 DRY RUN: Would verify $tool"
-      return 0
-      ;;
-    "PASS")
-      log_success "PASS MODE: Tool verification simulated successfully"
-      return 0
-      ;;
-    "FAIL")
-      log_error "FAIL MODE: Simulating tool verification failure"
-      return 1
-      ;;
-    "SKIP")
-      log_info "SKIP MODE: Tool verification skipped"
-      return 0
-      ;;
-    "TIMEOUT")
-      log_info "TIMEOUT MODE: Simulating tool verification timeout"
-      sleep 2
-      return 124
-      ;;
+  "DRY_RUN")
+    echo "🔍 DRY RUN: Would verify $tool"
+    return 0
+    ;;
+  "PASS")
+    log_success "PASS MODE: Tool verification simulated successfully"
+    return 0
+    ;;
+  "FAIL")
+    log_error "FAIL MODE: Simulating tool verification failure"
+    return 1
+    ;;
+  "SKIP")
+    log_info "SKIP MODE: Tool verification skipped"
+    return 0
+    ;;
+  "TIMEOUT")
+    log_info "TIMEOUT MODE: Simulating tool verification timeout"
+    sleep 2
+    return 124
+    ;;
   esac
 
   # EXECUTE mode - Actual verification
@@ -189,6 +193,7 @@ verify_all_tools() {
   fi
 
   local failed_count=0
+  local total_found=0
   local total_count=${#REQUIRED_TOOLS[@]}
 
   echo ""
@@ -355,39 +360,39 @@ main() {
   log_info "Tool Verification Script v$TOOLS_VERSION"
 
   case "$scope" in
-    "tools")
-      verify_all_tools
-      ;;
-    "config")
-      verify_configurations
-      ;;
-    "env")
-      verify_environment
-      ;;
-    "all")
-      local overall_success=true
+  "tools")
+    verify_all_tools
+    ;;
+  "config")
+    verify_configurations
+    ;;
+  "env")
+    verify_environment
+    ;;
+  "all")
+    local overall_success=true
 
-      if ! verify_all_tools; then
-        overall_success=false
-      fi
+    if ! verify_all_tools; then
+      overall_success=false
+    fi
 
-      if ! verify_configurations; then
-        overall_success=false
-      fi
+    if ! verify_configurations; then
+      overall_success=false
+    fi
 
-      if ! verify_environment; then
-        overall_success=false
-      fi
+    if ! verify_environment; then
+      overall_success=false
+    fi
 
-      if [[ "$overall_success" == "true" ]]; then
-        log_success "✅ All verifications passed successfully"
-      else
-        log_error "❌ Some verifications failed"
-        return 1
-      fi
-      ;;
-    "help"|"--help"|"-h")
-      cat << EOF
+    if [[ "$overall_success" == "true" ]]; then
+      log_success "✅ All verifications passed successfully"
+    else
+      log_error "❌ Some verifications failed"
+      return 1
+    fi
+    ;;
+  "help" | "--help" | "-h")
+    cat <<EOF
 Tool Verification Script v$TOOLS_VERSION
 
 Usage: $0 <scope>
@@ -419,13 +424,13 @@ Testability Examples:
   CI_TEST_MODE=DRY_RUN $0
   CI_TOOLS_VERIFICATION_BEHAVIOR=FAIL $0
 EOF
-      exit 0
-      ;;
-    *)
-      log_error "Unknown scope: $scope"
-      echo "Use '$0 help' for usage information"
-      exit 1
-      ;;
+    exit 0
+    ;;
+  *)
+    log_error "Unknown scope: $scope"
+    echo "Use '$0 help' for usage information"
+    exit 1
+    ;;
   esac
 
   # Show recommendations for all successful runs
