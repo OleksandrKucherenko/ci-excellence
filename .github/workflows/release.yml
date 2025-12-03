@@ -44,6 +44,7 @@ jobs:
   prepare:
     name: Prepare Release
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       version: ${{ steps.version.outputs.version }}
       is-prerelease: ${{ steps.version.outputs.is-prerelease }}
@@ -99,6 +100,7 @@ jobs:
     name: Build Release Artifacts
     runs-on: ubuntu-latest
     needs: prepare
+    timeout-minutes: 20
     if: ${{ vars.ENABLE_COMPILE == 'true' }}
     steps:
       - name: Checkout code
@@ -137,6 +139,7 @@ jobs:
     name: Test Release Build
     runs-on: ubuntu-latest
     needs: build
+    timeout-minutes: 15
     if: ${{ vars.ENABLE_TESTS == 'true' }}
     steps:
       - name: Checkout code
@@ -167,6 +170,7 @@ jobs:
     name: Publish to NPM
     runs-on: ubuntu-latest
     needs: [prepare, build, test]
+    timeout-minutes: 5
     if: |
       always() &&
       needs.prepare.result == 'success' &&
@@ -205,6 +209,7 @@ jobs:
     name: Create GitHub Release
     runs-on: ubuntu-latest
     needs: [prepare, build, test]
+    timeout-minutes: 5
     if: |
       always() &&
       needs.prepare.result == 'success' &&
@@ -264,6 +269,7 @@ jobs:
     name: Publish Docker Image
     runs-on: ubuntu-latest
     needs: [prepare, build, test]
+    timeout-minutes: 15
     if: |
       always() &&
       needs.prepare.result == 'success' &&
@@ -300,6 +306,7 @@ jobs:
     name: Publish Documentation
     runs-on: ubuntu-latest
     needs: [prepare, publish-github]
+    timeout-minutes: 10
     if: |
       always() &&
       needs.prepare.result == 'success' &&
@@ -333,6 +340,7 @@ jobs:
     name: Notify Release
     runs-on: ubuntu-latest
     needs: [prepare, publish-npm, publish-github, publish-docker, publish-documentation]
+    timeout-minutes: 5
     if: always() && github.event.inputs.dry-run != 'true'
     steps:
       - name: Generate summary

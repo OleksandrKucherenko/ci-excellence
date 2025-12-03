@@ -25,6 +25,9 @@ htmlcov/
 junit.xml
 test-results/
 
+# Local CI test results
+.ci-test-results/
+
 # Environment files
 .env
 .env.local
