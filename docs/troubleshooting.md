@@ -55,6 +55,32 @@ mise run install-hooks
 cat .git/hooks/pre-commit
 ```
 
+**Problem**: `lefthook install` fails with `/dev/null/commit-msg: not a directory`
+
+```bash
+$ lefthook install
+sync hooks: ❌
+│  Error: could not replace the hook: stat /dev/null/commit-msg: not a directory
+```
+
+**Root cause**: `core.hooksPath` is pointed at `/dev/null` (often from disabling hooks in another repo), so lefthook cannot write into the hooks directory.
+
+**Solution**:
+```bash
+# Confirm the misconfiguration and its source
+git config --show-origin --get core.hooksPath
+
+# Unset the value and reinstall hooks
+git config --unset core.hooksPath
+lefthook install
+```
+
+**Verification**:
+```bash
+git config --get core.hooksPath   # should be empty (defaults to .git/hooks)
+lefthook list                     # shows installed hooks without errors
+```
+
 ### Missing Tools
 
 **Problem**: Required tools not found
