@@ -1,0 +1,62 @@
+name: Auto-Fix Quality and Security Issues
+
+on:
+  push:
+    branches:
+      - develop
+      - 'feature/**'
+      - 'fix/**'
+      - 'claude/**'
+
+env:
+  GIT_AUTHOR_NAME: github-actions[bot]
+  GIT_AUTHOR_EMAIL: github-actions[bot]@users.noreply.github.com
+  GIT_COMMITTER_NAME: github-actions[bot]
+  GIT_COMMITTER_EMAIL: github-actions[bot]@users.noreply.github.com
+  AUTO_COMMIT: ${{ vars.AUTO_COMMIT || 'true' }}
+  AUTO_APPLY_FIXES: ${{ vars.AUTO_APPLY_FIXES || 'true' }}
+  PUSH_CHANGES: ${{ vars.PUSH_CHANGES || 'false' }}
+  MISE_LOG_LEVEL: info
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  security-scan:
+    name: Security and Quality Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup mise and install tools
+        run: ./scripts/ci/setup/ci-01-install-tools.sh
+        env:
+          MISE_TRUSTED_CONFIG_PATHS: ${{ github.workspace }}
+          MISE_YES: 1
+
+      - name: Run vulnerability scan
+        run: ./scripts/ci/build/ci-03-security-scan.sh
+        continue-on-error: true
+
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: |
+            gitleaks-report.json
+            trufflehog-report.json
+            security-results.sarif
+          retention-days: 30
+
+      - name: Upload SARIF results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: security-results.sarif
+        continue-on-error: true
