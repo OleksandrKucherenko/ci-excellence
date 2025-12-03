@@ -45,6 +45,8 @@ jobs:
         run: |
           chmod +x scripts/setup/*.sh
           ./scripts/setup/install-tools.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Cleanup old workflow runs
         if: ${{ vars.ENABLE_CLEANUP == 'true' }}
@@ -90,6 +92,8 @@ jobs:
         run: |
           chmod +x scripts/setup/*.sh
           ./scripts/setup/install-tools.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Sync package.json and changelog
         if: ${{ vars.ENABLE_FILE_SYNC == 'true' }}
@@ -145,6 +149,8 @@ jobs:
         run: |
           chmod +x scripts/setup/*.sh
           ./scripts/setup/install-tools.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Identify versions to deprecate
         if: ${{ vars.ENABLE_DEPRECATION == 'true' }}
@@ -194,6 +200,8 @@ jobs:
         run: |
           chmod +x scripts/setup/*.sh
           ./scripts/setup/install-tools.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install dependencies
         run: ./scripts/setup/install-dependencies.sh
@@ -245,6 +253,8 @@ jobs:
         run: |
           chmod +x scripts/setup/*.sh
           ./scripts/setup/install-tools.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update dependencies
         if: ${{ vars.ENABLE_DEPENDENCY_UPDATE == 'true' }}

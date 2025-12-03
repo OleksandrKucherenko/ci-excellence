@@ -40,6 +40,8 @@ jobs:
         run: |
           chmod +x scripts/setup/*.sh
           ./scripts/setup/install-tools.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Determine version
         id: version
@@ -153,6 +155,8 @@ jobs:
         run: |
           chmod +x scripts/setup/*.sh
           ./scripts/setup/install-tools.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Confirm rollback
         run: |

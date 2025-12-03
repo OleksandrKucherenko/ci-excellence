@@ -58,6 +58,8 @@ jobs:
         run: |
           chmod +x scripts/setup/*.sh
           ./scripts/setup/install-tools.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install dependencies
         run: ./scripts/setup/install-dependencies.sh
@@ -106,6 +108,8 @@ jobs:
         run: |
           chmod +x scripts/setup/*.sh
           ./scripts/setup/install-tools.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install dependencies
         run: ./scripts/setup/install-dependencies.sh
@@ -142,6 +146,8 @@ jobs:
         run: |
           chmod +x scripts/setup/*.sh
           ./scripts/setup/install-tools.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install dependencies
         run: ./scripts/setup/install-dependencies.sh
@@ -312,6 +318,8 @@ jobs:
         run: |
           chmod +x scripts/setup/*.sh
           ./scripts/setup/install-tools.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build documentation
         run: |
