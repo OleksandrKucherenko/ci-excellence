@@ -31,6 +31,14 @@ fi
 # Ensure mise is in PATH
 export PATH="$HOME/.local/bin:$PATH"
 
+# Configure GitHub token if available to avoid rate limiting
+if [ -n "${GITHUB_TOKEN:-}" ]; then
+    echo "✓ Using GITHUB_TOKEN for authenticated GitHub API requests"
+    export GITHUB_TOKEN
+else
+    echo "⚠ GITHUB_TOKEN not set - may encounter rate limiting"
+fi
+
 # Install all tools from mise.toml
 echo ""
 echo "Installing tools from mise.toml..."
