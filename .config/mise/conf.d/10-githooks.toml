@@ -1,0 +1,13 @@
+[tools]
+# Git hooks manager
+lefthook = "latest"
+
+[settings]
+experimental = true # enable hooks
+
+[hooks]
+enter = ["mise run install-githooks"]
+
+[tasks.install-githooks]
+description = "Install git hooks with lefthook help"
+run = ["lefthook install"]

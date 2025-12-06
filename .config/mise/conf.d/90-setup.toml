@@ -1,0 +1,9 @@
+[settings]
+experimental = true
+
+[tasks.setup]
+description = "Pre-configure project folders and tools"
+run = ["./scripts/00-setup-project.sh"]
+
+[hooks]
+enter = ["mise run setup"]

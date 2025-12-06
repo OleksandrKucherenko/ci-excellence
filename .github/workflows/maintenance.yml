@@ -42,25 +42,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup environment
-        run: |
-          chmod +x scripts/setup/*.sh
-          ./scripts/setup/install-tools.sh
+        run: ./scripts/ci/setup/ci-01-install-tools.sh
 
-      - name: Cleanup old workflow runs
+      - name: Cleanup resources
         if: ${{ vars.ENABLE_CLEANUP == 'true' }}
-        run: |
-          chmod +x scripts/maintenance/*.sh
-          ./scripts/maintenance/cleanup-workflow-runs.sh
-
-      - name: Cleanup old artifacts
-        if: ${{ vars.ENABLE_CLEANUP == 'true' }}
-        run: |
-          ./scripts/maintenance/cleanup-artifacts.sh
-
-      - name: Cleanup old caches
-        if: ${{ vars.ENABLE_CLEANUP == 'true' }}
-        run: |
-          ./scripts/maintenance/cleanup-caches.sh
+        run: ./scripts/ci/maintenance/ci-01-cleanup.sh
 
       - name: Report cleanup results
         if: always()
@@ -87,15 +73,11 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup environment
-        run: |
-          chmod +x scripts/setup/*.sh
-          ./scripts/setup/install-tools.sh
+        run: ./scripts/ci/setup/ci-01-install-tools.sh
 
       - name: Sync package.json and changelog
         if: ${{ vars.ENABLE_FILE_SYNC == 'true' }}
-        run: |
-          chmod +x scripts/maintenance/*.sh
-          ./scripts/maintenance/sync-version-files.sh
+        run: ./scripts/ci/maintenance/ci-02-sync-files.sh
 
       - name: Check for changes
         id: changes
@@ -142,15 +124,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup environment
-        run: |
-          chmod +x scripts/setup/*.sh
-          ./scripts/setup/install-tools.sh
+        run: ./scripts/ci/setup/ci-01-install-tools.sh
 
       - name: Identify versions to deprecate
         if: ${{ vars.ENABLE_DEPRECATION == 'true' }}
-        run: |
-          chmod +x scripts/maintenance/*.sh
-          ./scripts/maintenance/identify-deprecated-versions.sh
+        run: ./scripts/maintenance/identify-deprecated-versions.sh
 
       - name: Deprecate NPM versions
         if: |
@@ -191,24 +169,18 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup environment
-        run: |
-          chmod +x scripts/setup/*.sh
-          ./scripts/setup/install-tools.sh
+        run: ./scripts/ci/setup/ci-01-install-tools.sh
 
       - name: Install dependencies
-        run: ./scripts/setup/install-dependencies.sh
+        run: ./scripts/ci/setup/ci-02-install-dependencies.sh
 
       - name: Run dependency audit
         if: ${{ vars.ENABLE_SECURITY_AUDIT == 'true' }}
-        run: |
-          chmod +x scripts/maintenance/*.sh
-          ./scripts/maintenance/security-audit.sh
+        run: ./scripts/maintenance/security-audit.sh
 
       - name: Run vulnerability scan
         if: ${{ vars.ENABLE_SECURITY_AUDIT == 'true' }}
-        run: |
-          chmod +x scripts/build/*.sh
-          ./scripts/build/security-scan.sh
+        run: ./scripts/ci/build/ci-03-security-scan.sh
 
       - name: Upload SARIF results
         if: ${{ always() && vars.ENABLE_SECURITY_AUDIT == 'true' }}
@@ -242,21 +214,15 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup environment
-        run: |
-          chmod +x scripts/setup/*.sh
-          ./scripts/setup/install-tools.sh
+        run: ./scripts/ci/setup/ci-01-install-tools.sh
 
       - name: Update dependencies
         if: ${{ vars.ENABLE_DEPENDENCY_UPDATE == 'true' }}
-        run: |
-          chmod +x scripts/maintenance/*.sh
-          ./scripts/maintenance/update-dependencies.sh
+        run: ./scripts/maintenance/update-dependencies.sh
 
       - name: Run tests
         if: ${{ vars.ENABLE_DEPENDENCY_UPDATE == 'true' }}
-        run: |
-          chmod +x scripts/test/*.sh
-          ./scripts/test/unit.sh || echo "Tests failed, will be noted in PR"
+        run: ./scripts/ci/test/ci-01-unit-tests.sh || echo "Tests failed, will be noted in PR"
 
       - name: Check for changes
         id: changes
@@ -322,9 +288,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           APPRISE_URLS: ${{ secrets.APPRISE_URLS }}
           ENABLE_NOTIFICATIONS: ${{ vars.ENABLE_NOTIFICATIONS }}
-        run: |
-          chmod +x scripts/ci/notification/check-notifications-enabled.sh
-          ./scripts/ci/notification/check-notifications-enabled.sh
+        run: ./scripts/ci/notification/check-notifications-enabled.sh
 
       - name: Determine maintenance status
         if: steps.check_notify.outputs.enabled == 'true'
@@ -349,9 +313,7 @@ jobs:
         if: steps.check_notify.outputs.enabled == 'true'
         env:
           APPRISE_URLS: ${{ steps.check_notify.outputs.apprise_urls }}
-        run: |
-          chmod +x scripts/setup/send-notification.sh
-          ./scripts/setup/send-notification.sh \
+        run: ./scripts/ci/notification/ci-01-send-notification.sh \
             "Maintenance Pipeline" \
             "${{ steps.status.outputs.message }}" \
             "${{ steps.status.outputs.status }}"

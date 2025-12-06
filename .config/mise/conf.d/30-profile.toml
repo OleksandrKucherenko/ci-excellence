@@ -1,0 +1,4 @@
+# Load local overrides and then defaults from .env file
+[[env]]
+_.file = [".env.local"]
+

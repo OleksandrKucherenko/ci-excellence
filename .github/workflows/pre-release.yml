@@ -333,9 +333,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           APPRISE_URLS: ${{ secrets.APPRISE_URLS }}
           ENABLE_NOTIFICATIONS: ${{ vars.ENABLE_NOTIFICATIONS }}
-        run: |
-          chmod +x scripts/ci/notification/check-notifications-enabled.sh
-          ./scripts/ci/notification/check-notifications-enabled.sh
+        run: ./scripts/ci/notification/check-notifications-enabled.sh
 
       - name: Determine pipeline status
         if: steps.check_notify.outputs.enabled == 'true'
@@ -354,9 +352,7 @@ jobs:
         if: steps.check_notify.outputs.enabled == 'true'
         env:
           APPRISE_URLS: ${{ steps.check_notify.outputs.apprise_urls }}
-        run: |
-          chmod +x scripts/setup/send-notification.sh
-          ./scripts/setup/send-notification.sh \
+        run: ./scripts/ci/notification/ci-01-send-notification.sh \
             "Pre-Release Pipeline" \
             "${{ steps.status.outputs.message }}" \
             "${{ steps.status.outputs.status }}"
