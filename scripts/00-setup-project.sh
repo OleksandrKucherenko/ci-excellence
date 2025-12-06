@@ -1,81 +1,28 @@
 #!/usr/bin/env bash
-set -euo pipefail
+
+# Exit on error, undefined variable - error, pipefail - error in pipes
+set -e -u -o pipefail
 
 # Mise Setup: Pre-configure project folders
-# Purpose: Create necessary directories for local development
+# Purpose: Create necessary directories for local development, verify project setup
 # Called automatically when entering the project directory
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-cd "$PROJECT_ROOT"
-
-echo "========================================="
-echo "Setting up project folders"
-echo "========================================="
-
-# Create secrets directory if it doesn't exist
-if [ ! -d ".secrets" ]; then
-    echo "Creating .secrets directory..."
-    mkdir -p .secrets
-    chmod 700 .secrets
-    echo "✓ Created .secrets directory (mode: 700)"
-fi
-
-# Create dist/build directories if they don't exist
-if [ ! -d "dist" ]; then
-    echo "Creating dist directory..."
-    mkdir -p dist
-    echo "✓ Created dist directory"
-fi
+export FOUND_ERRORS=0
 
 # Check if age key exists
-if [ ! -f ".secrets/mise-age.txt" ]; then
-    echo ""
-    echo "⚠️  No age encryption key found!"
-    echo ""
-    echo "To set up secrets management:"
-    echo "  1. Generate a new age key:"
-    echo "     mise run generate-age-key"
-    echo ""
-    echo "  2. Or if you have an existing key, place it at:"
-    echo "     .secrets/mise-age.txt"
-    echo ""
-    echo "  3. Then encrypt your secrets:"
-    echo "     mise run encrypt-secrets"
-    echo ""
-fi
-
-# Check if .env file exists, if not create from template
-if [ ! -f ".env" ]; then
-    if [ -f "config/.env.template" ]; then
-        echo "Creating .env from template..."
-        cp config/.env.template .env
-        echo "✓ Created .env from template"
-        echo "  Please review and update .env with your settings"
-    fi
-fi
+[ ! -f ".secrets/mise-age.txt" ] && export FOUND_ERRORS=$(( FOUND_ERRORS+1 )) \
+    && echo "⚠️  No age encryption key found! expected: $(pwd)/.secrets/mise-age.txt"
 
 # Check if .env.secrets.json exists
-if [ ! -f ".env.secrets.json" ]; then
-    if [ -f ".env.secrets.json.example" ]; then
-        echo ""
-        echo "⚠️  No encrypted secrets file found!"
-        echo ""
-        echo "To create encrypted secrets:"
-        echo "  1. Copy the example file:"
-        echo "     cp .env.secrets.json.example .env.secrets.json.tmp"
-        echo ""
-        echo "  2. Edit with your actual secrets:"
-        echo "     vim .env.secrets.json.tmp"
-        echo ""
-        echo "  3. Encrypt it (mise sets SOPS_AGE_KEY_FILE automatically):"
-        echo "     sops --encrypt --input-type json --output-type json .env.secrets.json.tmp > .env.secrets.json"
-        echo ""
-        echo "  4. Remove the temporary file:"
-        echo "     rm .env.secrets.json.tmp"
-        echo ""
-    fi
+[ ! -f ".env.secrets.json" ] && export FOUND_ERRORS=$(( FOUND_ERRORS+1 )) \
+    && echo "⚠️  No encrypted secrets file found! expected: $(pwd)/.env.secrets.json"
+
+# in case of detected errors, print path to the documentation
+if [ $FOUND_ERRORS -gt 0 ]; then
+    echo ""
+    echo "Read: $(pwd)/docs/QUICKSTART.md"
+else
+    echo "✅ Project is ready for development!"
 fi
 
-echo "========================================="
-echo "Project folders setup complete"
-echo "========================================="
+exit 0

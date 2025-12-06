@@ -23,7 +23,7 @@ pre-commit:
     # Scan staged files with trufflehog
     trufflehog-git-staged:
       tags: security
-      run: trufflehog git file://. --since-commit HEAD --only-verified --fail --json 2>&1 | jq -r '.msg'
+      run: trufflehog git file://. --since-commit HEAD --only-verified --fail --json 2>&1 | jq -c
       skip:
         - merge
         - rebase
