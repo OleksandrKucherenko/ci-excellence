@@ -1,0 +1,12 @@
+[tools]
+bun = "latest"
+"npm:czg" = "latest"
+
+[tasks.cz]
+description = "Start interactive commit with czg"
+alias = "commit"
+run = ["czg"]
+
+[tasks.cz-check]
+description = "Check commit message with czg (hook mode)"
+run = ["czg --hook $1"]

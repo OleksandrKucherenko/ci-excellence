@@ -84,19 +84,12 @@ pre-push:
 
 # Commit-msg hook - enforce conventional commits (optional)
 # Uncomment to enforce commit message format
-# commit-msg:
-#   commands:
-#     conventional-commit:
-#       tags: commit-format
-#       run: |
-#         if ! grep -qE "^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .{1,}" "$1"; then
-#           echo "❌ Invalid commit message format!"
-#           echo "   Use conventional commits format:"
-#           echo "   feat: add new feature"
-#           echo "   fix: resolve bug"
-#           echo "   docs: update documentation"
-#           exit 1
-#         fi
+commit-msg:
+  commands:
+    commitizen:
+      interactive: true
+      tags: commit-format
+      run: mise run cz-check -- {1}
 
 # Post-checkout hook - remind about mise
 post-checkout:
