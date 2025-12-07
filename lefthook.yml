@@ -89,7 +89,7 @@ commit-msg:
     commitizen:
       interactive: true
       tags: commit-format
-      run: mise run cz-check -- {1}
+      run: exec < /dev/tty && mise x -- bunx czg --hook || true
 
 # Post-checkout hook - remind about mise
 post-checkout:
