@@ -60,10 +60,7 @@ jobs:
 
       - name: Report cleanup results
         if: always()
-        run: |
-          echo "## Cleanup Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Cleanup completed at $(date)" >> $GITHUB_STEP_SUMMARY
+        run: ./scripts/ci/reports/ci-30-summary-cleanup.sh
 
   sync-files:
     name: Sync Repository Files
@@ -108,14 +105,7 @@ jobs:
           delete-branch: true
 
       - name: Report sync results
-        run: |
-          echo "## File Sync Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ steps.changes.outputs.has-changes }}" == "true" ]; then
-            echo "Files were out of sync. PR created for review." >> $GITHUB_STEP_SUMMARY
-          else
-            echo "All files are in sync." >> $GITHUB_STEP_SUMMARY
-          fi
+        run: ./scripts/ci/reports/ci-20-summary-sync.sh "${{ steps.changes.outputs.has-changes }}"
 
   deprecate-old-versions:
     name: Deprecate Old Versions
@@ -154,10 +144,7 @@ jobs:
           ./scripts/ci/maintenance/ci-80-deprecate-github-releases.sh
 
       - name: Report deprecation results
-        run: |
-          echo "## Deprecation Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Deprecated versions checked and updated" >> $GITHUB_STEP_SUMMARY
+        run: ./scripts/ci/reports/ci-40-summary-deprecations.sh
 
   security-audit:
     name: Security Audit
@@ -196,10 +183,7 @@ jobs:
 
       - name: Report audit results
         if: always()
-        run: |
-          echo "## Security Audit Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Security audit completed at $(date)" >> $GITHUB_STEP_SUMMARY
+        run: ./scripts/ci/reports/ci-50-summary-security-audit.sh
 
   dependency-update:
     name: Update Dependencies
@@ -231,12 +215,7 @@ jobs:
 
       - name: Check for changes
         id: changes
-        run: |
-          if git diff --quiet; then
-            echo "has-changes=false" >> $GITHUB_OUTPUT
-          else
-            echo "has-changes=true" >> $GITHUB_OUTPUT
-          fi
+        run: ./scripts/ci/maintenance/ci-20-check-changes.sh
 
       - name: Create Pull Request
         if: steps.changes.outputs.has-changes == 'true'
@@ -256,14 +235,7 @@ jobs:
           labels: dependencies
 
       - name: Report update results
-        run: |
-          echo "## Dependency Update Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ steps.changes.outputs.has-changes }}" == "true" ]; then
-            echo "Dependencies updated. PR created for review." >> $GITHUB_STEP_SUMMARY
-          else
-            echo "All dependencies are up to date." >> $GITHUB_STEP_SUMMARY
-          fi
+        run: ./scripts/ci/reports/ci-60-summary-dependency-update.sh "${{ steps.changes.outputs.has-changes }}"
 
   notify:
     name: Maintenance Summary
@@ -272,16 +244,19 @@ jobs:
     if: always()
     steps:
       - name: Generate summary
+        env:
+          ENABLE_CLEANUP: ${{ vars.ENABLE_CLEANUP || 'false' }}
+          ENABLE_FILE_SYNC: ${{ vars.ENABLE_FILE_SYNC || 'false' }}
+          ENABLE_DEPRECATION: ${{ vars.ENABLE_DEPRECATION || 'false' }}
+          ENABLE_SECURITY_AUDIT: ${{ vars.ENABLE_SECURITY_AUDIT || 'false' }}
+          ENABLE_DEPENDENCY_UPDATE: ${{ vars.ENABLE_DEPENDENCY_UPDATE || 'false' }}
         run: |
-          echo "## Maintenance Pipeline Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Task | Status | Enabled |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|--------|---------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Cleanup | ${{ needs.cleanup.result }} | ${{ vars.ENABLE_CLEANUP || 'false' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| File Sync | ${{ needs.sync-files.result }} | ${{ vars.ENABLE_FILE_SYNC || 'false' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Deprecate Old Versions | ${{ needs.deprecate-old-versions.result }} | ${{ vars.ENABLE_DEPRECATION || 'false' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Security Audit | ${{ needs.security-audit.result }} | ${{ vars.ENABLE_SECURITY_AUDIT || 'false' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Dependency Update | ${{ needs.dependency-update.result }} | ${{ vars.ENABLE_DEPENDENCY_UPDATE || 'false' }} |" >> $GITHUB_STEP_SUMMARY
+          ./scripts/ci/reports/ci-70-summary-maintenance.sh \
+            "${{ needs.cleanup.result }}" \
+            "${{ needs['sync-files'].result }}" \
+            "${{ needs['deprecate-old-versions'].result }}" \
+            "${{ needs['security-audit'].result }}" \
+            "${{ needs['dependency-update'].result }}"
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -299,20 +274,12 @@ jobs:
         if: steps.check_notify.outputs.enabled == 'true'
         id: status
         run: |
-          # Check if any maintenance task failed
-          if [ "${{ needs.security-audit.result }}" == "failure" ]; then
-            echo "status=failure" >> $GITHUB_OUTPUT
-            echo "message=Maintenance: Security Audit Failed ❌" >> $GITHUB_OUTPUT
-          elif [ "${{ needs.dependency-update.result }}" == "success" ]; then
-            echo "status=warning" >> $GITHUB_OUTPUT
-            echo "message=Maintenance: Dependencies Updated ⚠️" >> $GITHUB_OUTPUT
-          elif [ "${{ needs.sync-files.result }}" == "success" ]; then
-            echo "status=warning" >> $GITHUB_OUTPUT
-            echo "message=Maintenance: Files Synced ⚠️" >> $GITHUB_OUTPUT
-          else
-            echo "status=success" >> $GITHUB_OUTPUT
-            echo "message=Maintenance Completed ✅" >> $GITHUB_OUTPUT
-          fi
+          ./scripts/ci/notification/ci-40-maintenance-status.sh \
+            "${{ needs.cleanup.result }}" \
+            "${{ needs['sync-files'].result }}" \
+            "${{ needs['deprecate-old-versions'].result }}" \
+            "${{ needs['security-audit'].result }}" \
+            "${{ needs['dependency-update'].result }}"
 
       - name: Send notification
         if: steps.check_notify.outputs.enabled == 'true'

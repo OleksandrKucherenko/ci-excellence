@@ -62,15 +62,9 @@ jobs:
 
       - name: Determine version
         id: version
-        run: |
-          VERSION=$(./scripts/ci/release/ci-10-determine-version.sh "${{ github.event.inputs.release-type || 'patch' }}")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-          IS_PRERELEASE="${{ github.event.inputs.pre-release || 'false' }}"
-          if [[ "$VERSION" == *"-"* ]]; then
-            IS_PRERELEASE="true"
-          fi
-          echo "is-prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
+        run: ./scripts/ci/release/ci-12-set-version-outputs.sh \
+          "${{ github.event.inputs.release-type || 'patch' }}" \
+          "${{ github.event.inputs.pre-release || 'false' }}"
 
       - name: Update version files
         if: ${{ github.event.inputs.dry-run != 'true' }}
@@ -82,12 +76,7 @@ jobs:
 
       - name: Commit version changes
         if: ${{ github.event.inputs.dry-run != 'true' && github.event_name == 'workflow_dispatch' }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "chore(release): bump version to ${{ steps.version.outputs.version }}" || echo "No changes to commit"
-          git push origin HEAD:main || echo "Nothing to push"
+        run: ./scripts/ci/release/ci-18-commit-version-changes.sh main "${{ steps.version.outputs.version }}"
 
   build:
     name: Build Release Artifacts
@@ -218,11 +207,7 @@ jobs:
 
       - name: Generate release notes
         id: notes
-        run: |
-          NOTES=$(./scripts/ci/release/ci-25-generate-release-notes.sh "${{ needs.prepare.outputs.version }}")
-          echo "notes<<EOF" >> $GITHUB_OUTPUT
-          echo "$NOTES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+        run: ./scripts/ci/release/ci-27-write-release-notes-output.sh "${{ needs.prepare.outputs.version }}"
 
       - name: Create GitHub Release
         uses: actions/create-release@v1
@@ -308,17 +293,13 @@ jobs:
     steps:
       - name: Generate summary
         run: |
-          echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** ${{ needs.prepare.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Pre-release:** ${{ needs.prepare.outputs.is-prerelease }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Target | Status | Enabled |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|--------|---------|" >> $GITHUB_STEP_SUMMARY
-          echo "| NPM | ${{ needs.publish-npm.result }} | ${{ vars.ENABLE_NPM_PUBLISH || 'false' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| GitHub | ${{ needs.publish-github.result }} | ${{ vars.ENABLE_GITHUB_RELEASE || 'false' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Docker | ${{ needs.publish-docker.result }} | ${{ vars.ENABLE_DOCKER_PUBLISH || 'false' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Documentation | ${{ needs.publish-documentation.result }} | ${{ vars.ENABLE_DOCUMENTATION || 'false' }} |" >> $GITHUB_STEP_SUMMARY
+          ./scripts/ci/reports/ci-95-summary-release.sh \
+            "${{ needs.prepare.outputs.version }}" \
+            "${{ needs.prepare.outputs.is-prerelease }}" \
+            "${{ needs['publish-npm'].result }}" \
+            "${{ needs['publish-github'].result }}" \
+            "${{ needs['publish-docker'].result }}" \
+            "${{ needs['publish-documentation'].result }}"
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -336,17 +317,12 @@ jobs:
         if: steps.check_notify.outputs.enabled == 'true'
         id: status
         run: |
-          # Check if any critical job failed
-          if [ "${{ needs.prepare.result }}" == "failure" ] || \
-             [ "${{ needs.publish-npm.result }}" == "failure" ] || \
-             [ "${{ needs.publish-github.result }}" == "failure" ] || \
-             [ "${{ needs.publish-docker.result }}" == "failure" ]; then
-            echo "status=failure" >> $GITHUB_OUTPUT
-            echo "message=Release ${{ needs.prepare.outputs.version }} Failed ❌" >> $GITHUB_OUTPUT
-          else
-            echo "status=success" >> $GITHUB_OUTPUT
-            echo "message=Release ${{ needs.prepare.outputs.version }} Published ✅" >> $GITHUB_OUTPUT
-          fi
+          ./scripts/ci/notification/ci-60-release-status.sh \
+            "${{ needs.prepare.outputs.version }}" \
+            "${{ needs.prepare.result }}" \
+            "${{ needs['publish-npm'].result }}" \
+            "${{ needs['publish-github'].result }}" \
+            "${{ needs['publish-docker'].result }}"
 
       - name: Send notification
         if: steps.check_notify.outputs.enabled == 'true'
