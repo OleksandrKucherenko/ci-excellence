@@ -32,6 +32,8 @@ jobs:
 
       - name: Setup environment
         run: ./scripts/ci/setup/ci-01-install-tools.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install dependencies
         run: ./scripts/ci/setup/ci-02-install-dependencies.sh
@@ -218,6 +220,8 @@ jobs:
 
       - name: Setup mise and install tools
         run: ./scripts/ci/setup/ci-01-install-tools.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run vulnerability scan
         run: ./scripts/ci/build/ci-03-security-scan.sh

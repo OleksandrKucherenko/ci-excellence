@@ -43,10 +43,20 @@ jobs:
 
       - name: Setup environment
         run: ./scripts/ci/setup/ci-01-install-tools.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cleanup old workflow runs
+        if: ${{ vars.ENABLE_CLEANUP == 'true' }}
+        run: ./scripts/ci/maintenance/ci-10-cleanup-workflow-runs.sh
+
+      - name: Cleanup old artifacts
+        if: ${{ vars.ENABLE_CLEANUP == 'true' }}
+        run: ./scripts/ci/maintenance/ci-20-cleanup-artifacts.sh
 
       - name: Cleanup resources
         if: ${{ vars.ENABLE_CLEANUP == 'true' }}
-        run: ./scripts/ci/maintenance/ci-01-cleanup.sh
+        run: ./scripts/ci/maintenance/ci-30-cleanup-resources.sh
 
       - name: Report cleanup results
         if: always()
