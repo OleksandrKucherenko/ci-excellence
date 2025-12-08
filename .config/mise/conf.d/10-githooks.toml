@@ -6,6 +6,7 @@ lefthook = "latest"
 experimental = true # enable hooks
 
 [hooks]
+# NOTE: to make tasks names printed nice, stay with 16 chars task name for hook tasks
 enter = ["mise run install-githooks"]
 
 [tasks.install-githooks]

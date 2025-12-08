@@ -1,9 +1,10 @@
 [settings]
 experimental = true
 
-[tasks.setup]
+[tasks.full-env-prepare]
 description = "Pre-configure project folders and tools"
 run = ["./scripts/00-setup-project.sh"]
 
 [hooks]
-enter = ["mise run setup"]
+# NOTE: to make tasks names printed nice, stay with 16 chars task name for hook tasks
+enter = ["mise run full-env-prepare"]

@@ -24,7 +24,7 @@ echo "========================================="
 
 # Add your cleanup commands here
 echo "✓ Caches cleanup stub executed"
-echo "  Customize this script in scripts/maintenance/cleanup-caches.sh"
+echo "  Customize this script in ${BASH_SOURCE[0]}"
 
 echo "========================================="
 echo "Caches Cleanup Complete"

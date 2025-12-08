@@ -50,7 +50,7 @@ echo "========================================="
 
 # Add your Docker publishing commands here
 echo "✓ Docker publish stub executed"
-echo "  Customize this script in scripts/release/publish-docker.sh"
+echo "  Customize this script in scripts/ci/release/ci-80-publish-docker.sh"
 
 echo "========================================="
 echo "Docker Publishing Complete"

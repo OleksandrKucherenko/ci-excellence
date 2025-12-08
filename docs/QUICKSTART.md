@@ -94,10 +94,10 @@ ENABLE_SECURITY_SCAN=true
 
 Edit scripts in the `scripts/` directory:
 
-- `scripts/test/unit.sh` - Unit testing
-- `scripts/test/integration.sh` - Integration testing
+- `scripts/ci/test/ci-01-unit-tests.sh` - Unit testing
+- `scripts/ci/test/ci-02-integration-tests.sh` - Integration testing
 - `scripts/build/lint.sh` - Linting
-- `scripts/release/publish-npm.sh` - NPM publishing
+- `scripts/ci/release/ci-04-publish-npm.sh` - NPM publishing
 
 ### Run Your First Release
 

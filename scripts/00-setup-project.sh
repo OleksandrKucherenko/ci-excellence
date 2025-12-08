@@ -22,7 +22,7 @@ if [ $FOUND_ERRORS -gt 0 ]; then
     echo ""
     echo "Read: $(pwd)/docs/QUICKSTART.md"
 else
-    echo "✅ Project is ready for development!"
+    : echo "✅ Project is ready for development!"
 fi
 
 exit 0

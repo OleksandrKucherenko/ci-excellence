@@ -78,7 +78,7 @@ jobs:
 
       - name: Generate changelog
         run: |
-          ./scripts/release/generate-changelog.sh "${{ steps.version.outputs.version }}"
+          ./scripts/ci/release/ci-03-generate-changelog.sh "${{ steps.version.outputs.version }}"
 
       - name: Commit version changes
         if: ${{ github.event.inputs.dry-run != 'true' && github.event_name == 'workflow_dispatch' }}
@@ -179,9 +179,9 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           if [ "${{ needs.prepare.outputs.is-prerelease }}" == "true" ]; then
-            ./scripts/release/publish-npm.sh --tag next
+            ./scripts/ci/release/ci-04-publish-npm.sh --tag next
           else
-            ./scripts/release/publish-npm.sh --tag latest
+            ./scripts/ci/release/ci-04-publish-npm.sh --tag latest
           fi
 
   publish-github:
@@ -212,15 +212,14 @@ jobs:
       - name: Create Git Tag
         if: github.event_name == 'workflow_dispatch'
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          ./scripts/ci/setup/ci-03-github-actions-bot.sh
           git tag -a "v${{ needs.prepare.outputs.version }}" -m "Release v${{ needs.prepare.outputs.version }}"
           git push origin "v${{ needs.prepare.outputs.version }}"
 
       - name: Generate release notes
         id: notes
         run: |
-          NOTES=$(./scripts/release/generate-release-notes.sh "${{ needs.prepare.outputs.version }}")
+          NOTES=$(./scripts/ci/release/ci-05-generate-release-notes.sh "${{ needs.prepare.outputs.version }}")
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           echo "$NOTES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -238,7 +237,7 @@ jobs:
 
       - name: Upload Release Assets
         if: ${{ vars.ENABLE_COMPILE == 'true' }}
-        run: ./scripts/release/upload-assets.sh "v${{ needs.prepare.outputs.version }}"
+        run: ./scripts/ci/release/ci-06-upload-assets.sh "v${{ needs.prepare.outputs.version }}"
 
   publish-docker:
     name: Publish Docker Image
@@ -272,7 +271,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
-        run: ./scripts/release/publish-docker.sh "${{ needs.prepare.outputs.version }}" "${{ needs.prepare.outputs.is-prerelease }}"
+        run: ./scripts/ci/release/ci-80-publish-docker.sh "${{ needs.prepare.outputs.version }}" "${{ needs.prepare.outputs.is-prerelease }}"
 
   publish-documentation:
     name: Publish Documentation
@@ -296,10 +295,10 @@ jobs:
         run: ./scripts/ci/setup/ci-01-install-tools.sh
 
       - name: Build documentation
-        run: ./scripts/release/build-docs.sh "${{ needs.prepare.outputs.version }}"
+        run: ./scripts/ci/release/ci-07-build-docs.sh "${{ needs.prepare.outputs.version }}"
 
       - name: Publish documentation
-        run: ./scripts/release/publish-docs.sh
+        run: ./scripts/ci/release/ci-08-publish-docs.sh
 
   notify:
     name: Notify Release
@@ -353,7 +352,7 @@ jobs:
         if: steps.check_notify.outputs.enabled == 'true'
         env:
           APPRISE_URLS: ${{ steps.check_notify.outputs.apprise_urls }}
-        run: ./scripts/setup/send-notification.sh \
+        run: ./scripts/ci/notification/ci-20-send-notification.sh \
             "Release Pipeline" \
             "${{ steps.status.outputs.message }}" \
             "${{ steps.status.outputs.status }}"

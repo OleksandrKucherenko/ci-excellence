@@ -28,7 +28,7 @@ echo "========================================="
 
 # Add your Docker rollback commands here
 echo "✓ Docker rollback stub executed"
-echo "  Customize this script in scripts/release/rollback-docker.sh"
+echo "  Customize this script in scripts/ci/release/ci-70-rollback-docker.sh"
 echo "  Note: Docker tags cannot be deleted from registries"
 echo "  Consider updating image description or documentation"
 

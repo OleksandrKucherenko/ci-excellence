@@ -44,7 +44,7 @@ EXIT_CODE=0
 
 # Add your smoke testing commands here
 echo "✓ Smoke test stub executed"
-echo "  Customize this script in scripts/test/smoke.sh"
+echo "  Customize this script in scripts/ci/test/ci-04-smoke-tests.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
     echo "========================================="

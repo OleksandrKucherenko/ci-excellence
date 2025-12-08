@@ -11,7 +11,7 @@ echo "========================================="
 
 # Example: Delete artifacts older than 7 days using gh CLI
 # if command -v gh &> /dev/null; then
-#     RETENTION_DAYS=7
+#     RETENTION_DAYS=${RETENTION_DAYS:-7}  # Default to 7 days if not set
 #
 #     echo "Deleting artifacts older than $RETENTION_DAYS days..."
 #
@@ -26,7 +26,7 @@ echo "========================================="
 
 # Add your cleanup commands here
 echo "✓ Artifacts cleanup stub executed"
-echo "  Customize this script in scripts/maintenance/cleanup-artifacts.sh"
+echo "  Customize this script in ${BASH_SOURCE[0]}"
 
 echo "========================================="
 echo "Artifacts Cleanup Complete"

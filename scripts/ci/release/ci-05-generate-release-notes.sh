@@ -37,7 +37,7 @@ cat <<EOF
 ### What's New
 
 - This is a stub release
-- Customize release notes in scripts/release/generate-release-notes.sh
+- Customize release notes in scripts/ci/release/ci-05-generate-release-notes.sh
 
 ### Installation
 

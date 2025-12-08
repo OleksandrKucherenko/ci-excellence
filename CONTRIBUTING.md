@@ -112,9 +112,9 @@ echo "========================================="
 
 3. **Test locally** (if applicable)
    ```bash
-   ./scripts/setup/install-dependencies.sh
+   ./scripts/ci/setup/ci-02-install-dependencies.sh
    ./scripts/build/compile.sh
-   ./scripts/test/unit.sh
+   ./scripts/ci/test/ci-01-unit-tests.sh
    ```
 
 ## Testing Guidelines

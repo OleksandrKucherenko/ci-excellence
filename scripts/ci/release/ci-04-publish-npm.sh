@@ -33,7 +33,7 @@ fi
 
 # Add your NPM publishing commands here
 echo "✓ NPM publish stub executed"
-echo "  Customize this script in scripts/release/publish-npm.sh"
+echo "  Customize this script in scripts/ci/release/ci-04-publish-npm.sh"
 
 echo "========================================="
 echo "NPM Publishing Complete"

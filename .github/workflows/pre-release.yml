@@ -7,6 +7,7 @@ on:
       - develop
   push:
     branches:
+      # TODO: should we allow any branch to trigger this?
       - develop
       - 'feature/**'
       - 'fix/**'
@@ -21,6 +22,10 @@ env:
   ENABLE_E2E_TESTS: ${{ vars.ENABLE_E2E_TESTS || 'false' }}
   ENABLE_BUNDLE: ${{ vars.ENABLE_BUNDLE || 'false' }}
   ENABLE_SECURITY_SCAN: ${{ vars.ENABLE_SECURITY_SCAN || 'false' }}
+  # Customization Variables
+  ARTIFACT_RETENTION_DAYS: ${{ vars.ARTIFACT_RETENTION_DAYS || 7 }}
+  DELIVERABLE_RETENTION_DAYS: ${{ vars.DELIVERABLE_RETENTION_DAYS || 14 }}
+  REPORT_RETENTION_DAYS: ${{ vars.REPORT_RETENTION_DAYS || 30 }}
 
 jobs:
   setup:
@@ -45,7 +50,8 @@ jobs:
             node_modules
             ~/.cache
             .cache
-          key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
+          # FIXME(olku): Single cache key definition reused across jobs
+          key: &deps-cache-key ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/bun.lock') }}
           restore-keys: |
             ${{ runner.os }}-deps-
 
@@ -65,7 +71,7 @@ jobs:
             node_modules
             ~/.cache
             .cache
-          key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
+          key: *deps-cache-key
 
       - name: Run compile
         run: ./scripts/ci/build/ci-01-compile.sh
@@ -78,7 +84,7 @@ jobs:
             dist/
             build/
             out/
-          retention-days: 7
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
   lint:
     name: Lint Code
@@ -96,7 +102,7 @@ jobs:
             node_modules
             ~/.cache
             .cache
-          key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
+          key: *deps-cache-key
 
       - name: Run linter
         run: ./scripts/ci/build/ci-02-lint.sh
@@ -117,7 +123,7 @@ jobs:
             node_modules
             ~/.cache
             .cache
-          key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
+          key: *deps-cache-key
 
       - name: Run unit tests
         run: ./scripts/ci/test/ci-01-unit-tests.sh
@@ -130,7 +136,7 @@ jobs:
           path: |
             coverage/
             test-results/
-          retention-days: 7
+          retention-days: ${{ env.REPORT_RETENTION_DAYS }}
 
   integration-tests:
     name: Integration Tests
@@ -148,7 +154,7 @@ jobs:
             node_modules
             ~/.cache
             .cache
-          key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
+          key: *deps-cache-key
 
       - name: Download build artifacts
         if: ${{ vars.ENABLE_COMPILE == 'true' }}
@@ -167,7 +173,7 @@ jobs:
           path: |
             coverage/
             test-results/
-          retention-days: 7
+          retention-days: ${{ env.REPORT_RETENTION_DAYS }}
 
   e2e-tests:
     name: End-to-End Tests
@@ -185,7 +191,7 @@ jobs:
             node_modules
             ~/.cache
             .cache
-          key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
+          key: *deps-cache-key
 
       - name: Download build artifacts
         if: ${{ vars.ENABLE_COMPILE == 'true' }}
@@ -206,7 +212,8 @@ jobs:
             test-results/
             screenshots/
             videos/
-          retention-days: 7
+            results/
+          retention-days: ${{ env.REPORT_RETENTION_DAYS }}
 
   security-scan:
     name: Security Vulnerability Scan
@@ -235,7 +242,7 @@ jobs:
             gitleaks-report.json
             trufflehog-report.json
             security-results.sarif
-          retention-days: 30
+          retention-days: ${{ env.REPORT_RETENTION_DAYS }}
 
   bundle:
     name: Bundle and Package
@@ -258,7 +265,7 @@ jobs:
             node_modules
             ~/.cache
             .cache
-          key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
+          key: *deps-cache-key
 
       - name: Download build artifacts
         if: ${{ vars.ENABLE_COMPILE == 'true' }}
@@ -278,7 +285,7 @@ jobs:
             *.tar.gz
             *.zip
             dist/
-          retention-days: 30
+          retention-days: ${{ env.DELIVERABLE_RETENTION_DAYS }}
 
   summary:
     name: Pipeline Summary
@@ -337,7 +344,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           APPRISE_URLS: ${{ secrets.APPRISE_URLS }}
           ENABLE_NOTIFICATIONS: ${{ vars.ENABLE_NOTIFICATIONS }}
-        run: ./scripts/ci/notification/check-notifications-enabled.sh
+        run: ./scripts/ci/notification/ci-01-check-notifications-enabled.sh
 
       - name: Determine pipeline status
         if: steps.check_notify.outputs.enabled == 'true'
@@ -350,13 +357,13 @@ jobs:
           GITHUB_SERVER_URL: ${{ github.server_url }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_RUN_ID: ${{ github.run_id }}
-        run: ./scripts/ci/notification/ci-02-determine-status.sh "${{ needs.summary.result }}"
+        run: ./scripts/ci/notification/ci-10-determine-status.sh "${{ needs.summary.result }}"
 
       - name: Send notification
         if: steps.check_notify.outputs.enabled == 'true'
         env:
           APPRISE_URLS: ${{ steps.check_notify.outputs.apprise_urls }}
-        run: ./scripts/ci/notification/ci-01-send-notification.sh \
+        run: ./scripts/ci/notification/ci-20-send-notification.sh \
             "Pre-Release Pipeline" \
             "${{ steps.status.outputs.message }}" \
             "${{ steps.status.outputs.status }}"

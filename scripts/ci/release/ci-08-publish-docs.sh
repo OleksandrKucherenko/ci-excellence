@@ -41,7 +41,7 @@ echo "========================================="
 
 # Add your documentation publishing commands here
 echo "✓ Documentation publish stub executed"
-echo "  Customize this script in scripts/release/publish-docs.sh"
+echo "  Customize this script in scripts/ci/release/ci-08-publish-docs.sh"
 
 echo "========================================="
 echo "Documentation Publishing Complete"

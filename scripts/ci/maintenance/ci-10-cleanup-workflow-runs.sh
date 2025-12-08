@@ -26,7 +26,7 @@ echo "========================================="
 
 # Add your cleanup commands here
 echo "✓ Workflow runs cleanup stub executed"
-echo "  Customize this script in scripts/maintenance/cleanup-workflow-runs.sh"
+echo "  Customize this script in ${BASH_SOURCE[0]}"
 
 echo "========================================="
 echo "Workflow Runs Cleanup Complete"

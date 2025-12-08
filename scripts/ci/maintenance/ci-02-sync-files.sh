@@ -38,7 +38,7 @@ echo "========================================="
 
 # Add your sync commands here
 echo "✓ Version files sync stub executed"
-echo "  Customize this script in scripts/ci/maintenance/ci-02-sync-files.sh"
+echo "  Customize this script in ${BASH_SOURCE[0]} to fit your project's needs."
 
 echo "========================================="
 echo "Version Files Synchronization Complete"

@@ -11,17 +11,12 @@ dist/
 /build/
 out/
 target/
-*.egg-info/
-__pycache__/
-*.py[cod]
-*$py.class
 
 # Test coverage
 coverage/
 .nyc_output/
 htmlcov/
 .coverage
-.pytest_cache/
 junit.xml
 test-results/
 
@@ -38,6 +33,7 @@ test-results/
 
 # IDE files
 .vscode/
+!.vscode/extensions.json
 .idea/
 *.swp
 *.swo
@@ -47,14 +43,19 @@ test-results/
 # Logs
 logs/
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
+*-debug.log*
+*-error.log*
 
 # Temporary files
 *.tmp
 *.temp
+*.backup
+*.orig
+*.~*~
+*.old
+*.bkp
+
+# Build tool caches
 .cache/
 .parcel-cache/
 
@@ -62,24 +63,6 @@ pnpm-debug.log*
 Thumbs.db
 .DS_Store
 desktop.ini
-
-# Lock files (optional, uncomment if you want to ignore them)
-# package-lock.json
-# yarn.lock
-# pnpm-lock.yaml
-# poetry.lock
-# Pipfile.lock
-# Gemfile.lock
-# composer.lock
-# Cargo.lock
-
-# Compiled binaries
-*.exe
-*.dll
-*.so
-*.dylib
-*.o
-*.a
 
 # Archives
 *.tar.gz
@@ -92,5 +75,11 @@ desktop.ini
 !.env.secrets.json
 
 # Reports
+reports/
+security/
 gitleaks-report.json
 trufflehog-report.json
+
+# AI Coding
+mcp.json
+.mcp.json

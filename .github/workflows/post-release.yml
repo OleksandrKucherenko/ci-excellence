@@ -51,20 +51,20 @@ jobs:
 
       - name: Verify NPM deployment
         if: vars.ENABLE_NPM_PUBLISH == 'true'
-        run: ./scripts/maintenance/verify-npm-deployment.sh "${{ steps.version.outputs.version }}"
+        run: ./scripts/ci/release/ci-10-verify-npm-deployment.sh "${{ steps.version.outputs.version }}"
 
       - name: Verify GitHub release
         if: vars.ENABLE_GITHUB_RELEASE == 'true'
         run: |
-          ./scripts/maintenance/verify-github-release.sh "${{ steps.version.outputs.version }}"
+          ./scripts/ci/release/ci-20-verify-github-release.sh "${{ steps.version.outputs.version }}"
 
       - name: Verify Docker deployment
         if: vars.ENABLE_DOCKER_PUBLISH == 'true'
         run: |
-          ./scripts/maintenance/verify-docker-deployment.sh "${{ steps.version.outputs.version }}"
+          ./scripts/ci/release/ci-30-verify-docker-deployment.sh "${{ steps.version.outputs.version }}"
 
       - name: Run smoke tests
-        run: ./scripts/test/smoke.sh "${{ steps.version.outputs.version }}"
+        run: ./scripts/ci/test/ci-04-smoke-tests.sh "${{ steps.version.outputs.version }}"
 
       - name: Report verification results
         if: always()
@@ -158,19 +158,19 @@ jobs:
         if: vars.ENABLE_NPM_PUBLISH == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: ./scripts/release/rollback-npm.sh "${{ github.event.inputs.version }}"
+        run: ./scripts/ci/release/ci-50-rollback-npm.sh "${{ github.event.inputs.version }}"
 
       - name: Update GitHub release
         if: vars.ENABLE_GITHUB_RELEASE == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ./scripts/release/rollback-github.sh "${{ github.event.inputs.version }}"
+          ./scripts/ci/release/ci-60-rollback-github.sh "${{ github.event.inputs.version }}"
 
       - name: Tag Docker images as deprecated
         if: vars.ENABLE_DOCKER_PUBLISH == 'true'
         run: |
-          ./scripts/release/rollback-docker.sh "${{ github.event.inputs.version }}"
+          ./scripts/ci/release/ci-70-rollback-docker.sh "${{ github.event.inputs.version }}"
 
       - name: Report rollback results
         run: |

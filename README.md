@@ -390,49 +390,24 @@ mise run validate-workflows  # Validate GitHub Actions workflows
 │       └── maintenance.yml      # Cleanup, sync, security
 │
 ├── scripts/
-│   ├── setup/                   # Installation scripts
-│   │   ├── install-tools.sh
-│   │   └── install-dependencies.sh
+│   ├── ci/                      # CI-oriented scripts
+│   │   ├── setup/ci-01-install-tools.sh, ci-02-install-dependencies.sh, ci-03-github-actions-bot.sh
+│   │   ├── build/ci-05-summary-pre-release.sh
+│   │   ├── test/ci-01-unit-tests.sh, ci-02-integration-tests.sh, ci-03-e2e-tests.sh, ci-04-smoke-tests.sh
+│   │   ├── release/ci-01-determine-version.sh, ci-02-update-version.sh, ci-03-generate-changelog.sh, ...
+│   │   ├── notification/ci-20-send-notification.sh
+│   │   └── maintenance/ci-10-cleanup-workflow-runs.sh, ci-20-cleanup-artifacts.sh, ...
+│   │
+│   ├── setup/                   # Local helpers
+│   │   ├── generate-age-key.sh
+│   │   ├── inject-secret.sh
+│   │   └── inject-gh-secret.sh
 │   │
 │   ├── build/                   # Build scripts
 │   │   ├── compile.sh
 │   │   ├── lint.sh
 │   │   ├── bundle.sh
 │   │   └── security-scan.sh
-│   │
-│   ├── test/                    # Test scripts
-│   │   ├── unit.sh
-│   │   ├── integration.sh
-│   │   ├── e2e.sh
-│   │   └── smoke.sh
-│   │
-│   ├── release/                 # Release scripts
-│   │   ├── determine-version.sh
-│   │   ├── update-version.sh
-│   │   ├── generate-changelog.sh
-│   │   ├── generate-release-notes.sh
-│   │   ├── publish-npm.sh
-│   │   ├── publish-docker.sh
-│   │   ├── build-docs.sh
-│   │   ├── publish-docs.sh
-│   │   ├── upload-assets.sh
-│   │   ├── rollback-npm.sh
-│   │   ├── rollback-github.sh
-│   │   └── rollback-docker.sh
-│   │
-│   └── maintenance/             # Maintenance scripts
-│       ├── cleanup-workflow-runs.sh
-│       ├── cleanup-artifacts.sh
-│       ├── cleanup-caches.sh
-│       ├── sync-version-files.sh
-│       ├── identify-deprecated-versions.sh
-│       ├── deprecate-npm-versions.sh
-│       ├── deprecate-github-releases.sh
-│       ├── security-audit.sh
-│       ├── update-dependencies.sh
-│       ├── verify-npm-deployment.sh
-│       ├── verify-github-release.sh
-│       └── verify-docker-deployment.sh
 │
 └── config/                      # Configuration templates
     ├── package.json.template
@@ -602,7 +577,7 @@ Edit the relevant stub scripts based on your technology stack:
 #### For Node.js/TypeScript Projects
 
 ```bash
-# scripts/setup/install-dependencies.sh
+# scripts/ci/setup/ci-02-install-dependencies.sh
 npm ci
 
 # scripts/build/compile.sh
@@ -611,40 +586,40 @@ npx tsc
 # scripts/build/lint.sh
 npx eslint .
 
-# scripts/test/unit.sh
+# scripts/ci/test/ci-01-unit-tests.sh
 npm test -- --coverage
 ```
 
 #### For Python Projects
 
 ```bash
-# scripts/setup/install-dependencies.sh
+# scripts/ci/setup/ci-02-install-dependencies.sh
 pip install -r requirements.txt
 
 # scripts/build/lint.sh
 flake8 .
 pylint **/*.py
 
-# scripts/test/unit.sh
+# scripts/ci/test/ci-01-unit-tests.sh
 pytest --cov --cov-report=xml
 ```
 
 #### For Go Projects
 
 ```bash
-# scripts/setup/install-dependencies.sh
+# scripts/ci/setup/ci-02-install-dependencies.sh
 go mod download
 
 # scripts/build/compile.sh
 go build -v ./...
 
-# scripts/test/unit.sh
+# scripts/ci/test/ci-01-unit-tests.sh
 go test -v -race -coverprofile=coverage.out ./...
 ```
 
 ### Step 2: Configure Version Management
 
-Edit `scripts/release/determine-version.sh` to read your version file:
+Edit `scripts/ci/release/ci-01-determine-version.sh` to read your version file:
 
 ```bash
 # For package.json
@@ -664,7 +639,7 @@ CURRENT_VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
 
 #### NPM Publishing
 
-Edit `scripts/release/publish-npm.sh`:
+Edit `scripts/ci/release/ci-04-publish-npm.sh`:
 
 ```bash
 # Uncomment and customize
@@ -675,7 +650,7 @@ Add `NPM_TOKEN` secret to repository.
 
 #### Docker Publishing
 
-Edit `scripts/release/publish-docker.sh`:
+Edit `scripts/ci/release/ci-80-publish-docker.sh`:
 
 ```bash
 IMAGE_NAME="your-org/your-app"
@@ -687,7 +662,7 @@ Add `DOCKER_USERNAME` and `DOCKER_PASSWORD` secrets.
 
 ### Step 4: Set Up Documentation
 
-Edit `scripts/release/build-docs.sh` and `publish-docs.sh`:
+Edit `scripts/ci/release/ci-07-build-docs.sh` and `scripts/ci/release/ci-08-publish-docs.sh`:
 
 ```bash
 # For Sphinx (Python)

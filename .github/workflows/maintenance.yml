@@ -56,7 +56,7 @@ jobs:
 
       - name: Cleanup resources
         if: ${{ vars.ENABLE_CLEANUP == 'true' }}
-        run: ./scripts/ci/maintenance/ci-30-cleanup-resources.sh
+        run: ./scripts/ci/maintenance/ci-30-cleanup-caches.sh
 
       - name: Report cleanup results
         if: always()
@@ -91,12 +91,7 @@ jobs:
 
       - name: Check for changes
         id: changes
-        run: |
-          if git diff --quiet; then
-            echo "has-changes=false" >> $GITHUB_OUTPUT
-          else
-            echo "has-changes=true" >> $GITHUB_OUTPUT
-          fi
+        run: ./scripts/ci/maintenance/ci-03-check-changes.sh
 
       - name: Create Pull Request
         if: steps.changes.outputs.has-changes == 'true'
@@ -138,7 +133,7 @@ jobs:
 
       - name: Identify versions to deprecate
         if: ${{ vars.ENABLE_DEPRECATION == 'true' }}
-        run: ./scripts/maintenance/identify-deprecated-versions.sh
+        run: ./scripts/ci/maintenance/ci-40-identify-deprecated-versions.sh
 
       - name: Deprecate NPM versions
         if: |
@@ -147,7 +142,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          ./scripts/maintenance/deprecate-npm-versions.sh
+          ./scripts/ci/maintenance/ci-50-deprecate-npm-versions.sh
 
       - name: Update GitHub releases
         if: |
@@ -156,7 +151,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ./scripts/maintenance/deprecate-github-releases.sh
+          ./scripts/ci/maintenance/ci-60-deprecate-github-releases.sh
 
       - name: Report deprecation results
         run: |
@@ -186,7 +181,7 @@ jobs:
 
       - name: Run dependency audit
         if: ${{ vars.ENABLE_SECURITY_AUDIT == 'true' }}
-        run: ./scripts/maintenance/security-audit.sh
+        run: ./scripts/ci/maintenance/ci-70-security-audit.sh
 
       - name: Run vulnerability scan
         if: ${{ vars.ENABLE_SECURITY_AUDIT == 'true' }}
@@ -228,7 +223,7 @@ jobs:
 
       - name: Update dependencies
         if: ${{ vars.ENABLE_DEPENDENCY_UPDATE == 'true' }}
-        run: ./scripts/maintenance/update-dependencies.sh
+        run: ./scripts/ci/maintenance/ci-80-update-dependencies.sh
 
       - name: Run tests
         if: ${{ vars.ENABLE_DEPENDENCY_UPDATE == 'true' }}

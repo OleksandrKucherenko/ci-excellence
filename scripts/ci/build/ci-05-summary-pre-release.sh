@@ -21,15 +21,17 @@ ENABLE_E2E_TESTS="${ENABLE_E2E_TESTS:-false}"
 ENABLE_SECURITY_SCAN="${ENABLE_SECURITY_SCAN:-false}"
 ENABLE_BUNDLE="${ENABLE_BUNDLE:-false}"
 
-echo "## Pre-Release Pipeline Summary" >> $GITHUB_STEP_SUMMARY
-echo "" >> $GITHUB_STEP_SUMMARY
-echo "| Job | Status | Enabled |" >> $GITHUB_STEP_SUMMARY
-echo "|-----|--------|---------|" >> $GITHUB_STEP_SUMMARY
-echo "| Setup | $SETUP_RESULT | Always |" >> $GITHUB_STEP_SUMMARY
-echo "| Compile | $COMPILE_RESULT | $ENABLE_COMPILE |" >> $GITHUB_STEP_SUMMARY
-echo "| Lint | $LINT_RESULT | $ENABLE_LINT |" >> $GITHUB_STEP_SUMMARY
-echo "| Unit Tests | $UNIT_RESULT | $ENABLE_UNIT_TESTS |" >> $GITHUB_STEP_SUMMARY
-echo "| Integration Tests | $INTEGRATION_RESULT | $ENABLE_INTEGRATION_TESTS |" >> $GITHUB_STEP_SUMMARY
-echo "| E2E Tests | $E2E_RESULT | $ENABLE_E2E_TESTS |" >> $GITHUB_STEP_SUMMARY
-echo "| Security Scan | $SECURITY_RESULT | $ENABLE_SECURITY_SCAN |" >> $GITHUB_STEP_SUMMARY
-echo "| Bundle | $BUNDLE_RESULT | $ENABLE_BUNDLE |" >> $GITHUB_STEP_SUMMARY
+{
+    echo "## Pre-Release Pipeline Summary"
+    echo ""
+    echo "| Job | Status | Enabled |"
+    echo "|-----|--------|---------|"
+    echo "| Setup | $SETUP_RESULT | Always |"
+    echo "| Compile | $COMPILE_RESULT | $ENABLE_COMPILE |"
+    echo "| Lint | $LINT_RESULT | $ENABLE_LINT |"
+    echo "| Unit Tests | $UNIT_RESULT | $ENABLE_UNIT_TESTS |"
+    echo "| Integration Tests | $INTEGRATION_RESULT | $ENABLE_INTEGRATION_TESTS |"
+    echo "| E2E Tests | $E2E_RESULT | $ENABLE_E2E_TESTS |"
+    echo "| Security Scan | $SECURITY_RESULT | $ENABLE_SECURITY_SCAN |"
+    echo "| Bundle | $BUNDLE_RESULT | $ENABLE_BUNDLE |" 
+} >> "${GITHUB_STEP_SUMMARY}"
