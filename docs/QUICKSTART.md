@@ -39,8 +39,8 @@ Edit the script for your tech stack:
 ### For Node.js/TypeScript:
 
 ```bash
-# Edit scripts/build/compile.sh
-vim scripts/build/compile.sh
+# Edit scripts/ci/build/ci-10-compile.sh
+vim scripts/ci/build/ci-10-compile.sh
 
 # Uncomment this line:
 # npx tsc
@@ -49,8 +49,8 @@ vim scripts/build/compile.sh
 ### For Python:
 
 ```bash
-# Edit scripts/build/compile.sh
-vim scripts/build/compile.sh
+# Edit scripts/ci/build/ci-10-compile.sh
+vim scripts/ci/build/ci-10-compile.sh
 
 # Uncomment this line:
 # python -m build
@@ -59,8 +59,8 @@ vim scripts/build/compile.sh
 ### For Go:
 
 ```bash
-# Edit scripts/build/compile.sh
-vim scripts/build/compile.sh
+# Edit scripts/ci/build/ci-10-compile.sh
+vim scripts/ci/build/ci-10-compile.sh
 
 # Uncomment this line:
 # go build -v ./...
@@ -94,10 +94,10 @@ ENABLE_SECURITY_SCAN=true
 
 Edit scripts in the `scripts/` directory:
 
-- `scripts/ci/test/ci-01-unit-tests.sh` - Unit testing
-- `scripts/ci/test/ci-02-integration-tests.sh` - Integration testing
-- `scripts/build/lint.sh` - Linting
-- `scripts/ci/release/ci-04-publish-npm.sh` - NPM publishing
+- `scripts/ci/test/ci-10-unit-tests.sh` - Unit testing
+- `scripts/ci/test/ci-20-integration-tests.sh` - Integration testing
+- `scripts/ci/build/ci-20-lint.sh` - Linting
+- `scripts/ci/release/ci-65-publish-npm.sh` - NPM publishing
 
 ### Run Your First Release
 

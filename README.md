@@ -220,7 +220,7 @@ Edit the script stubs in `scripts/` to match your project:
 
 ```bash
 # Example: Customize the build script
-vim scripts/build/compile.sh
+vim scripts/ci/build/ci-10-compile.sh
 
 # Uncomment and modify the relevant sections for your stack
 # e.g., for TypeScript project:
@@ -391,12 +391,13 @@ mise run validate-workflows  # Validate GitHub Actions workflows
 │
 ├── scripts/
 │   ├── ci/                      # CI-oriented scripts
-│   │   ├── setup/ci-01-install-tools.sh, ci-02-install-dependencies.sh, ci-03-github-actions-bot.sh
-│   │   ├── build/ci-05-summary-pre-release.sh
-│   │   ├── test/ci-01-unit-tests.sh, ci-02-integration-tests.sh, ci-03-e2e-tests.sh, ci-04-smoke-tests.sh
-│   │   ├── release/ci-01-determine-version.sh, ci-02-update-version.sh, ci-03-generate-changelog.sh, ...
-│   │   ├── notification/ci-20-send-notification.sh
-│   │   └── maintenance/ci-10-cleanup-workflow-runs.sh, ci-20-cleanup-artifacts.sh, ...
+│   │   ├── setup/ci-10-install-tools.sh, ci-20-install-dependencies.sh, ci-30-github-actions-bot.sh
+│   │   ├── build/ci-10-compile.sh, ci-20-lint.sh, ci-30-security-scan.sh, ci-40-bundle.sh, ci-60-check-failures.sh
+│   │   ├── reports/ci-10-summary-pre-release.sh, ci-20-summary-sync.sh, ci-30-summary-cleanup.sh
+│   │   ├── test/ci-10-unit-tests.sh, ci-20-integration-tests.sh, ci-30-e2e-tests.sh, ci-40-smoke-tests.sh
+│   │   ├── release/ci-10-determine-version.sh, ci-15-update-version.sh, ci-20-generate-changelog.sh, ...
+│   │   ├── notification/ci-10-check-notifications-enabled.sh, ci-20-determine-status.sh, ci-30-send-notification.sh
+│   │   └── maintenance/ci-10-sync-files.sh, ci-20-check-changes.sh, ci-30-cleanup-workflow-runs.sh, ...
 │   │
 │   ├── setup/                   # Local helpers
 │   │   ├── generate-age-key.sh
@@ -577,49 +578,49 @@ Edit the relevant stub scripts based on your technology stack:
 #### For Node.js/TypeScript Projects
 
 ```bash
-# scripts/ci/setup/ci-02-install-dependencies.sh
+# scripts/ci/setup/ci-20-install-dependencies.sh
 npm ci
 
-# scripts/build/compile.sh
+# scripts/ci/build/ci-10-compile.sh
 npx tsc
 
-# scripts/build/lint.sh
+# scripts/ci/build/ci-20-lint.sh
 npx eslint .
 
-# scripts/ci/test/ci-01-unit-tests.sh
+# scripts/ci/test/ci-10-unit-tests.sh
 npm test -- --coverage
 ```
 
 #### For Python Projects
 
 ```bash
-# scripts/ci/setup/ci-02-install-dependencies.sh
+# scripts/ci/setup/ci-20-install-dependencies.sh
 pip install -r requirements.txt
 
-# scripts/build/lint.sh
+# scripts/ci/build/ci-20-lint.sh
 flake8 .
 pylint **/*.py
 
-# scripts/ci/test/ci-01-unit-tests.sh
+# scripts/ci/test/ci-10-unit-tests.sh
 pytest --cov --cov-report=xml
 ```
 
 #### For Go Projects
 
 ```bash
-# scripts/ci/setup/ci-02-install-dependencies.sh
+# scripts/ci/setup/ci-20-install-dependencies.sh
 go mod download
 
-# scripts/build/compile.sh
+# scripts/ci/build/ci-10-compile.sh
 go build -v ./...
 
-# scripts/ci/test/ci-01-unit-tests.sh
+# scripts/ci/test/ci-10-unit-tests.sh
 go test -v -race -coverprofile=coverage.out ./...
 ```
 
 ### Step 2: Configure Version Management
 
-Edit `scripts/ci/release/ci-01-determine-version.sh` to read your version file:
+Edit `scripts/ci/release/ci-10-determine-version.sh` to read your version file:
 
 ```bash
 # For package.json
@@ -639,7 +640,7 @@ CURRENT_VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
 
 #### NPM Publishing
 
-Edit `scripts/ci/release/ci-04-publish-npm.sh`:
+Edit `scripts/ci/release/ci-65-publish-npm.sh`:
 
 ```bash
 # Uncomment and customize
@@ -662,7 +663,7 @@ Add `DOCKER_USERNAME` and `DOCKER_PASSWORD` secrets.
 
 ### Step 4: Set Up Documentation
 
-Edit `scripts/ci/release/ci-07-build-docs.sh` and `scripts/ci/release/ci-08-publish-docs.sh`:
+Edit `scripts/ci/release/ci-50-build-docs.sh` and `scripts/ci/release/ci-55-publish-docs.sh`:
 
 ```bash
 # For Sphinx (Python)

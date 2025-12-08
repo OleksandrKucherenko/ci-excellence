@@ -40,7 +40,7 @@ echo "========================================="
 
 # Add your bundling commands here
 echo "✓ Bundle stub executed"
-echo "  Customize this script in scripts/ci/build/ci-04-bundle.sh"
+echo "  Customize this script in scripts/ci/build/ci-40-bundle.sh"
 
 echo "========================================="
 echo "Bundling Complete"

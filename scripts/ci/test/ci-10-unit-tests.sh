@@ -60,7 +60,7 @@ EXIT_CODE=0
 
 # Add your unit testing commands here
 echo "✓ Unit test stub executed"
-echo "  Customize this script in scripts/ci/test/ci-01-unit-tests.sh"
+echo "  Customize this script in scripts/ci/test/ci-10-unit-tests.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
     echo "========================================="

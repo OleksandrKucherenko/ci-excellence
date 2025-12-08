@@ -42,7 +42,7 @@ EXIT_CODE=0
 
 # Add your E2E testing commands here
 echo "✓ E2E test stub executed"
-echo "  Customize this script in scripts/ci/test/ci-03-e2e-tests.sh"
+echo "  Customize this script in scripts/ci/test/ci-30-e2e-tests.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
     echo "========================================="

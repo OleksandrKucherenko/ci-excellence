@@ -57,7 +57,7 @@ elif [ -f "Cargo.toml" ]; then
     echo "✓ Stub: cargo fetch would run here"
 else
     echo "⚠ No recognized dependency file found"
-    echo "  Customize this script in scripts/ci/setup/ci-02-install-dependencies.sh"
+    echo "  Customize this script in scripts/ci/setup/ci-20-install-dependencies.sh"
 fi
 
 echo "========================================="

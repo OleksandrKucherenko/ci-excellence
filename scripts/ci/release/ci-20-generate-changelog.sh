@@ -65,7 +65,7 @@ echo "========================================="
 
 # Add your changelog generation commands here
 echo "✓ Changelog generation stub executed"
-echo "  Customize this script in scripts/ci/release/ci-03-generate-changelog.sh"
+echo "  Customize this script in scripts/ci/release/ci-20-generate-changelog.sh"
 
 echo "========================================="
 echo "Changelog Generated"

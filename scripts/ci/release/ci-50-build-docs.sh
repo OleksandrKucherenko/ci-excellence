@@ -52,7 +52,7 @@ echo "========================================="
 
 # Add your documentation build commands here
 echo "✓ Documentation build stub executed"
-echo "  Customize this script in scripts/ci/release/ci-07-build-docs.sh"
+echo "  Customize this script in scripts/ci/release/ci-50-build-docs.sh"
 
 echo "========================================="
 echo "Documentation Build Complete"

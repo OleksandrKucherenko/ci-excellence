@@ -41,7 +41,7 @@ echo "========================================="
 
 # Add your version update commands here
 echo "✓ Version update stub executed"
-echo "  Customize this script in scripts/ci/release/ci-02-update-version.sh"
+echo "  Customize this script in scripts/ci/release/ci-15-update-version.sh"
 
 echo "========================================="
 echo "Version Files Updated"

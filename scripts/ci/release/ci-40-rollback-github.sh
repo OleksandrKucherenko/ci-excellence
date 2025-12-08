@@ -32,7 +32,7 @@ echo "========================================="
 
 # Add your GitHub rollback commands here
 echo "✓ GitHub rollback stub executed"
-echo "  Customize this script in scripts/ci/release/ci-60-rollback-github.sh"
+echo "  Customize this script in scripts/ci/release/ci-40-rollback-github.sh"
 
 echo "========================================="
 echo "GitHub Rollback Complete"

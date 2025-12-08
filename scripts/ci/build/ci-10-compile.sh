@@ -46,7 +46,7 @@ echo "========================================="
 
 # Add your build commands here
 echo "✓ Build stub executed"
-echo "  Customize this script in scripts/ci/build/ci-01-compile.sh"
+echo "  Customize this script in scripts/ci/build/ci-10-compile.sh"
 
 echo "========================================="
 echo "Build Complete"

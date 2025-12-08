@@ -55,15 +55,15 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup environment
-        run: ./scripts/ci/setup/ci-01-install-tools.sh
+        run: ./scripts/ci/setup/ci-10-install-tools.sh
 
       - name: Install dependencies
-        run: ./scripts/ci/setup/ci-02-install-dependencies.sh
+        run: ./scripts/ci/setup/ci-20-install-dependencies.sh
 
       - name: Determine version
         id: version
         run: |
-          VERSION=$(./scripts/ci/release/ci-01-determine-version.sh "${{ github.event.inputs.release-type || 'patch' }}")
+          VERSION=$(./scripts/ci/release/ci-10-determine-version.sh "${{ github.event.inputs.release-type || 'patch' }}")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
           IS_PRERELEASE="${{ github.event.inputs.pre-release || 'false' }}"
@@ -74,11 +74,11 @@ jobs:
 
       - name: Update version files
         if: ${{ github.event.inputs.dry-run != 'true' }}
-        run: ./scripts/ci/release/ci-02-update-version.sh "${{ steps.version.outputs.version }}"
+        run: ./scripts/ci/release/ci-15-update-version.sh "${{ steps.version.outputs.version }}"
 
       - name: Generate changelog
         run: |
-          ./scripts/ci/release/ci-03-generate-changelog.sh "${{ steps.version.outputs.version }}"
+          ./scripts/ci/release/ci-20-generate-changelog.sh "${{ steps.version.outputs.version }}"
 
       - name: Commit version changes
         if: ${{ github.event.inputs.dry-run != 'true' && github.event_name == 'workflow_dispatch' }}
@@ -99,16 +99,16 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup environment
-        run: ./scripts/ci/setup/ci-01-install-tools.sh
+        run: ./scripts/ci/setup/ci-10-install-tools.sh
 
       - name: Install dependencies
-        run: ./scripts/ci/setup/ci-02-install-dependencies.sh
+        run: ./scripts/ci/setup/ci-20-install-dependencies.sh
 
       - name: Build
-        run: ./scripts/ci/build/ci-01-compile.sh
+        run: ./scripts/ci/build/ci-10-compile.sh
 
       - name: Bundle
-        run: ./scripts/ci/build/ci-04-bundle.sh
+        run: ./scripts/ci/build/ci-40-bundle.sh
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3
@@ -131,10 +131,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup environment
-        run: ./scripts/ci/setup/ci-01-install-tools.sh
+        run: ./scripts/ci/setup/ci-10-install-tools.sh
 
       - name: Install dependencies
-        run: ./scripts/ci/setup/ci-02-install-dependencies.sh
+        run: ./scripts/ci/setup/ci-20-install-dependencies.sh
 
       - name: Download build artifacts
         uses: actions/download-artifact@v3
@@ -142,10 +142,10 @@ jobs:
           name: release-artifacts
 
       - name: Run unit tests
-        run: ./scripts/ci/test/ci-01-unit-tests.sh
+        run: ./scripts/ci/test/ci-10-unit-tests.sh
 
       - name: Run integration tests
-        run: ./scripts/ci/test/ci-02-integration-tests.sh
+        run: ./scripts/ci/test/ci-20-integration-tests.sh
 
   publish-npm:
     name: Publish to NPM
@@ -179,9 +179,9 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           if [ "${{ needs.prepare.outputs.is-prerelease }}" == "true" ]; then
-            ./scripts/ci/release/ci-04-publish-npm.sh --tag next
+            ./scripts/ci/release/ci-65-publish-npm.sh --tag next
           else
-            ./scripts/ci/release/ci-04-publish-npm.sh --tag latest
+            ./scripts/ci/release/ci-65-publish-npm.sh --tag latest
           fi
 
   publish-github:
@@ -212,14 +212,14 @@ jobs:
       - name: Create Git Tag
         if: github.event_name == 'workflow_dispatch'
         run: |
-          ./scripts/ci/setup/ci-03-github-actions-bot.sh
+          ./scripts/ci/setup/ci-30-github-actions-bot.sh
           git tag -a "v${{ needs.prepare.outputs.version }}" -m "Release v${{ needs.prepare.outputs.version }}"
           git push origin "v${{ needs.prepare.outputs.version }}"
 
       - name: Generate release notes
         id: notes
         run: |
-          NOTES=$(./scripts/ci/release/ci-05-generate-release-notes.sh "${{ needs.prepare.outputs.version }}")
+          NOTES=$(./scripts/ci/release/ci-25-generate-release-notes.sh "${{ needs.prepare.outputs.version }}")
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           echo "$NOTES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -237,7 +237,7 @@ jobs:
 
       - name: Upload Release Assets
         if: ${{ vars.ENABLE_COMPILE == 'true' }}
-        run: ./scripts/ci/release/ci-06-upload-assets.sh "v${{ needs.prepare.outputs.version }}"
+        run: ./scripts/ci/release/ci-30-upload-assets.sh "v${{ needs.prepare.outputs.version }}"
 
   publish-docker:
     name: Publish Docker Image
@@ -292,13 +292,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup environment
-        run: ./scripts/ci/setup/ci-01-install-tools.sh
+        run: ./scripts/ci/setup/ci-10-install-tools.sh
 
       - name: Build documentation
-        run: ./scripts/ci/release/ci-07-build-docs.sh "${{ needs.prepare.outputs.version }}"
+        run: ./scripts/ci/release/ci-50-build-docs.sh "${{ needs.prepare.outputs.version }}"
 
       - name: Publish documentation
-        run: ./scripts/ci/release/ci-08-publish-docs.sh
+        run: ./scripts/ci/release/ci-55-publish-docs.sh
 
   notify:
     name: Notify Release
@@ -330,7 +330,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           APPRISE_URLS: ${{ secrets.APPRISE_URLS }}
           ENABLE_NOTIFICATIONS: ${{ vars.ENABLE_NOTIFICATIONS }}
-        run: ./scripts/ci/notification/check-notifications-enabled.sh
+        run: ./scripts/ci/notification/ci-10-check-notifications-enabled.sh
 
       - name: Determine release status
         if: steps.check_notify.outputs.enabled == 'true'
@@ -352,7 +352,7 @@ jobs:
         if: steps.check_notify.outputs.enabled == 'true'
         env:
           APPRISE_URLS: ${{ steps.check_notify.outputs.apprise_urls }}
-        run: ./scripts/ci/notification/ci-20-send-notification.sh \
+        run: ./scripts/ci/notification/ci-30-send-notification.sh \
             "Release Pipeline" \
             "${{ steps.status.outputs.message }}" \
             "${{ steps.status.outputs.status }}"

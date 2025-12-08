@@ -33,7 +33,7 @@ echo "========================================="
 
 # Add your Docker verification commands here
 echo "✓ Docker deployment verification stub executed"
-echo "  Customize this script in scripts/maintenance/verify-docker-deployment.sh"
+echo "  Customize this script in scripts/ci/release/ci-85-verify-docker-deployment.sh"
 
 echo "========================================="
 echo "Docker Deployment Verification Complete"

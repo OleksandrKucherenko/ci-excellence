@@ -27,7 +27,7 @@ echo "========================================="
 
 # Add your asset upload commands here
 echo "✓ Asset upload stub executed"
-echo "  Customize this script in scripts/ci/release/ci-06-upload-assets.sh"
+echo "  Customize this script in scripts/ci/release/ci-30-upload-assets.sh"
 
 echo "========================================="
 echo "Release Assets Uploaded"

@@ -70,7 +70,7 @@ echo ""
 
 # Add your security scanning commands here
 echo "✓ Security scan stub executed"
-echo "  Customize this script in scripts/ci/build/ci-03-security-scan.sh"
+echo "  Customize this script in scripts/ci/build/ci-30-security-scan.sh"
 
 # Create SARIF output for GitHub Security
 mkdir -p .

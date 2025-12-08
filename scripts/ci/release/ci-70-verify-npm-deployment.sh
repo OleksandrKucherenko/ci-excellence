@@ -36,7 +36,7 @@ echo "========================================="
 
 # Add your NPM verification commands here
 echo "✓ NPM deployment verification stub executed"
-echo "  Customize this script in scripts/maintenance/verify-npm-deployment.sh"
+echo "  Customize this script in scripts/ci/release/ci-70-verify-npm-deployment.sh"
 
 echo "========================================="
 echo "NPM Deployment Verification Complete"

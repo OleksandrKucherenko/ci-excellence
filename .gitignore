@@ -75,8 +75,8 @@ desktop.ini
 !.env.secrets.json
 
 # Reports
-reports/
-security/
+./reports
+./security
 gitleaks-report.json
 trufflehog-report.json
 

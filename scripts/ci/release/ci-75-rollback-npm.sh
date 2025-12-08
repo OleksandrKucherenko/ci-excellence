@@ -32,7 +32,7 @@ fi
 
 # Add your NPM rollback commands here
 echo "✓ NPM rollback stub executed"
-echo "  Customize this script in scripts/ci/release/ci-50-rollback-npm.sh"
+echo "  Customize this script in scripts/ci/release/ci-75-rollback-npm.sh"
 
 echo "========================================="
 echo "NPM Rollback Complete"

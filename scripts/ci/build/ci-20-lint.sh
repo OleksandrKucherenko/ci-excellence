@@ -54,7 +54,7 @@ EXIT_CODE=0
 
 # Add your linting commands here
 echo "✓ Lint stub executed"
-echo "  Customize this script in scripts/ci/build/ci-02-lint.sh"
+echo "  Customize this script in scripts/ci/build/ci-20-lint.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
     echo "========================================="

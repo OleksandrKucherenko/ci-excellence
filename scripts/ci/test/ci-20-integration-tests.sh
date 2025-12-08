@@ -45,7 +45,7 @@ EXIT_CODE=0
 
 # Add your integration testing commands here
 echo "✓ Integration test stub executed"
-echo "  Customize this script in scripts/ci/test/ci-02-integration-tests.sh"
+echo "  Customize this script in scripts/ci/test/ci-20-integration-tests.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
     echo "========================================="

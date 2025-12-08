@@ -35,7 +35,7 @@ echo "========================================="
 
 # Add your GitHub verification commands here
 echo "✓ GitHub release verification stub executed"
-echo "  Customize this script in scripts/maintenance/verify-github-release.sh"
+echo "  Customize this script in scripts/ci/release/ci-35-verify-github-release.sh"
 
 echo "========================================="
 echo "GitHub Release Verification Complete"
