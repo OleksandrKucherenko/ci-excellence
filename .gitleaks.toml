@@ -1,5 +1,4 @@
-# Gitleaks Configuration
-# Detect hardcoded secrets in git repository
+# Purpose: Gitleaks configuration to detect hardcoded secrets in the repository.
 # Docs: https://github.com/gitleaks/gitleaks
 
 title = "Gitleaks Configuration for CI Excellence"

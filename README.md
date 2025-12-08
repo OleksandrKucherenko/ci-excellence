@@ -279,7 +279,7 @@ enter = ["mise run setup", "mise run install-hooks"]
 mise run generate-age-key
 
 # 2. Create encrypted secrets file
-cp .env.secrets.json.example .env.secrets.json.tmp
+cp config/.env.secrets.json.example .env.secrets.json.tmp
 vim .env.secrets.json.tmp  # Edit with your secrets
 mise run encrypt-secrets
 rm .env.secrets.json.tmp
@@ -437,6 +437,7 @@ mise run validate-workflows  # Validate GitHub Actions workflows
 └── config/                      # Configuration templates
     ├── package.json.template
     ├── .env.template
+    ├── .env.secrets.json.example
     ├── CHANGELOG.md.template
     ├── .gitignore.template
     ├── Dockerfile.template
@@ -884,3 +885,25 @@ Found a bug or have a suggestion? Please:
 **Happy Building! 🚀**
 
 Remember: Start simple, enable features as needed, and customize scripts for your specific use case.
+
+## 📏 Project Rules
+
+We follow these major rules for configuration and secrets:
+
+### Configuration Formats
+All project tools should store their configuration in the following formats (in order of preference):
+1. **TOML** (Most preferred)
+2. **YAML**
+3. **JSONC** (JSON with comments)
+
+If these are not supported, use TypeScript or in-code configurations.
+
+### Configuration Guidelines
+- **Comments**: Configuration formats MUST support comments.
+- **Location**: Configurations can be in the **root** of the project or inside a **`.config`** folder. Tools should support this automatically.
+- **Naming**: For secondary tools (all except MISE), prefer using a **`.` (dot)** prefix in the filename so they are treated as hidden and sorted correctly.
+- **Purpose**: Every configuration file MUST have a comment at the beginning of the file explaining its **purpose** and usage.
+
+### Secret Management
+- **Non-git secrets**: Stored in the `.secrets` folder (ignored by git).
+- **Environment secrets**: Injected via **[Mise](https://mise.jdx.dev/)** tool using encrypted secrets support.

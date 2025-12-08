@@ -1,12 +1,30 @@
 [tools]
 bun = "latest"
-"npm:czg" = "latest"
+
+[env]
+# Ensure bun global binaries and modules are found
+_.path = ["/Users/oleksandr.kucherenko/.bun/bin"]
+NODE_PATH = "/Users/oleksandr.kucherenko/.bun/install/global/node_modules:$NODE_PATH"
+
+[settings]
+experimental = true # enable hooks
+
+[hooks]
+enter = ["mise run install-commit-tools"]
+
+[tasks.install-commit-tools]
+description = "Install tools globally via Bun"
+run = """
+bun install --global czg
+bun install --global @commitlint/cli
+bun install --global @commitlint/config-conventional
+"""
 
 [tasks.cz]
 description = "Start interactive commit with czg"
 alias = "commit"
-run = ["czg"]
+run = "czg"
 
 [tasks.cz-check]
-description = "Check commit message with czg (hook mode)"
-run = ["czg --hook $1"]
+description = "Check commit message with commitlint"
+run = "commitlint --edit $1"
