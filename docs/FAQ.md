@@ -14,13 +14,16 @@
 - How do I regenerate release notes for a given tag?
 - How do I release a specific commit hash or branch instead of the latest main?
 - How do I create a hotfix release from a previous version?
+- How do I compute which version should be next for release from conventional commits?
 
 **Feature Flags and Pipeline Control:**
 - How do CI feature flags (ENABLE_*) change which jobs run in each workflow?
+- How do I get list of all availabele ENABLE_* flags/env variables?
 - How do I publish release artifacts when compile/build is disabled via feature flags?
 - How do I conditionally enable/disable workflows based on file changes (path filters)?
 - How do I temporarily disable a workflow without deleting it?
 - How do I set different feature flags for different branches?
+- How can I apply CI environment variable on server side? Like disable Lint step for all workflows?
 
 ## Post-Release and Verification
 
@@ -29,9 +32,8 @@
 - How do I tag an existing version as stable?
 - How do I tag an existing version as unstable/next?
 - How do I run the post-release verification step separately from tagging?
-- How do I verify a release deployed to multiple registries (NPM + Docker + PyPI)?
-- How do I validate that release artifacts match the source code?
-- How do I check if a release is accessible from different regions/CDNs?
+- How do I verify a release deployed to multiple registries (NPM + Docker)?
+- How do I validate that release artifacts match the source code? How to compure SHA of release artifacts?
 
 **Rollback and Recovery:**
 - How do I rollback a bad release version across NPM, GitHub Releases, and Docker?
@@ -45,6 +47,7 @@
 - How do I re-trigger notifications for a completed pipeline?
 - How do I send release notifications to multiple channels (Slack + Teams + Email)?
 - How do I customize notification messages for different release types?
+- How to produce changes log between two releases (or current state and last known stable release?
 
 ## Maintenance and Operations
 
@@ -63,6 +66,7 @@
 - How do I deprecate GitHub releases for superseded versions?
 - How do I bulk update version numbers across multiple package.json files in a monorepo?
 - How do I prevent accidental version downgrades?
+- How to avoid versions conflicts between different PRs?
 
 **Dependency Management:**
 - How do I run automated dependency upgrades and open a PR?
@@ -86,8 +90,8 @@
 - How do I track which versions are deployed to which environments?
 - How do I enforce required approvals before production releases?
 - How do I maintain an audit log of all pipeline executions?
-- How do I ensure SBOM (Software Bill of Materials) is generated for each release?
 - How do I verify license compliance for all dependencies?
+- How do I verify the history of versions deployed to each environment?
 
 ## Developer Loop / Day-to-Day
 
@@ -101,6 +105,8 @@
 - How do I run the same CI steps locally before pushing?
 - How do I debug a failing CI job on my local machine?
 - How do I override CI behavior for experimental branches?
+- How do I customize CI steps for a specific monorepo sub-project/workspace?
+- How do I check the CI pipelines changes? enabled feature flags? enabled env variables?
 
 **Pull Request Workflows:**
 - How do I require specific CI checks to pass before PR merge?
@@ -119,6 +125,10 @@
 - How do I use matrix builds to test multiple configurations?
 - How do I reduce flaky test failures?
 - How do I optimize Docker layer caching?
+
+**Usability and UX:**
+- Where I can found one-click links for quick actions?
+- Where I can found state machine of the release?
 
 ## Monorepo-Specific Questions
 
@@ -194,6 +204,7 @@
 - How do I scope secrets to specific workflows or branches?
 - How do I share secrets across multiple repositories?
 - How do I audit secret usage and access?
+- How do I generate a new secrets?
 
 **Customization and Extension:**
 - How do I add custom scripts to the CI pipeline?
