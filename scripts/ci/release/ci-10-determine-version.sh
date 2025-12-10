@@ -1,91 +1,120 @@
 #!/usr/bin/env bash
-set -euo pipefail
+# set -euo pipefail # strict mode disabled for e-bash compatibility
 
 # CI Script: Determine Version
-# Purpose: Calculate next version based on release type
+# Purpose: Calculate next version based on release type using e-bash semver lib
 
 RELEASE_TYPE="${1:-patch}"
+PRE_RELEASE_TYPE="${2:-alpha}" 
 
-echo "=========================================" >&2
-echo "Determining Version" >&2
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../../" && pwd)"
+LIB_DIR="$REPO_ROOT/scripts/lib"
+
+# Setup e-bash environment
+if [ -z "${E_BASH:-}" ]; then
+  export E_BASH="$LIB_DIR"
+fi
+
+# Source semver library
+set +u
+# shellcheck disable=SC1090
+source "$LIB_DIR/_semver.sh"
+set -u
+
+# Get current version details
+# Find the latest tag that looks like a semver version v*.*.*
+# We use 'git describe' to find the closest reachable tag
+if ! CURRENT_TAG=$(git describe --tags --match "v*" --abbrev=0 2>/dev/null); then
+    echo "Warning: No existing tags found. Defaulting to 0.0.1-alpha" >&2
+    CURRENT_TAG="v0.0.1-alpha"
+fi
+
+# Strip 'v' prefix if present
+CURRENT_VERSION="${CURRENT_TAG#v}"
+
+echo "Current Version: $CURRENT_VERSION" >&2
 echo "Release Type: $RELEASE_TYPE" >&2
-echo "=========================================" >&2
 
-# Example: Get version from package.json
-# if [ -f "package.json" ]; then
-#     CURRENT_VERSION=$(jq -r '.version' package.json)
-# fi
+# Parse current version
+semver:parse "$CURRENT_VERSION" "PARSED"
 
-# Example: Get version from setup.py
-# if [ -f "setup.py" ]; then
-#     CURRENT_VERSION=$(grep -oP 'version=\"\\K[^\"]+' setup.py)
-# fi
+# Helper to reconstruct base version (major.minor.patch)
+function get_base_version() {
+    echo "${PARSED["major"]}.${PARSED["minor"]}.${PARSED["patch"]}"
+}
 
-# Example: Get version from Cargo.toml
-# if [ -f "Cargo.toml" ]; then
-#     CURRENT_VERSION=$(grep -oP '^version = \"\\K[^\"]+' Cargo.toml)
-# fi
-
-# Example: Get version from git tags
-# CURRENT_VERSION=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "0.0.0")
-
-# For now, use a stub version
-CURRENT_VERSION="0.0.0"
-
-# Simple semver bump logic (replace with proper semver tool in production)
-IFS='.' read -r -a VERSION_PARTS <<< "$CURRENT_VERSION"
-MAJOR="${VERSION_PARTS[0]}"
-MINOR="${VERSION_PARTS[1]}"
-PATCH="${VERSION_PARTS[2]}"
+NEW_VERSION=""
 
 case "$RELEASE_TYPE" in
     major)
-        MAJOR=$((MAJOR + 1))
-        MINOR=0
-        PATCH=0
+        NEW_VERSION=$(semver:increase:major "$CURRENT_VERSION")
         ;;
     minor)
-        MINOR=$((MINOR + 1))
-        PATCH=0
+        NEW_VERSION=$(semver:increase:minor "$CURRENT_VERSION")
         ;;
     patch)
-        PATCH=$((PATCH + 1))
+        NEW_VERSION=$(semver:increase:patch "$CURRENT_VERSION")
         ;;
     premajor)
-        MAJOR=$((MAJOR + 1))
-        MINOR=0
-        PATCH=0
-        NEW_VERSION="$MAJOR.$MINOR.$PATCH-alpha.0"
-        echo "$NEW_VERSION"
-        exit 0
+        # 1. Increment major
+        NEXT_MAJOR=$(semver:increase:major "$CURRENT_VERSION")
+        # 2. Append pre-release type (e.g. 1.0.0-alpha, not 1.0.0-alpha.1 per preference)
+        NEW_VERSION="${NEXT_MAJOR}-${PRE_RELEASE_TYPE}"
         ;;
     preminor)
-        MINOR=$((MINOR + 1))
-        PATCH=0
-        NEW_VERSION="$MAJOR.$MINOR.$PATCH-alpha.0"
-        echo "$NEW_VERSION"
-        exit 0
+        NEXT_MINOR=$(semver:increase:minor "$CURRENT_VERSION")
+        NEW_VERSION="${NEXT_MINOR}-${PRE_RELEASE_TYPE}"
         ;;
     prepatch)
-        PATCH=$((PATCH + 1))
-        NEW_VERSION="$MAJOR.$MINOR.$PATCH-alpha.0"
-        echo "$NEW_VERSION"
-        exit 0
+        NEXT_PATCH=$(semver:increase:patch "$CURRENT_VERSION")
+        NEW_VERSION="${NEXT_PATCH}-${PRE_RELEASE_TYPE}"
         ;;
     prerelease)
-        # Increment pre-release version
-        NEW_VERSION="$MAJOR.$MINOR.$PATCH-alpha.1"
-        echo "$NEW_VERSION"
-        exit 0
+        # Handle existing pre-release increment
+        CURRENT_PRE="${PARSED["pre-release"]}" # Includes leading dash e.g. "-alpha.1" or "-alpha"
+        
+        if [ -z "$CURRENT_PRE" ]; then
+            # Not currently a pre-release, so start one (e.g. 1.2.3 -> 1.2.4-alpha)
+            NEXT_PATCH=$(semver:increase:patch "$CURRENT_VERSION")
+            NEW_VERSION="${NEXT_PATCH}-${PRE_RELEASE_TYPE}"
+        else
+            # Remove leading dash
+            clean_pre="${CURRENT_PRE#-}"
+            
+            # Logic: 
+            # If PRE_RELEASE_TYPE matches current (e.g. alpha -> alpha), increment number.
+            # If different (e.g. alpha -> beta), keep version core, switch type, reset.
+            
+            if [[ "$clean_pre" == "${PRE_RELEASE_TYPE}" || "$clean_pre" == "${PRE_RELEASE_TYPE}."* ]]; then
+                # Same type, increment number
+                # Extract number. Assuming format "type.number" or just "type"
+                prefix="${PRE_RELEASE_TYPE}."
+                if [[ "$clean_pre" == "$PRE_RELEASE_TYPE" ]]; then
+                   # "alpha" -> "alpha.1"
+                   NEW_VERSION="$(get_base_version)-${PRE_RELEASE_TYPE}.1"
+                else
+                   number="${clean_pre#$prefix}"
+                   if [[ "$number" =~ ^[0-9]+$ ]]; then
+                       new_number=$((number + 1))
+                       NEW_VERSION="$(get_base_version)-${PRE_RELEASE_TYPE}.${new_number}"
+                   else
+                       echo "Error: Cannot auto-increment complex pre-release identifier: $clean_pre" >&2
+                       exit 1
+                   fi
+                fi
+            else
+                # Different type (e.g. alpha -> beta)
+                # alpha -> beta (no .1)
+                NEW_VERSION="$(get_base_version)-${PRE_RELEASE_TYPE}"
+            fi
+        fi
+        ;;
+    *)
+        echo "Error: Unknown release type '$RELEASE_TYPE'" >&2
+        exit 1
         ;;
 esac
 
-NEW_VERSION="$MAJOR.$MINOR.$PATCH"
-
-echo "Current version: $CURRENT_VERSION" >&2
-echo "New version: $NEW_VERSION" >&2
+echo "Calculated Version: $NEW_VERSION" >&2
 echo "$NEW_VERSION"
-
-echo "=========================================" >&2
-echo "Version Determined: $NEW_VERSION" >&2
-echo "=========================================" >&2

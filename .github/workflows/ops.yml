@@ -1,0 +1,85 @@
+name: Ops Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - promote-release
+          - deploy-staging
+          - deploy-production
+          - mark-stable
+          - mark-deprecated
+      version:
+        description: 'Target Version (e.g. 1.2.3)'
+        required: true
+        type: string
+      confirm:
+        description: 'Type "yes" to confirm critical actions'
+        required: false
+        default: 'no'
+
+jobs:
+  ops-handler:
+    name: Handle Ops Action
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Validate Inputs
+        run: |
+          echo "Action: ${{ github.event.inputs.action }}"
+          echo "Version: ${{ github.event.inputs.version }}"
+          
+          if [[ -z "${{ github.event.inputs.version }}" ]]; then
+            echo "Error: Version is required"
+            exit 1
+          fi
+
+      - name: Promote Release
+        if: github.event.inputs.action == 'promote-release'
+        run: |
+          echo "Promoting version ${{ github.event.inputs.version }}..."
+          # Logic to promote pre-release to next stage or release
+          # e.g. 1.0.0-alpha -> 1.0.0-beta or 1.0.0
+          # This would typically trigger tag creation similar to release.yml
+          
+          echo "Run: gh workflow run release.yml -f release-scope=... -f pre-release-type=..."
+          echo "Please use the Release Pipeline for promotions until auto-promotion is fully implemented."
+          exit 1
+
+      - name: Deploy Staging
+        if: github.event.inputs.action == 'deploy-staging'
+        run: |
+          echo "Deploying ${{ github.event.inputs.version }} to Staging..."
+          # Placeholder for deployment logic
+          # ./scripts/ops/deploy.sh staging ${{ github.event.inputs.version }}
+
+      - name: Deploy Production
+        if: github.event.inputs.action == 'deploy-production'
+        run: |
+          if [[ "${{ github.event.inputs.confirm }}" != "yes" ]]; then
+            echo "Error: Production deployment requires confirmation 'yes'"
+            exit 1
+          fi
+          echo "Deploying ${{ github.event.inputs.version }} to Production..."
+          # Placeholder for deployment logic
+          # ./scripts/ops/deploy.sh production ${{ github.event.inputs.version }}
+
+      - name: Mark Stable
+        if: github.event.inputs.action == 'mark-stable'
+        run: |
+          echo "Marking ${{ github.event.inputs.version }} as stable..."
+          # Logic to update GitHub release or status badges
+          # ./scripts/ops/update-stability.sh ${{ github.event.inputs.version }} stable
+
+      - name: Mark Deprecated
+        if: github.event.inputs.action == 'mark-deprecated'
+        run: |
+          echo "Marking ${{ github.event.inputs.version }} as deprecated..."
+          # Logic to update GitHub release or npm deprecation
+          # ./scripts/ops/update-stability.sh ${{ github.event.inputs.version }} deprecated

@@ -3,7 +3,10 @@
 [settings]
 verbose = false                             # enable if SOPS is failing or you need more debug details
 
+[[env]]
+_.file = [".ebashrc"]
+E_BASH = "{{config_root}}/{{env.E_BASH_INSTALL_DIR}}"
+
 # Load local overrides and then defaults from .env file
 [[env]]
 _.file = [".env.local", ".env"]
-
