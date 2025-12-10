@@ -4,20 +4,16 @@
 min_version = "1.5.0"
 colors = true
 no_tty = false
-skip_output = ["meta", "summary"]
+
+# ref: https://lefthook.dev/configuration/output.html
+output = ["execution", "failure"]
 
 [pre-commit]
 parallel = true
 
 [pre-commit.commands.gitleaks-staged]
 tags = "security"
-run = "gitleaks protect --staged --redact --verbose --no-banner"
-skip = ["merge", "rebase"]
-
-[pre-commit.commands.trufflehog-git-staged]
-tags = "security"
-# JSON formatting with colors for trufflehog output
-run = "trufflehog git file://. --since-commit HEAD --only-verified --fail --json 2>&1 | jq -r '\"\\(.ts[11:19]) \\u001b[35m\\(.logger)\\u001b[0m \\u001b[33m\\(.level)\\u001b[0m \\u001b[1m\\(.msg)\\u001b[0m\"'"
+run = "gitleaks protect --staged --redact --no-banner"
 skip = ["merge", "rebase"]
 
 [pre-commit.commands.prevent-main-commit]
@@ -58,7 +54,7 @@ find .github/workflows -type f -name "*.yml" | xargs action-validator --verbose 
 
 [pre-push.commands.gitleaks-push]
 tags = "security"
-run = "gitleaks protect --redact --verbose --no-banner"
+run = "gitleaks protect --redact --no-banner"
 
 [pre-push.commands.trufflehog-push]
 tags = "security"
