@@ -83,3 +83,6 @@ trufflehog-report.json
 # AI Coding
 mcp.json
 .mcp.json
+
+# Worktrees
+versions/
