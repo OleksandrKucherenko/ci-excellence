@@ -3,7 +3,7 @@
 
 # Initialize security logging
 init_security_logging() {
-    local security_log_dir="${PROJECT_ROOT}/.security"
+    local security_log_dir="${PROJECT_ROOT}/.reports/security"
     mkdir -p "$security_log_dir"
 
     export SECURITY_LOG_FILE="${security_log_dir}/security-$(date -u +"%Y%m%d").log"
@@ -188,7 +188,7 @@ run_secret_scan() {
     # Use gitleaks if available
     if command -v gitleaks &> /dev/null; then
         log_info "Running gitleaks scan"
-        local gitleaks_report="${PROJECT_ROOT}/.security/gitleaks-report.json"
+        local gitleaks_report="${PROJECT_ROOT}/.reports/security/gitleaks-report.json"
 
         if gitleaks detect --source="$target" --report-path="$gitleaks_report" --report-format=json &> /dev/null; then
             if [[ -f "$gitleaks_report" ]]; then

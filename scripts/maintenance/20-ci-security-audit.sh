@@ -97,7 +97,7 @@ run_secret_scanning() {
     # Gitleaks scan
     if command -v gitleaks &> /dev/null; then
         log_info "Running Gitleaks scan"
-        local gitleaks_report="${PROJECT_ROOT}/.security/gitleaks-report.json"
+        local gitleaks_report="${PROJECT_ROOT}/.reports/security/gitleaks-report.json"
 
         if [[ "$SCRIPT_MODE" != "dry_run" ]]; then
             gitleaks detect --source="${PROJECT_ROOT}" \
@@ -267,7 +267,7 @@ run_custom_security_checks() {
 
 # Generate security audit report
 generate_security_audit_report() {
-    local report_file="${PROJECT_ROOT}/.security/security-audit-report.json"
+    local report_file="${PROJECT_ROOT}/.reports/security/security-audit-report.json"
     local timestamp
     timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 

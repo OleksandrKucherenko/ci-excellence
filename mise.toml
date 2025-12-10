@@ -27,7 +27,7 @@ run = ["lefthook uninstall"]
 
 [tasks.scan-secrets]
 description = "Scan repository for secrets with gitleaks"
-run = ["gitleaks detect --redact --verbose --report-path gitleaks-report.json"]
+run = ["mkdir -p .reports/security && gitleaks detect --redact --verbose --report-path .reports/security/gitleaks-report.json"]
 
 [tasks.scan-history]
 description = "Scan git history for leaked credentials with trufflehog"

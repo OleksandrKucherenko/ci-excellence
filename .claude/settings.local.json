@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mise doctor:*)",
+      "Bash(mise --verbose config:*)",
+      "Bash(mise tasks:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(shellcheck:*)",
+      "Bash(grep:*)"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "zai-mcp-server",
+    "web-search-prime"
+  ]
+}

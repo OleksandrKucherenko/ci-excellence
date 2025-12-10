@@ -14,7 +14,7 @@ source "$PROJECT_ROOT/scripts/lib/common.sh" 2>/dev/null || {
 
 # Configuration
 readonly SECURITY_SCAN_VERSION="1.0.0"
-readonly SECURITY_REPORT_DIR="${GITHUB_WORKSPACE:-$PROJECT_ROOT}/.github/security-reports"
+readonly SECURITY_REPORT_DIR="${GITHUB_WORKSPACE:-$PROJECT_ROOT}/.reports/security"
 
 # Testability configuration
 get_behavior_mode() {
