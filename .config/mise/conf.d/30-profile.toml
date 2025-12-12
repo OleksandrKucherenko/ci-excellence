@@ -1,4 +1,82 @@
-# Load local overrides and then defaults from .env file
-[[env]]
-_.file = [".env.local"]
+# Profile and ZSH prompt integration
+#
+# Notes:
+# - Defaults to staging unless overridden.
+# - Plugin lives in-repo and is symlinked into Oh My Zsh custom plugins.
+# - Self-registration happens during mise activation (ZSH only).
 
+# Load local overrides first (it should be in the mise.toml of the project root)
+#[[env]]
+#_.file = [".env.local"]
+
+# Default profile and plugin path
+[[env]]
+DEPLOYMENT_PROFILE = "staging"
+CI_EXCELLENCE_MISE_PROFILE_PLUGIN = "{{config_root}}/scripts/setup/shell/mise-profile.plugin.zsh"
+MISE_PROFILE_PLUGIN_ANNOUNCE = "true"
+
+# ZSH-only activation hook (runs on project enter): ensure OMZ symlink, source plugin, install prompt
+[hooks]
+enter = [
+  """
+if [ "${MISE_SHELL:-}" = "zsh" ] && command -v zsh >/dev/null 2>&1; then
+  repo_plugin="$CI_EXCELLENCE_MISE_PROFILE_PLUGIN"
+  omz_dir="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/ci-excellence"
+
+  if [ -f "$repo_plugin" ]; then
+    mkdir -p "$omz_dir"
+    target="$omz_dir/ci-excellence.plugin.zsh"
+    
+    # 1. Ensure Symlink Exists
+    if [ ! -L "$target" ] || [ "$(readlink "$target")" != "$repo_plugin" ]; then
+      ln -sf "$repo_plugin" "$target"
+      echo "[oh-my-zsh-plugin] Plugin symlinked to Oh-My-Zsh custom directory."
+    fi
+
+    # 2. Verify Activation in .zshrc
+    zshrc="$HOME/.zshrc"
+    if [ -f "$zshrc" ]; then
+      if ! grep -q "ci-excellence" "$zshrc"; then
+        echo ""
+        echo "⚠️  [oh-my-zsh-plugin] ACTION REQUIRED"
+        echo "   The plugin is installed but not enabled in your configuration."
+        echo "   Please edit '$zshrc' and add 'ci-excellence' to the plugins list:"
+        echo ""
+        echo "   plugins=("
+        echo "     ..."
+        echo "     ci-excellence"
+        echo "   )"
+        echo ""
+      else
+         # It is in the file, but we only remind reload if we think they might need it (e.g. naive check)
+         # For now, let's keep it clean. If they just landed here, they might see the prompt immediately if sourced.
+         echo "[oh-my-zsh-plugin] $ project deploy profile visualization plugin is enabled"
+      fi
+    fi
+  else
+    echo "[oh-my-zsh-plugin] Error: Plugin source file not found at $repo_plugin"
+  fi
+fi
+""",
+]
+
+# Profile tasks
+[tasks."profile:list"]
+description = "List available profiles (environments)"
+run = ["./scripts/setup/profile/profile-list.sh"]
+
+[tasks."profile:show"]
+description = "Show current profile from .env.local"
+run = ["./scripts/setup/profile/profile-show.sh"]
+
+[tasks."profile:create"]
+description = "Create a new profile cloned from an existing one (default base: staging)"
+run = [
+  "./scripts/setup/profile/profile-create.sh {{ args | default(value=[]) | join(sep=\" \") }}",
+]
+
+[tasks."profile:switch"]
+description = "Switch active profile by updating .env.local"
+run = [
+  "./scripts/setup/profile/profile-switch.sh {{ args | default(value=[]) | join(sep=\" \") }}",
+]
