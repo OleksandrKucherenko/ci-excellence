@@ -1,5 +1,4 @@
-# Gitleaks Configuration
-# Detect hardcoded secrets in git repository
+# Purpose: Gitleaks configuration to detect hardcoded secrets in the repository.
 # Docs: https://github.com/gitleaks/gitleaks
 
 title = "Gitleaks Configuration for CI Excellence"
@@ -81,6 +80,9 @@ paths = [
     '''tests?/fixtures/.*''',
     '''tests?/.*\.test\.(js|ts|py)$''',
     '''scripts/notify/test-.*\.sh$''',
+
+    # BATS test file for secret scanning (contains simulated secrets to test detection)
+    '''.*pre-commit-secret-scan\.bats$''',
 
     # CI workflows (using GitHub secrets)
     '''\.github/workflows/.*\.yml$''',

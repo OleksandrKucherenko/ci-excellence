@@ -7,6 +7,7 @@ on:
       - develop
   push:
     branches:
+      # TODO: should we allow any branch to trigger this?
       - develop
       - 'feature/**'
       - 'fix/**'
@@ -21,6 +22,10 @@ env:
   ENABLE_E2E_TESTS: ${{ vars.ENABLE_E2E_TESTS || 'false' }}
   ENABLE_BUNDLE: ${{ vars.ENABLE_BUNDLE || 'false' }}
   ENABLE_SECURITY_SCAN: ${{ vars.ENABLE_SECURITY_SCAN || 'false' }}
+  # Customization Variables
+  ARTIFACT_RETENTION_DAYS: ${{ vars.ARTIFACT_RETENTION_DAYS || 7 }}
+  DELIVERABLE_RETENTION_DAYS: ${{ vars.DELIVERABLE_RETENTION_DAYS || 14 }}
+  REPORT_RETENTION_DAYS: ${{ vars.REPORT_RETENTION_DAYS || 30 }}
 
 jobs:
   setup:
@@ -31,12 +36,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup environment
-        run: ./scripts/ci/setup/ci-01-install-tools.sh
+        run: ./scripts/ci/setup/ci-10-install-tools.sh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install dependencies
-        run: ./scripts/ci/setup/ci-02-install-dependencies.sh
+        run: ./scripts/ci/setup/ci-20-install-dependencies.sh
 
       - name: Cache dependencies
         uses: actions/cache@v3
@@ -45,7 +50,8 @@ jobs:
             node_modules
             ~/.cache
             .cache
-          key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
+          # FIXME(olku): Single cache key definition reused across jobs
+          key: &deps-cache-key ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/bun.lock') }}
           restore-keys: |
             ${{ runner.os }}-deps-
 
@@ -65,10 +71,10 @@ jobs:
             node_modules
             ~/.cache
             .cache
-          key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
+          key: *deps-cache-key
 
       - name: Run compile
-        run: ./scripts/ci/build/ci-01-compile.sh
+        run: ./scripts/ci/build/ci-10-compile.sh
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -78,7 +84,7 @@ jobs:
             dist/
             build/
             out/
-          retention-days: 7
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
   lint:
     name: Lint Code
@@ -96,10 +102,10 @@ jobs:
             node_modules
             ~/.cache
             .cache
-          key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
+          key: *deps-cache-key
 
       - name: Run linter
-        run: ./scripts/ci/build/ci-02-lint.sh
+        run: ./scripts/ci/build/ci-20-lint.sh
 
   unit-tests:
     name: Unit Tests
@@ -117,10 +123,10 @@ jobs:
             node_modules
             ~/.cache
             .cache
-          key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
+          key: *deps-cache-key
 
       - name: Run unit tests
-        run: ./scripts/ci/test/ci-01-unit-tests.sh
+        run: ./scripts/ci/test/ci-10-unit-tests.sh
 
       - name: Upload test results
         if: always()
@@ -130,7 +136,7 @@ jobs:
           path: |
             coverage/
             test-results/
-          retention-days: 7
+          retention-days: ${{ env.REPORT_RETENTION_DAYS }}
 
   integration-tests:
     name: Integration Tests
@@ -148,7 +154,7 @@ jobs:
             node_modules
             ~/.cache
             .cache
-          key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
+          key: *deps-cache-key
 
       - name: Download build artifacts
         if: ${{ vars.ENABLE_COMPILE == 'true' }}
@@ -157,7 +163,7 @@ jobs:
           name: build-output
 
       - name: Run integration tests
-        run: ./scripts/ci/test/ci-02-integration-tests.sh
+        run: ./scripts/ci/test/ci-20-integration-tests.sh
 
       - name: Upload test results
         if: always()
@@ -167,7 +173,7 @@ jobs:
           path: |
             coverage/
             test-results/
-          retention-days: 7
+          retention-days: ${{ env.REPORT_RETENTION_DAYS }}
 
   e2e-tests:
     name: End-to-End Tests
@@ -185,7 +191,7 @@ jobs:
             node_modules
             ~/.cache
             .cache
-          key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
+          key: *deps-cache-key
 
       - name: Download build artifacts
         if: ${{ vars.ENABLE_COMPILE == 'true' }}
@@ -194,7 +200,7 @@ jobs:
           name: build-output
 
       - name: Run E2E tests
-        run: ./scripts/ci/test/ci-03-e2e-tests.sh
+        run: ./scripts/ci/test/ci-30-e2e-tests.sh
 
       - name: Upload test results
         if: always()
@@ -206,7 +212,8 @@ jobs:
             test-results/
             screenshots/
             videos/
-          retention-days: 7
+            results/
+          retention-days: ${{ env.REPORT_RETENTION_DAYS }}
 
   security-scan:
     name: Security Vulnerability Scan
@@ -219,12 +226,12 @@ jobs:
           fetch-depth: 0  # Full history for trufflehog to scan
 
       - name: Setup mise and install tools
-        run: ./scripts/ci/setup/ci-01-install-tools.sh
+        run: ./scripts/ci/setup/ci-10-install-tools.sh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run vulnerability scan
-        run: ./scripts/ci/build/ci-03-security-scan.sh
+        run: ./scripts/ci/build/ci-30-security-scan.sh
 
       - name: Upload security reports
         if: always()
@@ -235,7 +242,7 @@ jobs:
             gitleaks-report.json
             trufflehog-report.json
             security-results.sarif
-          retention-days: 30
+          retention-days: ${{ env.REPORT_RETENTION_DAYS }}
 
   bundle:
     name: Bundle and Package
@@ -258,7 +265,7 @@ jobs:
             node_modules
             ~/.cache
             .cache
-          key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
+          key: *deps-cache-key
 
       - name: Download build artifacts
         if: ${{ vars.ENABLE_COMPILE == 'true' }}
@@ -267,7 +274,7 @@ jobs:
           name: build-output
 
       - name: Create bundle/package
-        run: ./scripts/ci/build/ci-04-bundle.sh
+        run: ./scripts/ci/build/ci-40-bundle.sh
 
       - name: Upload bundle artifacts
         uses: actions/upload-artifact@v4
@@ -278,7 +285,7 @@ jobs:
             *.tar.gz
             *.zip
             dist/
-          retention-days: 30
+          retention-days: ${{ env.DELIVERABLE_RETENTION_DAYS }}
 
   summary:
     name: Pipeline Summary
@@ -299,7 +306,7 @@ jobs:
           ENABLE_SECURITY_SCAN: ${{ vars.ENABLE_SECURITY_SCAN || 'false' }}
           ENABLE_BUNDLE: ${{ vars.ENABLE_BUNDLE || 'false' }}
         run: |
-          ./scripts/ci/build/ci-05-summary-pre-release.sh \
+          ./scripts/ci/reports/ci-10-summary-pre-release.sh \
             "${{ needs.setup.result }}" \
             "${{ needs.compile.result }}" \
             "${{ needs.lint.result }}" \
@@ -311,7 +318,7 @@ jobs:
 
       - name: Check for failures
         run: |
-          ./scripts/ci/build/ci-06-check-failures.sh \
+          ./scripts/ci/build/ci-60-check-failures.sh \
             "${{ needs.setup.result }}" \
             "${{ needs.compile.result }}" \
             "${{ needs.lint.result }}" \
@@ -337,9 +344,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           APPRISE_URLS: ${{ secrets.APPRISE_URLS }}
           ENABLE_NOTIFICATIONS: ${{ vars.ENABLE_NOTIFICATIONS }}
-        run: |
-          chmod +x scripts/ci/notification/check-notifications-enabled.sh
-          ./scripts/ci/notification/check-notifications-enabled.sh
+        run: ./scripts/ci/notification/ci-10-check-notifications-enabled.sh
 
       - name: Determine pipeline status
         if: steps.check_notify.outputs.enabled == 'true'
@@ -352,15 +357,13 @@ jobs:
           GITHUB_SERVER_URL: ${{ github.server_url }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_RUN_ID: ${{ github.run_id }}
-        run: ./scripts/ci/notification/ci-02-determine-status.sh "${{ needs.summary.result }}"
+        run: ./scripts/ci/notification/ci-20-determine-status.sh "${{ needs.summary.result }}"
 
       - name: Send notification
         if: steps.check_notify.outputs.enabled == 'true'
         env:
           APPRISE_URLS: ${{ steps.check_notify.outputs.apprise_urls }}
-        run: |
-          chmod +x scripts/setup/send-notification.sh
-          ./scripts/setup/send-notification.sh \
+        run: ./scripts/ci/notification/ci-30-send-notification.sh \
             "Pre-Release Pipeline" \
             "${{ steps.status.outputs.message }}" \
             "${{ steps.status.outputs.status }}"

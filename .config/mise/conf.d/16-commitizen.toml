@@ -1,0 +1,27 @@
+[tools]
+bun = "latest"
+
+[env]
+# Ensure BUN global binaries and modules are found
+_.path = ["{{env.HOME}}/.bun/bin"]
+NODE_PATH = "{{env.HOME}}/.bun/install/global/node_modules"
+
+[settings]
+experimental = true # enable hooks
+
+[hooks]
+# NOTE: to make tasks names printed nice, stay with 16 chars task name for hook tasks
+enter = ["mise run install-cz-tools"]
+
+[tasks.install-cz-tools]
+description = "Install commit compose and validation tools globally via Bun"
+run = "bun i -g --silent czg @commitlint/cli @commitlint/config-conventional"
+
+[tasks.cz]
+description = "Start interactive commit with czg"
+alias = "commit"
+run = "czg"
+
+[tasks.cz-check]
+description = "Check commit message with commitlint"
+run = "commitlint --edit $1"

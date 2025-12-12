@@ -1,5 +1,4 @@
-# Trufflehog Configuration
-# Find leaked credentials in git history and filesystem
+# Purpose: Trufflehog configuration for finding leaked credentials in git history and filesystem.
 # Docs: https://github.com/trufflesecurity/trufflehog
 
 # This is a YAML configuration for trufflehog v3
@@ -22,7 +21,7 @@ exclude-paths:
   # Config templates
   - "config/*.template"
   - "*.example"
-  - ".env.secrets.json.example"
+  - "config/.env.secrets.json.example"
 
   # Documentation
   - "docs/**/*.md"
@@ -36,6 +35,9 @@ exclude-paths:
   - "**/*.test.js"
   - "**/*.test.ts"
   - "**/*.test.py"
+
+  # BATS test file for secret scanning (contains simulated secrets to test detection)
+  - "**/pre-commit-secret-scan.bats"
 
   # CI workflows (managed secrets)
   - ".github/workflows/*.yml"

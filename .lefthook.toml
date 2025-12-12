@@ -1,0 +1,66 @@
+# Purpose: Git hooks manager configuration to run security checks, validation, and linting on commits and pushes.
+# Docs: https://github.com/evilmartians/lefthook
+
+min_version = "1.5.0"
+colors = true
+no_tty = false
+
+# ref: https://lefthook.dev/configuration/output.html
+output = ["execution", "failure"]
+
+[pre-commit]
+parallel = true
+
+[pre-commit.commands.gitleaks-staged]
+tags = "security"
+run = "gitleaks protect --staged --redact --no-banner"
+skip = ["merge", "rebase"]
+
+[pre-commit.commands.prevent-main-commit]
+tags = "branch-protection"
+run = """
+branch=$(git rev-parse --abbrev-ref HEAD)
+if [ "$branch" = "main" ] || [ "$branch" = "master" ]; then
+  echo "❌ Direct commits to main/master are not recommended!"
+  echo "   Create a feature branch instead:"
+  echo "   git checkout -b feature/your-feature-name"
+fi
+"""
+skip = ["merge", "rebase"]
+
+[pre-commit.commands.validate-workflows]
+tags = "validation"
+glob = ".github/workflows/*.{yml,yaml}"
+run = """
+echo "Validating GitHub Actions workflows..."
+WORKFLOWS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\\.github/workflows/.*\\.ya?ml$' || true)
+if [ -n "$WORKFLOWS" ]; then
+  echo "$WORKFLOWS" | xargs action-validator
+else
+  echo "✓ No workflow files to validate"
+fi
+"""
+skip = ["merge", "rebase"]
+
+[pre-push]
+parallel = false
+
+[pre-push.commands.validate-all-workflows]
+tags = "validation"
+run = """
+echo "Validating all GitHub Actions workflows..."
+find .github/workflows -type f -name "*.yml" | xargs action-validator --verbose 2>/dev/null || true
+"""
+
+[pre-push.commands.gitleaks-push]
+tags = "security"
+run = "gitleaks protect --redact --no-banner"
+
+[pre-push.commands.trufflehog-push]
+tags = "security"
+run = "trufflehog git file://. --since-commit \"$(git rev-parse @{u} 2>/dev/null || echo '')\" --only-verified --fail --json 2>&1 | jq -r '.msg'"
+
+# Commit-msg hook - enforce conventional commits
+# Uncomment to enforce commit message format
+[commit-msg.commands.commitlint]
+run = "commitlint --edit {1}"

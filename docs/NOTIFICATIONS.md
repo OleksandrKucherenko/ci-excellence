@@ -182,7 +182,7 @@ You can call the notification script directly in your own workflows:
   env:
     APPRISE_URLS: ${{ secrets.APPRISE_URLS }}
   run: |
-    ./scripts/setup/send-notification.sh \
+    ./scripts/ci/notification/ci-20-send-notification.sh \
       "Custom Title" \
       "Custom message here" \
       "success"  # success, failure, warning, or info
@@ -227,7 +227,7 @@ Only notify on failures:
   env:
     APPRISE_URLS: ${{ secrets.APPRISE_URLS }}
   run: |
-    ./scripts/setup/send-notification.sh \
+    ./scripts/ci/notification/ci-20-send-notification.sh \
       "Pipeline Failed" \
       "The pipeline has failed!" \
       "failure"
@@ -245,7 +245,7 @@ pip install apprise
 export APPRISE_URLS="slack://your/webhook/url"
 
 # Test notification
-./scripts/setup/send-notification.sh \
+./scripts/ci/notification/ci-20-send-notification.sh \
   "Test Notification" \
   "This is a test message" \
   "info"
@@ -270,8 +270,8 @@ jobs:
         env:
           APPRISE_URLS: ${{ secrets.APPRISE_URLS }}
         run: |
-          chmod +x scripts/setup/send-notification.sh
-          ./scripts/setup/send-notification.sh \
+          chmod +x scripts/ci/notification/ci-20-send-notification.sh
+          ./scripts/ci/notification/ci-20-send-notification.sh \
             "Test Notification" \
             "Testing notification system ✅" \
             "success"

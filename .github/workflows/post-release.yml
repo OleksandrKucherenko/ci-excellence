@@ -37,51 +37,35 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup environment
-        run: |
-          chmod +x scripts/setup/*.sh
-          ./scripts/setup/install-tools.sh
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./scripts/ci/setup/ci-10-install-tools.sh
 
       - name: Determine version
         id: version
-        run: |
-          if [ "${{ github.event_name }}" == "release" ]; then
-            VERSION="${{ github.event.release.tag_name }}"
-          else
-            VERSION="${{ github.event.inputs.version }}"
-          fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+        run: ./scripts/ci/release/ci-05-select-version.sh \
+          "${{ github.event_name }}" \
+          "${{ github.event.release.tag_name }}" \
+          "${{ github.event.inputs.version }}"
 
       - name: Verify NPM deployment
         if: vars.ENABLE_NPM_PUBLISH == 'true'
-        run: |
-          chmod +x scripts/maintenance/*.sh
-          ./scripts/maintenance/verify-npm-deployment.sh "${{ steps.version.outputs.version }}"
+        run: ./scripts/ci/release/ci-70-verify-npm-deployment.sh "${{ steps.version.outputs.version }}"
 
       - name: Verify GitHub release
         if: vars.ENABLE_GITHUB_RELEASE == 'true'
         run: |
-          ./scripts/maintenance/verify-github-release.sh "${{ steps.version.outputs.version }}"
+          ./scripts/ci/release/ci-35-verify-github-release.sh "${{ steps.version.outputs.version }}"
 
       - name: Verify Docker deployment
         if: vars.ENABLE_DOCKER_PUBLISH == 'true'
         run: |
-          ./scripts/maintenance/verify-docker-deployment.sh "${{ steps.version.outputs.version }}"
+          ./scripts/ci/release/ci-85-verify-docker-deployment.sh "${{ steps.version.outputs.version }}"
 
       - name: Run smoke tests
-        run: |
-          chmod +x scripts/test/*.sh
-          ./scripts/test/smoke.sh "${{ steps.version.outputs.version }}"
+        run: ./scripts/ci/test/ci-40-smoke-tests.sh "${{ steps.version.outputs.version }}"
 
       - name: Report verification results
         if: always()
-        run: |
-          echo "## Deployment Verification Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "All deployment targets verified successfully!" >> $GITHUB_STEP_SUMMARY
+        run: ./scripts/ci/reports/ci-80-summary-post-release-verify.sh "${{ steps.version.outputs.version }}"
 
   tag-stable:
     name: Tag as Stable
@@ -98,17 +82,7 @@ jobs:
           fetch-depth: 0
 
       - name: Create stable tag
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          VERSION="${{ github.event.inputs.version }}"
-          git tag -f stable "$VERSION"
-          git push -f origin stable
-
-          echo "## Stability Tagging" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Version $VERSION tagged as stable**" >> $GITHUB_STEP_SUMMARY
+        run: ./scripts/ci/release/ci-07-apply-stability-tag.sh stable "${{ github.event.inputs.version }}"
 
   tag-unstable:
     name: Tag as Unstable
@@ -125,17 +99,7 @@ jobs:
           fetch-depth: 0
 
       - name: Create unstable tag
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          VERSION="${{ github.event.inputs.version }}"
-          git tag -f unstable "$VERSION"
-          git push -f origin unstable
-
-          echo "## Stability Tagging" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Version $VERSION tagged as unstable**" >> $GITHUB_STEP_SUMMARY
+        run: ./scripts/ci/release/ci-07-apply-stability-tag.sh unstable "${{ github.event.inputs.version }}"
 
   rollback:
     name: Rollback Release
@@ -152,47 +116,31 @@ jobs:
           fetch-depth: 0
 
       - name: Setup environment
-        run: |
-          chmod +x scripts/setup/*.sh
-          ./scripts/setup/install-tools.sh
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./scripts/ci/setup/ci-10-install-tools.sh
 
       - name: Confirm rollback
-        run: |
-          echo "⚠️ WARNING: Rolling back version ${{ github.event.inputs.version }}"
-          echo "This action will:"
-          echo "  - Deprecate NPM package version (if enabled)"
-          echo "  - Mark GitHub release as draft (if enabled)"
-          echo "  - Tag Docker images as deprecated (if enabled)"
+        run: ./scripts/ci/release/ci-77-confirm-rollback.sh "${{ github.event.inputs.version }}"
 
       - name: Rollback NPM release
         if: vars.ENABLE_NPM_PUBLISH == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          chmod +x scripts/release/*.sh
-          ./scripts/release/rollback-npm.sh "${{ github.event.inputs.version }}"
+        run: ./scripts/ci/release/ci-75-rollback-npm.sh "${{ github.event.inputs.version }}"
 
       - name: Update GitHub release
         if: vars.ENABLE_GITHUB_RELEASE == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ./scripts/release/rollback-github.sh "${{ github.event.inputs.version }}"
+          ./scripts/ci/release/ci-40-rollback-github.sh "${{ github.event.inputs.version }}"
 
       - name: Tag Docker images as deprecated
         if: vars.ENABLE_DOCKER_PUBLISH == 'true'
         run: |
-          ./scripts/release/rollback-docker.sh "${{ github.event.inputs.version }}"
+          ./scripts/ci/release/ci-90-rollback-docker.sh "${{ github.event.inputs.version }}"
 
       - name: Report rollback results
-        run: |
-          echo "## Rollback Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** ${{ github.event.inputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Rollback completed successfully" >> $GITHUB_STEP_SUMMARY
+        run: ./scripts/ci/reports/ci-85-summary-rollback.sh "${{ github.event.inputs.version }}"
 
   notify:
     name: Notify Post-Release Actions
@@ -202,14 +150,11 @@ jobs:
     steps:
       - name: Generate summary
         run: |
-          echo "## Post-Release Actions Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Action | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Verify Deployment | ${{ needs.verify-deployment.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Tag Stable | ${{ needs.tag-stable.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Tag Unstable | ${{ needs.tag-unstable.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Rollback | ${{ needs.rollback.result }} |" >> $GITHUB_STEP_SUMMARY
+          ./scripts/ci/reports/ci-90-summary-post-release.sh \
+            "${{ needs['verify-deployment'].result }}" \
+            "${{ needs['tag-stable'].result }}" \
+            "${{ needs['tag-unstable'].result }}" \
+            "${{ needs.rollback.result }}"
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -221,39 +166,23 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           APPRISE_URLS: ${{ secrets.APPRISE_URLS }}
           ENABLE_NOTIFICATIONS: ${{ vars.ENABLE_NOTIFICATIONS }}
-        run: |
-          chmod +x scripts/ci/notification/check-notifications-enabled.sh
-          ./scripts/ci/notification/check-notifications-enabled.sh
+        run: ./scripts/ci/notification/ci-10-check-notifications-enabled.sh
 
       - name: Determine action type and status
         if: steps.check_notify.outputs.enabled == 'true'
         id: status
         run: |
-          # Determine which action was performed
-          if [ "${{ needs.rollback.result }}" == "success" ]; then
-            echo "status=warning" >> $GITHUB_OUTPUT
-            echo "message=Rollback Completed ⚠️" >> $GITHUB_OUTPUT
-          elif [ "${{ needs.tag-stable.result }}" == "success" ]; then
-            echo "status=success" >> $GITHUB_OUTPUT
-            echo "message=Version Tagged as Stable ✅" >> $GITHUB_OUTPUT
-          elif [ "${{ needs.verify-deployment.result }}" == "success" ]; then
-            echo "status=success" >> $GITHUB_OUTPUT
-            echo "message=Deployment Verified ✅" >> $GITHUB_OUTPUT
-          elif [ "${{ needs.rollback.result }}" == "failure" ]; then
-            echo "status=failure" >> $GITHUB_OUTPUT
-            echo "message=Rollback Failed ❌" >> $GITHUB_OUTPUT
-          else
-            echo "status=info" >> $GITHUB_OUTPUT
-            echo "message=Post-Release Actions Completed ℹ️" >> $GITHUB_OUTPUT
-          fi
+          ./scripts/ci/notification/ci-50-post-release-status.sh \
+            "${{ needs['verify-deployment'].result }}" \
+            "${{ needs['tag-stable'].result }}" \
+            "${{ needs['tag-unstable'].result }}" \
+            "${{ needs.rollback.result }}"
 
       - name: Send notification
         if: steps.check_notify.outputs.enabled == 'true'
         env:
           APPRISE_URLS: ${{ steps.check_notify.outputs.apprise_urls }}
-        run: |
-          chmod +x scripts/setup/send-notification.sh
-          ./scripts/setup/send-notification.sh \
+        run: ./scripts/ci/notification/ci-30-send-notification.sh \
             "Post-Release Pipeline" \
             "${{ steps.status.outputs.message }}" \
             "${{ steps.status.outputs.status }}"

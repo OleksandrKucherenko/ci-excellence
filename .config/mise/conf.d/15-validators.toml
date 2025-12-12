@@ -1,0 +1,42 @@
+[tools]
+# Secret detection tools
+gitleaks = "latest"
+trufflehog = "latest"
+# GitHub Actions validator
+action-validator = "latest"
+# Shell scripts development and formatting
+shellcheck = "latest"
+shfmt = "latest"
+
+[[env]]
+GIT_PAGER = "cat"
+
+[tasks.scan-secrets]
+description = "Scan repository for secrets with gitleaks"
+run = ["gitleaks detect --redact --verbose --report-path gitleaks-report.json"]
+
+[tasks.scan-history]
+description = "Scan git history for leaked credentials with trufflehog"
+run = ["trufflehog git file://. --only-verified"]
+
+[tasks.check-workflows]
+description = "Check/Validate GitHub Actions workflows"
+run = [
+  "if [ -d .github/workflows ]; then",
+  "  action-validator .github/workflows/*.yml .github/workflows/*.yaml 2>/dev/null || true",
+  "else",
+  "  echo 'No workflows found in .github/workflows'",
+  "fi"
+]
+
+[tasks.scan-scripts]
+description = "Lint all bash scripts with ShellCheck"
+run = ["shellcheck **/*.sh"]
+
+[tasks.format-scripts]
+description = "Format all bash scripts with shfmt"
+run = ["shfmt -l -w ."]
+
+[tasks.check-scripts]
+description = "Check/Validate formatting without changing files"
+run = ["shfmt -l ."]
