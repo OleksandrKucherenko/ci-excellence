@@ -86,3 +86,6 @@ mcp.json
 
 # Worktrees
 versions/
+
+# old configs/versions of the e-bash library
+.e-bash*
