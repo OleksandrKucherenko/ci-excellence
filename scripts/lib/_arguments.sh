@@ -2,7 +2,7 @@
 # shellcheck disable=SC2155,SC2034,SC2059,SC2154
 
 ## Copyright (C) 2017-present, Oleksandr Kucherenko
-## Last revisit: 2025-12-12
+## Last revisit: 2025-12-17
 ## Version: 1.0.0
 ## License: MIT
 ## Source: https://github.com/OleksandrKucherenko/e-bash
@@ -93,6 +93,7 @@ function parse:mapping() {
   declare -A -g index_to_keys && index_to_keys=()       # index-to-keys_definition
 
   # build parameters mapping
+  local i=0 # make $i local to avoid conflicts
   for i in "${!definitions[@]}"; do
     # TODO (olku): validate the pattern format, otherwise throw an error
     # shellcheck disable=SC2206
@@ -249,7 +250,7 @@ function args:d() {
 
   printf:Parser "%12s -> %s ${cl_grey}group:%s order:%s${cl_reset}\n" "$flag" "$description" "$group" "$order"
 
-  if [[ ! -t 1 ]]; then echo "$flag"; fi # print flag for pipes
+  # if [[ ! -t 1 ]]; then echo "$flag"; fi # print flag for pipes
 }
 
 # compose argument 'variable' mapping, function can be used in pipeline
@@ -268,8 +269,7 @@ function args:e() {
 
   echo:Parser "$flag -> env:$env"
 
-  # echo flag only if we in pipeline mode
-  if [[ ! -t 1 ]]; then echo "$flag"; fi # print flag for pipes
+  # if [[ ! -t 1 ]]; then echo "$flag"; fi # print flag for pipes
 }
 
 # compose argument "defaults" mapping, function can be used in pipeline
@@ -288,8 +288,7 @@ function args:v() {
 
   echo:Parser "$flag -> defaults:$defaults"
 
-  # echo flag only if we in pipeline mode
-  if [[ ! -t 1 ]]; then echo "$flag"; fi # print flag for pipes
+  # if [[ ! -t 1 ]]; then echo "$flag"; fi # print flag for pipes
 }
 
 # Compose argument definition string by pattern: "{\$argument_index}[,-{short},--{alias}-]=[output]:[init_value]:[args_quantity]"
