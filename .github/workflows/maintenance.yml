@@ -243,6 +243,9 @@ jobs:
     needs: [cleanup, sync-files, deprecate-old-versions, security-audit, dependency-update]
     if: always()
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Generate summary
         env:
           ENABLE_CLEANUP: ${{ vars.ENABLE_CLEANUP || 'false' }}
@@ -257,9 +260,6 @@ jobs:
             "${{ needs['deprecate-old-versions'].result }}" \
             "${{ needs['security-audit'].result }}" \
             "${{ needs['dependency-update'].result }}"
-
-      - name: Checkout code
-        uses: actions/checkout@v4
 
       - name: Check if notifications enabled
         id: check_notify

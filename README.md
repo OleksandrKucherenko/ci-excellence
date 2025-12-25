@@ -4,11 +4,14 @@ A customizable, stub-based CI/CD pipeline that follows the philosophy of "reserv
 
 ## 🎯 Philosophy
 
-- **Stub-based**: All scripts are customizable stubs with examples
+- **Pipelines are Generic**: All pipelines are generic for all projects, difference is only in how each specific step is implemented.
+- **Stub-based**: All scripts are customizable stubs (with examples) and injections/hook points
 - **Variable-driven**: Features skip gracefully when not enabled
 - **Zero routine**: Setup is done, you only configure specifics
 - **Production-ready**: Based on real-world best practices
 - **Modular**: Enable only what you need
+
+![States Diagram](./docs/images/state-diagram-workflows.png)
 
 ## 🚀 Quick Start
 
@@ -91,7 +94,7 @@ vim scripts/ci/test/ci-10-unit-tests.sh
 
 **More examples:** [Customization Guide](docs/CUSTOMIZATION.md)
 
-### 7. Start Developing!
+### 7. Start Developing
 
 ```bash
 git add .
@@ -109,16 +112,19 @@ git push
 ## 📚 Documentation
 
 ### Core Guides
+
 - **[Installation](docs/INSTALLATION.md)** - Platform-specific installation instructions
 - **[Quick Start](docs/QUICKSTART.md)** - Get started in 5 minutes
 - **[Customization](docs/CUSTOMIZATION.md)** - Customize for your tech stack
 
 ### Advanced Topics
+
 - **[Workflows](docs/WORKFLOWS.md)** - Detailed workflow documentation
 - **[Architecture](docs/ARCHITECTURE.md)** - System architecture and design
 - **[Notifications](docs/NOTIFICATIONS.md)** - Setup Slack, Teams, Discord, etc.
 
 ### Reference
+
 - **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[Migration Guide](docs/MIGRATION.md)** - Upgrading from v1.x
 - **[Mise Setup](docs/MISE-SETUP.md)** - Mise configuration details
@@ -127,6 +133,7 @@ git push
 ## 🔧 What Mise Installs
 
 Mise automatically installs and configures:
+
 - **Secret Management**: age, sops
 - **Security Scanning**: gitleaks, trufflehog
 - **Git Hooks**: lefthook
@@ -137,13 +144,14 @@ Everything installs on first `cd` into the project!
 
 ## 🎨 Available Workflows
 
-| Workflow | Triggers | Purpose |
-|----------|----------|---------|
-| **Pre-Release** | PRs, pushes to develop/feature branches | Build, lint, test, security scan |
-| **Release** | Manual trigger or tag push | Version, build, publish to NPM/Docker/GitHub |
-| **Post-Release** | After release published | Verify deployments, tag stability, rollback |
-| **Maintenance** | Daily cron (2 AM UTC) | Cleanup, sync, security audit, dependency updates |
-| **Auto-Fix Quality** | Push to development branches | Auto-scan and fix security issues |
+| Workflow             | Triggers                                | Purpose                                                       |
+| -------------------- | --------------------------------------- | ------------------------------------------------------------- |
+| **Pre-Release**      | PRs, pushes to develop/feature branches | Build, lint, test, security scan                              |
+| **Release**          | Manual trigger or tag push              | Version, build, publish to NPM/Docker/GitHub                  |
+| **Post-Release**     | After release published                 | Verify deployments, tag stability, rollback                   |
+| **Maintenance**      | Daily cron (2 AM UTC)                   | Cleanup, sync, security audit, dependency updates             |
+| **Auto-Fix Quality** | Push to development branches            | Auto-scan and fix lint and security issues                    |
+| **Operations**       | Manual trigger or REST api call         | Simplify common operations like tags assigning, release, etc. |
 
 **Detailed workflow docs:** [Workflows](docs/WORKFLOWS.md)
 
@@ -186,19 +194,63 @@ ENABLE_DOCKER_PUBLISH=true
 - **Security tab integration**: Results appear in GitHub Security tab
 - **Auto-fix workflow**: Automatically scan and fix vulnerabilities
 
+## 🔄 Updating e-bash Library
+
+This project uses the [e-bash](https://github.com/OleksandrKucherenko/e-bash) library for script utilities. To upgrade to the latest version:
+
+```bash
+# Download and run the latest installation script
+curl -sSL https://git.new/e-bash | bash -s -- upgrade
+
+# The script will:
+# - Read .ebashrc configuration (custom directory: scripts/lib)
+# - Upgrade e-bash to the latest master branch version
+# - Preserve CI-specific customizations
+# - Update mise.toml integration automatically
+```
+
+**What gets updated:**
+
+- All library files in `scripts/lib/` (via git subtree)
+- CI customizations are preserved (stderr suppression in colors)
+- Version tracked in git commits for easy rollback
+
+**Check current version:**
+
+```bash
+grep "Version:" scripts/lib/_hooks.sh
+# Should show: ## Version: 1.12.6 (or later)
+```
+
+**Rollback if needed:**
+
+```bash
+# The installation script saves previous version for rollback
+./install.e-bash.sh rollback
+```
+
+**Custom installation directory:**
+
+- Configuration in `.ebashrc` specifies `E_BASH_INSTALL_DIR="scripts/lib"`
+- Do not manually edit `.ebashrc` - it's auto-generated by the installer
+- mise.toml uses `{{env.E_BASH_INSTALL_DIR}}` for dynamic path resolution
+
 ## 🆕 What's New in v2.0
 
 **Script Organization:**
+
 - Spaced numbering (10, 20, 30...) allows easy insertion of new scripts
 - Logical grouping by function (GitHub ops, docs, registry publishing)
 - Modular mise configuration in `.config/mise/conf.d/`
 
 **Development Quality:**
+
 - Enforced conventional commits with commitlint + commitizen
 - Auto-fix security workflow for automatic vulnerability scanning
 - Faster, more reliable git hooks using Lefthook
 
 **Enhanced Workflows:**
+
 - Granular reporting with workflow-specific status scripts
 - Fine-grained release control (version selection, stability tagging, rollback)
 - Environment directory structure for multi-environment deployments
