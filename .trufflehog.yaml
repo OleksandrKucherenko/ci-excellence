@@ -36,6 +36,9 @@ exclude-paths:
   - "**/*.test.ts"
   - "**/*.test.py"
 
+  # BATS test file for secret scanning (contains simulated secrets to test detection)
+  - "**/pre-commit-secret-scan.bats"
+
   # CI workflows (managed secrets)
   - ".github/workflows/*.yml"
 
