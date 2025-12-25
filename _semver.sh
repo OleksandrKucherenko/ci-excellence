@@ -2,8 +2,8 @@
 # shellcheck disable=SC2155,SC2034,SC2059
 
 ## Copyright (C) 2017-present, Oleksandr Kucherenko
-## Last revisit: 2025-04-28
-## Version: 1.0.0
+## Last revisit: 2025-12-22
+## Version: 1.16.2
 ## License: MIT
 ## Source: https://github.com/OleksandrKucherenko/e-bash
 
@@ -109,9 +109,12 @@ function semver:grep() {
   echo "${v_valid_semver}"
 
   # debug output
-  if type echo:Regex &>/dev/null; then
+  if declare -F "echo:Regex" >/dev/null; then 
     echo:Regex "${v_valid_semver}" >&2
   fi
+  # if type echo:Regex &>/dev/null; then
+  #  echo:Regex "${v_valid_semver}" >&2
+  # fi
 }
 
 # create version from parsed results
@@ -139,38 +142,41 @@ function semver:recompose() {
 function semver:parse() {
   local version="$1"
   local output_variable="${2:-"__semver_parse_result"}"
-  local SEMVER_REGEX="$(semver:grep)"
+  #local SEMVER_REGEX="$(semver:grep)"
+  local SEMVER_REGEX="$SEMVER"
   declare -A parsed=(["version"]="" ["version-core"]="" ["pre-release"]="" ["build"]="")
+  local iSeq=0 # make $iSeq local to avoid conflicts
 
   if [[ "$version" =~ $SEMVER_REGEX ]]; then
-    # debug output
-    for i in "${!BASH_REMATCH[@]}"; do echo:Regex "$i: ${BASH_REMATCH[$i]}" >&2; done
+    # debug output (disabled: noisy and slow during profiling)
+    # for iSeq in "${!BASH_REMATCH[@]}"; do echo:Regex "$iSeq: ${BASH_REMATCH[$iSeq]}" >&2; done
 
     # iterate all matches and assign to associative array found parts
     # 0,1 - full match; 2 - version core; `-` start prefix - pre-release; `+` start prefix - build
-    for i in "${!BASH_REMATCH[@]}"; do
-      case "$i" in
-      0) parsed["version"]="${BASH_REMATCH[$i]}" ;;
-      2) parsed["version-core"]="${BASH_REMATCH[$i]}" ;;
-      3) parsed["major"]="${BASH_REMATCH[$i]}" ;;
-      7) parsed["minor"]="${BASH_REMATCH[$i]}" ;;
-      11) parsed["patch"]="${BASH_REMATCH[$i]}" ;;
-      37) parsed[".pre-release"]="${BASH_REMATCH[$i]}" ;;
-      79) parsed[".build"]="${BASH_REMATCH[$i]}" ;;
+    for iSeq in "${!BASH_REMATCH[@]}"; do
+      case "$iSeq" in
+      0) parsed["version"]="${BASH_REMATCH[$iSeq]}" ;;
+      2) parsed["version-core"]="${BASH_REMATCH[$iSeq]}" ;;
+      3) parsed["major"]="${BASH_REMATCH[$iSeq]}" ;;
+      7) parsed["minor"]="${BASH_REMATCH[$iSeq]}" ;;
+      11) parsed["patch"]="${BASH_REMATCH[$iSeq]}" ;;
+      37) parsed[".pre-release"]="${BASH_REMATCH[$iSeq]}" ;;
+      79) parsed[".build"]="${BASH_REMATCH[$iSeq]}" ;;
       *)
-        if [[ "${BASH_REMATCH[$i]:0:1}" == "-" ]]; then # index=15
-          parsed["pre-release"]="${BASH_REMATCH[$i]}"
-        elif [[ "${BASH_REMATCH[$i]:0:1}" == "+" ]]; then # index=57
-          parsed["build"]="${BASH_REMATCH[$i]}"
+        if [[ "${BASH_REMATCH[$iSeq]:0:1}" == "-" ]]; then # index=15
+          parsed["pre-release"]="${BASH_REMATCH[$iSeq]}"
+        elif [[ "${BASH_REMATCH[$iSeq]:0:1}" == "+" ]]; then # index=57
+          parsed["build"]="${BASH_REMATCH[$iSeq]}"
         fi
         ;;
       esac
     done
 
-    # print associative array as key-value pairs
-    eval "declare -g -A ${output_variable}" ## declare global associative array
+    # copy local associative array to global without eval
+    declare -g -A "$output_variable"
+    local -n out="$output_variable"
     for key in "${!parsed[@]}"; do
-      eval "${output_variable}[${key}]=\"${parsed[$key]}\"" ## copy local associative array to global
+      out["$key"]="${parsed[$key]}"
     done
   else
     echo:Semver "Invalid semver: $version" >&2
@@ -241,13 +247,15 @@ function semver:increase:patch() {
 function semver:compare() {
   local version1="$1"
   local version2="$2"
+  local iParts=0 # make $iParts local to avoid conflicts
+  local LC_ALL=C
 
   # quick check for equality
   if [[ "$version1" == "$version2" ]]; then return 0; fi
 
   # parse versions
-  semver:parse "$version1" "__semver_compare_v1"
-  semver:parse "$version2" "__semver_compare_v2"
+  semver:parse "$version1" "__semver_compare_v1" || return 3
+  semver:parse "$version2" "__semver_compare_v2" || return 3
 
   # "build" parts of the versions are ignored during comparison
   local major1=${__semver_compare_v1["major"]} major2=${__semver_compare_v2["major"]}
@@ -270,9 +278,12 @@ function semver:compare() {
 
   # compare pre-release parts as an array of identifiers.
   # We should split pre-release by '.' and compare each part (identifier) separately
+  # Keep hyphens inside identifiers per semver item #11.
   local parts1=() parts2=()
-  IFS='.' read -ra parts1 <<<"${pre_release1//\-/}"
-  IFS='.' read -ra parts2 <<<"${pre_release2//\-/}"
+  local pre_release1_clean="${pre_release1#-}"
+  local pre_release2_clean="${pre_release2#-}"
+  IFS='.' read -ra parts1 <<<"${pre_release1_clean}"
+  IFS='.' read -ra parts2 <<<"${pre_release2_clean}"
 
   # find the longest array size
   local maxSize=$((${#parts1[@]} > ${#parts2[@]} ? ${#parts1[@]} : ${#parts2[@]}))
@@ -281,9 +292,9 @@ function semver:compare() {
   if [[ "$maxSize" -ge 0 ]]; then
     # if identifier is a number, then compare as a number, otherwise as a string
     # number is always less than string
-    for i in $(seq 0 $maxSize); do
-      local part1="${parts1[$i]}"
-      local part2="${parts2[$i]}"
+    for ((iParts = 0; iParts <= maxSize; iParts++)); do
+      local part1="${parts1[$iParts]}"
+      local part2="${parts2[$iParts]}"
 
       # if one of the parts is empty, then it is less than the other
       if [[ -z "$part1" && -n "$part2" ]]; then return 2; fi
@@ -293,6 +304,11 @@ function semver:compare() {
       if [[ "$part1" =~ ^[0-9]+$ && "$part2" =~ ^[0-9]+$ ]]; then
         if [[ "$part1" -gt "$part2" ]]; then return 1; fi
         if [[ "$part1" -lt "$part2" ]]; then return 2; fi
+      elif [[ "$part1" =~ ^[0-9]+$ ]]; then
+        # Numeric identifiers have lower precedence than non-numeric
+        return 2
+      elif [[ "$part2" =~ ^[0-9]+$ ]]; then
+        return 1
       else
         if [[ "$part1" > "$part2" ]]; then return 1; fi
         if [[ "$part1" < "$part2" ]]; then return 2; fi
@@ -304,19 +320,21 @@ function semver:compare() {
     if [[ "${#parts1[@]}" -gt "${#parts2[@]}" ]]; then return 1; fi
     if [[ "${#parts1[@]}" -lt "${#parts2[@]}" ]]; then return 2; fi
 
-    # numbers are equal? but how? Only META left uncomared
-    echo:Semver "Warning: verify versions, are is META an only difference: $version1 $version2"
+    # numbers are equal? but how? Only META left un-compared
+    # echo:Semver "Warning: verify versions, are is META an only difference: $version1 $version2"
     return 0
   else
-    echo:Semver "Warning: No pre-release part in versions: $version1 $version2"
+    # echo:Semver "Warning: No pre-release part in versions: $version1 $version2"
 
     # Build metadata MUST be ignored when determining version precedence. (Rule #10)
-    # So versions are equal during the comparisson!
+    # So versions are equal during the comparison!
     return 0
   fi
 
   # We should never reach this point!
+  # shellcheck disable=SC2059
   echo:Semver "Error: $version1 $version2" >&2
+  # shellcheck disable=SC2059
   return 3 # error
 }
 
@@ -355,6 +373,7 @@ function semver:constraints:simple() {
   # remove whitespaces during assigning to local variable
   local expression="${1//[[:space:]]/}"
   local left="" operator="" right=""
+  local i=0 # make $i local to avoid conflicts
 
   # split expression to left, operator and right parts
   if [[ "$expression" =~ ^([^<>=!]+)(!=|>=|<=|>|=|<)(.+)$ ]]; then
@@ -395,8 +414,11 @@ function semver:constraints:complex() {
   # `~1.0.0` - version in range >= 1.0.x, patch releases allowed
   if [[ "$molecule" =~ (~) ]]; then
     atom=${atom//\~/}
+    semver:parse "$atom" "__semver_constraints_complex_atom" || return 1
+    local atom_core="${__semver_constraints_complex_atom["version-core"]}"
+    unset __semver_constraints_complex_atom
     echo ">=$atom"
-    echo "<$(semver:increase:minor "$atom")"
+    echo "<$(semver:increase:minor "$atom_core")"
     return 0
   fi
 
@@ -404,8 +426,11 @@ function semver:constraints:complex() {
   # `^1.0.0` - version in range >= 1.x.x, minor & patch releases allowed
   if [[ "$molecule" =~ (\^) ]]; then
     atom=${atom//\^/}
+    semver:parse "$atom" "__semver_constraints_complex_atom" || return 1
+    local atom_core="${__semver_constraints_complex_atom["version-core"]}"
+    unset __semver_constraints_complex_atom
     echo ">=$atom"
-    echo "<$(semver:increase:major "$atom")"
+    echo "<$(semver:increase:major "$atom_core")"
     return 0
   fi
 
@@ -420,8 +445,9 @@ function semver:constraints:complex() {
   echo "$atom"
 }
 
-# verify that provided version matches constraints
-function semver:constraints() {
+# verify that provided version matches constraints (v1)
+# NOTE: This version does not follow npm's default prerelease exclusion behavior.
+function semver:constraints:v1() {
   local version="$1"
   local expression="$2"
 
@@ -476,6 +502,111 @@ function semver:constraints() {
   # BASH expected 0 for success, any other number for failure
   [[ "$resultOr" -eq 1 ]] && return 0 # true
   return 1                            # false
+}
+
+# verify that provided version matches constraints (v2, npm-like)
+# - prerelease versions are excluded unless the range includes a prerelease
+#   comparator with the same major.minor.patch as the candidate version.
+function semver:constraints:v2() {
+  local version="$1"
+  local expression="$2"
+
+  semver:parse "$version" "__semver_constraints_v2_version" || return 1
+  local version_pre_release="${__semver_constraints_v2_version["pre-release"]}"
+  local version_core="${__semver_constraints_v2_version["version-core"]}"
+  unset __semver_constraints_v2_version
+
+  # stable versions use legacy evaluation logic
+  if [[ -z "$version_pre_release" ]]; then
+    semver:constraints:v1 "$version" "$expression"
+    return $?
+  fi
+
+  echo:Semver "[$expression]:" >&2
+
+  # split || (or) expressions to multiple sub-expressions and process them in a loop
+  local -a expressions=() ors="" resultOr=0
+  IFS='||' read -ra expressions <<<"$expression"
+
+  for ors in "${expressions[@]}"; do
+    [ -z "$ors" ] && continue # skip empty expressions
+
+    # remove whitespace after operator, so operator stick to the right operand
+    ors=$(echo "$ors" | sed -E 's/(=|!=|>|<|>=|<=) /\1/g; s/ $//g; s/^ //g')
+    echo:Semver " |-- ($ors)" >&2
+
+    # Determine whether this comparator set explicitly allows prerelease versions
+    # for the candidate version's core (major.minor.patch).
+    local prerelease_allowed=0
+    local -a ands=() molecule=""
+    IFS=' ' read -ra ands <<<"$ors"
+
+    for molecule in "${ands[@]}"; do
+      [ -z "$molecule" ] && continue
+
+      # Normalize complex operators (~, ^) to the raw version string for prerelease detection
+      local comp="${molecule#>=}"
+      comp="${comp#<=}"
+      comp="${comp#!=}"
+      comp="${comp#>}"
+      comp="${comp#<}"
+      comp="${comp#=}"
+      comp="${comp#~}"
+      comp="${comp#^}"
+
+      # Only a comparator that contains a prerelease can allow prerelease candidates.
+      [[ "$comp" == *"-"* ]] || continue
+
+      semver:parse "$comp" "__semver_constraints_v2_comp" || continue
+      local comp_core="${__semver_constraints_v2_comp["version-core"]}"
+      unset __semver_constraints_v2_comp
+
+      if [[ "$comp_core" == "$version_core" ]]; then
+        prerelease_allowed=1
+        break
+      fi
+    done
+
+    # If this OR-set doesn't explicitly include a prerelease comparator for this
+    # major.minor.patch, it cannot match prerelease candidates.
+    [[ "$prerelease_allowed" -eq 1 ]] || continue
+
+    # Evaluate the AND-set as in v1.
+    local resultAnd=1
+    for molecule in "${ands[@]}"; do
+      [ -z "$molecule" ] && continue # skip empty expressions
+      echo:Semver " |   +-- ($molecule)" >&2
+
+      local atom=""
+      while read -r atom; do
+        echo:Semver -n " |       +-- ($version$atom)" >&2
+        if semver:constraints:simple "$version$atom"; then
+          echo:Semver " $? : TRUE" >&2
+          ((resultAnd &= 1))
+        else
+          echo:Semver " $? : FALSE" >&2
+          ((resultAnd &= 0))
+          break
+        fi
+      done < <(semver:constraints:complex "$molecule")
+
+      [[ "$resultAnd" -eq 0 ]] && break
+    done
+
+    ((resultOr |= resultAnd))
+  done
+
+  [[ "$resultOr" -eq 1 ]] && return 0 # true
+  return 1                            # false
+}
+
+# verify that provided version matches constraints (default)
+# - SEMVER_CONSTRAINTS_IMPL=v1|v2 can be used to switch behavior (v1 deprecated).
+function semver:constraints() {
+  case "${SEMVER_CONSTRAINTS_IMPL:-v2}" in
+  v1) semver:constraints:v1 "$@" ;;
+  v2 | *) semver:constraints:v2 "$@" ;;
+  esac
 }
 
 export SEMVER="$(semver:grep)"
