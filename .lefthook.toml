@@ -58,7 +58,10 @@ run = "gitleaks protect --redact --no-banner"
 
 [pre-push.commands.trufflehog-push]
 tags = "security"
-run = "trufflehog git file://. --since-commit \"$(git rev-parse @{u} 2>/dev/null || echo '')\" --only-verified --fail --json 2>&1 | jq -r '.msg'"
+run = '''
+trufflehog git file://. --since-commit "$(git rev-parse @{u} 2>/dev/null || echo '')" --only-verified --fail --json 2>&1 \
+  | jq -r '"\u001b[90m" + (.ts | split("T")[1][:8]) + "\u001b[0m " + "\u001b[35m" + .logger + "\u001b[0m " + "\u001b[32m" + .level + "\u001b[0m " + "\u001b[97m" + .msg + "\u001b[0m"'
+'''
 
 # Commit-msg hook - enforce conventional commits
 # Uncomment to enforce commit message format

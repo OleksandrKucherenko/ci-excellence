@@ -250,6 +250,7 @@ PUSH_CHANGES=false            # Auto-push fixes (default: false, use with cautio
 Enable workflows gradually:
 
 **Week 1 - Basic CI:**
+
 ```bash
 ENABLE_COMPILE=true
 ENABLE_LINT=true
@@ -257,18 +258,21 @@ ENABLE_UNIT_TESTS=true
 ```
 
 **Week 2 - Extended Testing:**
+
 ```bash
 ENABLE_INTEGRATION_TESTS=true
 ENABLE_SECURITY_SCAN=true
 ```
 
 **Week 3 - Releases:**
+
 ```bash
 ENABLE_GITHUB_RELEASE=true
 ENABLE_NOTIFICATIONS=true
 ```
 
 **Month 2 - Publishing:**
+
 ```bash
 ENABLE_NPM_PUBLISH=true
 ENABLE_DOCKER_PUBLISH=true
@@ -276,6 +280,7 @@ ENABLE_DOCUMENTATION=true
 ```
 
 **Month 3 - Maintenance:**
+
 ```bash
 ENABLE_CLEANUP=true
 ENABLE_FILE_SYNC=true
@@ -288,6 +293,7 @@ ENABLE_DEPENDENCY_UPDATE=true
 Configure in: **Settings > Branches > Branch protection rules**
 
 Recommended settings:
+
 - ✅ Require status checks before merging
 - ✅ Require branches to be up to date
 - ✅ Required checks: `setup`, `compile`, `lint`, `unit-tests`

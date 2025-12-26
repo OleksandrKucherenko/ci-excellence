@@ -3,4 +3,5 @@
 # Version: 1.0
 
 # Custom installation directory for e-bash scripts
+# shellcheck disable=SC2034
 E_BASH_INSTALL_DIR="scripts/lib"
