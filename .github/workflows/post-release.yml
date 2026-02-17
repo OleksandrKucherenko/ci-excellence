@@ -38,6 +38,8 @@ jobs:
 
       - name: Setup environment
         run: ./scripts/ci/setup/ci-10-install-tools.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Determine version
         id: version
@@ -117,6 +119,8 @@ jobs:
 
       - name: Setup environment
         run: ./scripts/ci/setup/ci-10-install-tools.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Confirm rollback
         run: ./scripts/ci/release/ci-77-confirm-rollback.sh "${{ github.event.inputs.version }}"
