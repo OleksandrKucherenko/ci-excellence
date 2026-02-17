@@ -1,6 +1,6 @@
 [tools]
 # Git hooks manager
-lefthook = "latest"
+lefthook = "2.1.1"
 
 [settings]
 experimental = true # enable hooks

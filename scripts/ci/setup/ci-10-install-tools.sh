@@ -37,6 +37,11 @@ echo "Installing tools from mise.toml..."
 echo "This includes: age, sops, gitleaks, trufflehog, lefthook, action-validator, apprise, bun"
 echo ""
 
+# Disable aqua GitHub attestation verification in CI to avoid GitHub API rate limits.
+# Attestation checks make unauthenticated API calls that frequently hit the 60 req/hr
+# limit on shared GitHub Actions runners. ref: https://mise.jdx.dev/dev-tools/backends/aqua.html
+export MISE_AQUA_GITHUB_ATTESTATIONS=0
+
 if mise install; then
     echo "✓ All tools installed successfully"
 else
