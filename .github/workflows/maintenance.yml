@@ -81,6 +81,8 @@ jobs:
 
       - name: Setup environment
         run: ./scripts/ci/setup/ci-10-install-tools.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Sync package.json and changelog
         if: ${{ vars.ENABLE_FILE_SYNC == 'true' }}
@@ -120,6 +122,8 @@ jobs:
 
       - name: Setup environment
         run: ./scripts/ci/setup/ci-10-install-tools.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Identify versions to deprecate
         if: ${{ vars.ENABLE_DEPRECATION == 'true' }}
@@ -162,6 +166,8 @@ jobs:
 
       - name: Setup environment
         run: ./scripts/ci/setup/ci-10-install-tools.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install dependencies
         run: ./scripts/ci/setup/ci-20-install-dependencies.sh
@@ -204,6 +210,8 @@ jobs:
 
       - name: Setup environment
         run: ./scripts/ci/setup/ci-10-install-tools.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update dependencies
         if: ${{ vars.ENABLE_DEPENDENCY_UPDATE == 'true' }}

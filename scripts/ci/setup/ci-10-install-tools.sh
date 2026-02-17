@@ -37,10 +37,13 @@ echo "Installing tools from mise.toml..."
 echo "This includes: age, sops, gitleaks, trufflehog, lefthook, action-validator, apprise, bun"
 echo ""
 
-# Disable aqua GitHub attestation verification in CI to avoid GitHub API rate limits.
-# Attestation checks make unauthenticated API calls that frequently hit the 60 req/hr
-# limit on shared GitHub Actions runners. ref: https://mise.jdx.dev/dev-tools/backends/aqua.html
-export MISE_AQUA_GITHUB_ATTESTATIONS=0
+# Ensure mise uses GITHUB_TOKEN for GitHub API calls (aqua attestation verification, etc.).
+# Unauthenticated requests are limited to 60 req/hr per IP, which is easily exhausted on
+# shared GitHub Actions runners. Authenticated requests get 1,000 req/hr per repository.
+# ref: https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api
+if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+    export MISE_GITHUB_TOKEN="${GITHUB_TOKEN}"
+fi
 
 if mise install; then
     echo "✓ All tools installed successfully"
