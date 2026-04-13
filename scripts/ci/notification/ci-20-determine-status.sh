@@ -21,10 +21,15 @@ RUN_NUMBER="${GITHUB_RUN_NUMBER:-???}"
 COMMIT_SHA="${GITHUB_SHA:-unknown}"
 COMMIT_SHORT="${COMMIT_SHA:0:7}"
 REF_NAME="${GITHUB_REF_NAME:-unknown}"
+COMMIT_MSG=$(git log -1 --format='%s' "${COMMIT_SHA}" 2>/dev/null || echo "")
 
 CONTEXT="Build: #${RUN_NUMBER}
 Branch: ${REF_NAME}
 Commit: ${COMMIT_SHORT}"
+if [ -n "$COMMIT_MSG" ]; then
+  CONTEXT="${CONTEXT}
+Message: ${COMMIT_MSG}"
+fi
 
 if [ "$SUMMARY_RESULT" == "failure" ]; then
   ci:output notify "status" "failure"
