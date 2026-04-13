@@ -13,6 +13,8 @@ echo:Maint "Updating Dependencies"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+ci:skip_if_no_hooks update
+
 set +eu
 hooks:declare update
 hooks:do update

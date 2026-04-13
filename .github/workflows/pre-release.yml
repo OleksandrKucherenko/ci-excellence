@@ -48,7 +48,11 @@ jobs:
   setup:
     name: Setup and Install Dependencies
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    timeout-minutes: 10
+    if: |
+      (github.event_name != 'pull_request' || github.event.pull_request.draft == false) &&
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[ci skip]')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -75,6 +79,7 @@ jobs:
   compile:
     name: Compile/Build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: setup
     if: ${{ vars.ENABLE_COMPILE == 'true' }}
     steps:
@@ -106,6 +111,7 @@ jobs:
   lint:
     name: Lint Code
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: setup
     if: ${{ vars.ENABLE_LINT == 'true' }}
     steps:
@@ -127,6 +133,7 @@ jobs:
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: setup
     if: ${{ vars.ENABLE_UNIT_TESTS == 'true' }}
     steps:
@@ -158,6 +165,7 @@ jobs:
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [setup, compile]
     if: ${{ vars.ENABLE_INTEGRATION_TESTS == 'true' }}
     steps:
@@ -195,6 +203,7 @@ jobs:
   e2e-tests:
     name: End-to-End Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [setup, compile]
     if: ${{ vars.ENABLE_E2E_TESTS == 'true' }}
     steps:
@@ -235,6 +244,7 @@ jobs:
   security-scan:
     name: Security Vulnerability Scan
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: setup
     if: ${{ vars.ENABLE_SECURITY_SCAN == 'true' }}
     steps:
@@ -265,6 +275,7 @@ jobs:
   bundle:
     name: Bundle and Package
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [compile, lint, unit-tests]
     if: |
       always() &&
@@ -308,6 +319,7 @@ jobs:
   summary:
     name: Pipeline Summary
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [setup, compile, lint, unit-tests, integration-tests, e2e-tests, security-scan, bundle]
     if: always()
     env:
@@ -340,6 +352,7 @@ jobs:
   notify:
     name: Send Notifications
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [summary]
     if: always()
     steps:

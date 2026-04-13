@@ -13,6 +13,8 @@ echo:Release "Publishing Documentation"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+ci:skip_if_no_hooks publish
+
 set +eu
 hooks:declare publish
 hooks:do publish

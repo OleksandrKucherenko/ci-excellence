@@ -14,6 +14,8 @@ ci:param test "CI_VERSION" "${CI_VERSION:-latest}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+ci:skip_if_no_hooks test
+
 set +eu
 hooks:declare test
 hooks:do test

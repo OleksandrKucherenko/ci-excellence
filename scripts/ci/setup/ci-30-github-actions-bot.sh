@@ -13,6 +13,8 @@ echo:Setup "Set GitHub Username and Email for Bot"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+ci:skip_if_no_hooks configure
+
 set +eu
 hooks:declare configure
 hooks:do configure

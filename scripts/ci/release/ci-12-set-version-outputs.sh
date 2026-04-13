@@ -15,6 +15,8 @@ ci:param release "CI_PRE_RELEASE_TYPE" "${CI_PRE_RELEASE_TYPE:-false}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+ci:skip_if_no_hooks resolve
+
 set +eu
 hooks:declare resolve
 hooks:do resolve

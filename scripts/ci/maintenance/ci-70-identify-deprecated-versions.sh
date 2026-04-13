@@ -13,6 +13,8 @@ echo:Maint "Identifying Deprecated Versions"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+ci:skip_if_no_hooks identify
+
 set +eu
 hooks:declare identify
 hooks:do identify
