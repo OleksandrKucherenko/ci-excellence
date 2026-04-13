@@ -4,8 +4,8 @@
 # CI Script: Determine Version
 # Purpose: Calculate next version based on release type using e-bash semver lib
 
-RELEASE_TYPE="${1:-patch}"
-PRE_RELEASE_TYPE="${2:-alpha}" 
+RELEASE_TYPE="${CI_RELEASE_SCOPE:-patch}"
+PRE_RELEASE_TYPE="${CI_PRE_RELEASE_TYPE:-alpha}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../../" && pwd)"
@@ -16,25 +16,37 @@ if [ -z "${E_BASH:-}" ]; then
   export E_BASH="$LIB_DIR"
 fi
 
+# Source CI common (logger)
+set +u
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
+set -u
+
 # Source semver library
 set +u
 # shellcheck disable=SC1090
 source "$LIB_DIR/_semver.sh"
 set -u
 
+echo:Release "Determining Next Version"
+ci:param release "CI_RELEASE_SCOPE" "$RELEASE_TYPE"
+ci:param release "CI_PRE_RELEASE_TYPE" "$PRE_RELEASE_TYPE"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
+
+
 # Get current version details
 # Find the latest tag that looks like a semver version v*.*.*
 # We use 'git describe' to find the closest reachable tag
 if ! CURRENT_TAG=$(git describe --tags --match "v*" --abbrev=0 2>/dev/null); then
-    echo "Warning: No existing tags found. Defaulting to 0.0.1-alpha" >&2
+    echo:Release "Warning: No existing tags found. Defaulting to 0.0.1-alpha"
     CURRENT_TAG="v0.0.1-alpha"
 fi
 
 # Strip 'v' prefix if present
 CURRENT_VERSION="${CURRENT_TAG#v}"
 
-echo "Current Version: $CURRENT_VERSION" >&2
-echo "Release Type: $RELEASE_TYPE" >&2
+echo:Release "Current Version: $CURRENT_VERSION"
+echo:Release "Release Type: $RELEASE_TYPE"
 
 # Parse current version
 semver:parse "$CURRENT_VERSION" "PARSED"
@@ -99,7 +111,7 @@ case "$RELEASE_TYPE" in
                        new_number=$((number + 1))
                        NEW_VERSION="$(get_base_version)-${PRE_RELEASE_TYPE}.${new_number}"
                    else
-                       echo "Error: Cannot auto-increment complex pre-release identifier: $clean_pre" >&2
+                       echo:Error "Error: Cannot auto-increment complex pre-release identifier: $clean_pre"
                        exit 1
                    fi
                 fi
@@ -111,10 +123,13 @@ case "$RELEASE_TYPE" in
         fi
         ;;
     *)
-        echo "Error: Unknown release type '$RELEASE_TYPE'" >&2
+        echo:Error "Error: Unknown release type '$RELEASE_TYPE'"
         exit 1
         ;;
 esac
 
-echo "Calculated Version: $NEW_VERSION" >&2
+echo:Release "Calculated Version: $NEW_VERSION"
+
+echo:Success "Version Determination Complete"
+
 echo "$NEW_VERSION"

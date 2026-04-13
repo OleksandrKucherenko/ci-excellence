@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Update Dependencies
 # Purpose: Update project dependencies to latest versions
 # Customize this script based on your package manager
 
-echo "========================================="
-echo "Updating Dependencies"
-echo "========================================="
+echo:Maint "Updating Dependencies"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 # Example: Update NPM dependencies
 # if [ -f "package.json" ]; then
@@ -50,9 +51,7 @@ echo "========================================="
 # fi
 
 # Add your dependency update commands here
-echo "✓ Dependency update stub executed"
-echo "  Customize this script in scripts/maintenance/update-dependencies.sh"
+echo:Success "✓ Dependency update stub executed"
+echo:Maint "  Customize this script in scripts/maintenance/update-dependencies.sh"
 
-echo "========================================="
-echo "Dependency Update Complete"
-echo "========================================="
+echo:Success "Dependency Update Complete"

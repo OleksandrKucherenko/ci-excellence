@@ -1,0 +1,4 @@
+-P ubuntu-latest=catthehacker/ubuntu:act-latest
+--env GITHUB_TOKEN=fake-token
+--env GITHUB_OUTPUT=/tmp/act-output
+--env GITHUB_STEP_SUMMARY=/tmp/act-summary

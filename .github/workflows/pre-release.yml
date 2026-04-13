@@ -7,10 +7,10 @@ on:
       - develop
   push:
     branches:
-      # TODO: should we allow any branch to trigger this?
       - develop
       - 'feature/**'
       - 'fix/**'
+      - 'claude/**'
 
 env:
   # CI Feature Flags - Set these in GitHub Variables to activate jobs
@@ -22,6 +22,7 @@ env:
   ENABLE_E2E_TESTS: ${{ vars.ENABLE_E2E_TESTS || 'false' }}
   ENABLE_BUNDLE: ${{ vars.ENABLE_BUNDLE || 'false' }}
   ENABLE_SECURITY_SCAN: ${{ vars.ENABLE_SECURITY_SCAN || 'false' }}
+  ENABLE_NOTIFICATIONS: ${{ vars.ENABLE_NOTIFICATIONS || 'false' }}
   # Customization Variables
   ARTIFACT_RETENTION_DAYS: ${{ vars.ARTIFACT_RETENTION_DAYS || 7 }}
   DELIVERABLE_RETENTION_DAYS: ${{ vars.DELIVERABLE_RETENTION_DAYS || 14 }}
@@ -44,14 +45,13 @@ jobs:
         run: ./scripts/ci/setup/ci-20-install-dependencies.sh
 
       - name: Cache dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             node_modules
             ~/.cache
             .cache
-          # FIXME(olku): Single cache key definition reused across jobs
-          key: &deps-cache-key ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/bun.lock') }}
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/bun.lock') }}
           restore-keys: |
             ${{ runner.os }}-deps-
 
@@ -65,13 +65,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Restore dependencies cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             node_modules
             ~/.cache
             .cache
-          key: *deps-cache-key
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/bun.lock') }}
 
       - name: Run compile
         run: ./scripts/ci/build/ci-10-compile.sh
@@ -96,13 +96,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Restore dependencies cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             node_modules
             ~/.cache
             .cache
-          key: *deps-cache-key
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/bun.lock') }}
 
       - name: Run linter
         run: ./scripts/ci/build/ci-20-lint.sh
@@ -117,13 +117,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Restore dependencies cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             node_modules
             ~/.cache
             .cache
-          key: *deps-cache-key
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/bun.lock') }}
 
       - name: Run unit tests
         run: ./scripts/ci/test/ci-10-unit-tests.sh
@@ -148,13 +148,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Restore dependencies cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             node_modules
             ~/.cache
             .cache
-          key: *deps-cache-key
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/bun.lock') }}
 
       - name: Download build artifacts
         if: ${{ vars.ENABLE_COMPILE == 'true' }}
@@ -185,13 +185,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Restore dependencies cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             node_modules
             ~/.cache
             .cache
-          key: *deps-cache-key
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/bun.lock') }}
 
       - name: Download build artifacts
         if: ${{ vars.ENABLE_COMPILE == 'true' }}
@@ -219,6 +219,7 @@ jobs:
     name: Security Vulnerability Scan
     runs-on: ubuntu-latest
     needs: setup
+    if: ${{ vars.ENABLE_SECURITY_SCAN == 'true' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -259,13 +260,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Restore dependencies cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             node_modules
             ~/.cache
             .cache
-          key: *deps-cache-key
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/bun.lock') }}
 
       - name: Download build artifacts
         if: ${{ vars.ENABLE_COMPILE == 'true' }}
@@ -292,6 +293,15 @@ jobs:
     runs-on: ubuntu-latest
     needs: [setup, compile, lint, unit-tests, integration-tests, e2e-tests, security-scan, bundle]
     if: always()
+    env:
+      RESULT_SETUP: ${{ needs.setup.result }}
+      RESULT_COMPILE: ${{ needs.compile.result }}
+      RESULT_LINT: ${{ needs.lint.result }}
+      RESULT_UNIT_TESTS: ${{ needs.unit-tests.result }}
+      RESULT_INTEGRATION_TESTS: ${{ needs.integration-tests.result }}
+      RESULT_E2E_TESTS: ${{ needs.e2e-tests.result }}
+      RESULT_SECURITY_SCAN: ${{ needs.security-scan.result }}
+      RESULT_BUNDLE: ${{ needs.bundle.result }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -305,28 +315,10 @@ jobs:
           ENABLE_E2E_TESTS: ${{ vars.ENABLE_E2E_TESTS || 'false' }}
           ENABLE_SECURITY_SCAN: ${{ vars.ENABLE_SECURITY_SCAN || 'false' }}
           ENABLE_BUNDLE: ${{ vars.ENABLE_BUNDLE || 'false' }}
-        run: |
-          ./scripts/ci/reports/ci-10-summary-pre-release.sh \
-            "${{ needs.setup.result }}" \
-            "${{ needs.compile.result }}" \
-            "${{ needs.lint.result }}" \
-            "${{ needs.unit-tests.result }}" \
-            "${{ needs.integration-tests.result }}" \
-            "${{ needs.e2e-tests.result }}" \
-            "${{ needs.security-scan.result }}" \
-            "${{ needs.bundle.result }}"
+        run: ./scripts/ci/reports/ci-10-summary-pre-release.sh
 
       - name: Check for failures
-        run: |
-          ./scripts/ci/build/ci-60-check-failures.sh \
-            "${{ needs.setup.result }}" \
-            "${{ needs.compile.result }}" \
-            "${{ needs.lint.result }}" \
-            "${{ needs.unit-tests.result }}" \
-            "${{ needs.integration-tests.result }}" \
-            "${{ needs.e2e-tests.result }}" \
-            "${{ needs.security-scan.result }}" \
-            "${{ needs.bundle.result }}"
+        run: ./scripts/ci/build/ci-60-check-failures.sh
 
   notify:
     name: Send Notifications
@@ -357,13 +349,14 @@ jobs:
           GITHUB_SERVER_URL: ${{ github.server_url }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_RUN_ID: ${{ github.run_id }}
-        run: ./scripts/ci/notification/ci-20-determine-status.sh "${{ needs.summary.result }}"
+          RESULT_SUMMARY: ${{ needs.summary.result }}
+        run: ./scripts/ci/notification/ci-20-determine-status.sh
 
       - name: Send notification
         if: steps.check_notify.outputs.enabled == 'true'
         env:
           APPRISE_URLS: ${{ steps.check_notify.outputs.apprise_urls }}
-        run: ./scripts/ci/notification/ci-30-send-notification.sh \
-            "Pre-Release Pipeline" \
-            "${{ steps.status.outputs.message }}" \
-            "${{ steps.status.outputs.status }}"
+          NOTIFY_TITLE: Pre-Release Pipeline
+          NOTIFY_MESSAGE: ${{ steps.status.outputs.message }}
+          NOTIFY_STATUS: ${{ steps.status.outputs.status }}
+        run: ./scripts/ci/notification/ci-30-send-notification.sh

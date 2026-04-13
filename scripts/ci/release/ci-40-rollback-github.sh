@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Rollback GitHub Release
 # Purpose: Mark GitHub release as draft or delete it
 # Customize this script based on your rollback strategy
 
-VERSION="${1:?Version is required}"
+VERSION="${CI_VERSION:?CI_VERSION is required}"
 TAG="v$VERSION"
 
-echo "========================================="
-echo "Rolling Back GitHub Release"
-echo "Version: $VERSION"
-echo "========================================="
+echo:Release "Rolling Back GitHub Release"
+ci:param release "CI_VERSION" "$VERSION"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
+
 
 # Example: Mark release as draft using gh CLI
 # if command -v gh &> /dev/null; then
@@ -31,9 +33,7 @@ echo "========================================="
 # fi
 
 # Add your GitHub rollback commands here
-echo "✓ GitHub rollback stub executed"
-echo "  Customize this script in scripts/ci/release/ci-40-rollback-github.sh"
+echo:Success "✓ GitHub rollback stub executed"
+echo:Release "  Customize this script in scripts/ci/release/ci-40-rollback-github.sh"
 
-echo "========================================="
-echo "GitHub Rollback Complete"
-echo "========================================="
+echo:Success "GitHub Rollback Complete"

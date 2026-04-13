@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Verify NPM Deployment
 # Purpose: Verify that package is available on NPM
 # Customize this script based on your verification needs
 
-VERSION="${1:?Version is required}"
+VERSION="${CI_VERSION:?CI_VERSION is required}"
 
-echo "========================================="
-echo "Verifying NPM Deployment"
-echo "Version: $VERSION"
-echo "========================================="
+echo:Release "Verifying NPM Deployment"
+ci:param release "CI_VERSION" "$VERSION"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
+
 
 # Example: Verify NPM package availability
 # if [ -f "package.json" ]; then
@@ -35,9 +37,7 @@ echo "========================================="
 # fi
 
 # Add your NPM verification commands here
-echo "✓ NPM deployment verification stub executed"
-echo "  Customize this script in scripts/ci/release/ci-70-verify-npm-deployment.sh"
+echo:Success "✓ NPM deployment verification stub executed"
+echo:Release "  Customize this script in scripts/ci/release/ci-70-verify-npm-deployment.sh"
 
-echo "========================================="
-echo "NPM Deployment Verification Complete"
-echo "========================================="
+echo:Success "NPM Deployment Verification Complete"

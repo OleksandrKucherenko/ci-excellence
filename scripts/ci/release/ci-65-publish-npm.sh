@@ -1,21 +1,24 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Publish to NPM
 # Purpose: Publish package to NPM registry
 # Customize this script based on your NPM publishing needs
 
-TAG="${1:---tag latest}"
+TAG="${CI_NPM_TAG:---tag latest}"
 
-echo "========================================="
-echo "Publishing to NPM"
-echo "Tag: $TAG"
-echo "========================================="
+echo:Release "Publishing to NPM"
+ci:param release "CI_NPM_TAG" "${TAG}"
+ci:secret release "NODE_AUTH_TOKEN" "${NODE_AUTH_TOKEN:-}"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
+
 
 # Check if NODE_AUTH_TOKEN is set
 if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
-    echo "⚠ NODE_AUTH_TOKEN is not set"
-    echo "  Set this secret in GitHub to enable NPM publishing"
+    echo:Error "⚠ NODE_AUTH_TOKEN is not set"
+    echo:Release "  Set this secret in GitHub to enable NPM publishing"
     exit 1
 fi
 
@@ -32,9 +35,7 @@ fi
 # fi
 
 # Add your NPM publishing commands here
-echo "✓ NPM publish stub executed"
-echo "  Customize this script in scripts/ci/release/ci-65-publish-npm.sh"
+echo:Success "✓ NPM publish stub executed"
+echo:Release "  Customize this script in scripts/ci/release/ci-65-publish-npm.sh"
 
-echo "========================================="
-echo "NPM Publishing Complete"
-echo "========================================="
+echo:Success "NPM Publishing Complete"

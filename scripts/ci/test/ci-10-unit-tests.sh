@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Script: Unit Tests
 # Purpose: Run unit tests (technology-agnostic stub)
 
-echo "========================================="
-echo "Running Unit Tests"
-echo "========================================="
+echo:Test "Running Unit Tests"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 EXIT_CODE=0
 
@@ -59,16 +60,12 @@ EXIT_CODE=0
 # fi
 
 # Add your unit testing commands here
-echo "✓ Unit test stub executed"
-echo "  Customize this script in scripts/ci/test/ci-10-unit-tests.sh"
+echo:Success "✓ Unit test stub executed"
+echo:Test "  Customize this script in scripts/ci/test/ci-10-unit-tests.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
-    echo "========================================="
-    echo "⚠ Unit Tests Failed"
-    echo "========================================="
+    echo:Error "⚠ Unit Tests Failed"
     exit $EXIT_CODE
 fi
 
-echo "========================================="
-echo "Unit Tests Complete"
-echo "========================================="
+echo:Success "Unit Tests Complete"

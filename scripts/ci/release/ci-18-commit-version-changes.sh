@@ -1,14 +1,22 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Script: Commit Version Changes
 # Purpose: Commit and push version bump changes
 
-TARGET_BRANCH="${1:-main}"
-VERSION="${2:-}"
+TARGET_BRANCH="${CI_TARGET_BRANCH:-main}"
+VERSION="${CI_VERSION:-}"
+
+echo:Release "Committing Version Changes"
+ci:param release "CI_TARGET_BRANCH" "$TARGET_BRANCH"
+ci:param release "CI_VERSION" "$VERSION"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
+
 
 if [ -z "$VERSION" ]; then
-  echo "Version is required" >&2
+  echo:Release "Version is required"
   exit 1
 fi
 
@@ -17,3 +25,5 @@ fi
 git add .
 git commit -m "chore(release): bump version to ${VERSION}" || echo "No changes to commit"
 git push origin "HEAD:${TARGET_BRANCH}" || echo "Nothing to push"
+
+echo:Success "Version Changes Committed"

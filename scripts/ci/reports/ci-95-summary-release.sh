@@ -1,17 +1,37 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Script: Release Summary
 # Purpose: Generate release summary table
 
-VERSION="${1:-unknown}"
-IS_PRERELEASE="${2:-false}"
-NPM_RESULT="${3:-unknown}"
-GITHUB_RESULT="${4:-unknown}"
-DOCKER_RESULT="${5:-unknown}"
-DOCS_RESULT="${6:-unknown}"
+echo:Report "Generating Release Summary"
+
+VERSION="${CI_VERSION:-unknown}"
+IS_PRERELEASE="${CI_IS_PRERELEASE:-false}"
+NPM_RESULT="${RESULT_PUBLISH_NPM:-unknown}"
+GITHUB_RESULT="${RESULT_PUBLISH_GITHUB:-unknown}"
+DOCKER_RESULT="${RESULT_PUBLISH_DOCKER:-unknown}"
+DOCS_RESULT="${RESULT_PUBLISH_DOCS:-unknown}"
 
 ENABLE_NPM_PUBLISH="${ENABLE_NPM_PUBLISH:-false}"
+ENABLE_GITHUB_RELEASE="${ENABLE_GITHUB_RELEASE:-false}"
+ENABLE_DOCKER_PUBLISH="${ENABLE_DOCKER_PUBLISH:-false}"
+ENABLE_DOCUMENTATION="${ENABLE_DOCUMENTATION:-false}"
+
+ci:param report "CI_VERSION" "$VERSION"
+ci:param report "CI_IS_PRERELEASE" "$IS_PRERELEASE"
+ci:param report "RESULT_PUBLISH_NPM" "$NPM_RESULT"
+ci:param report "RESULT_PUBLISH_GITHUB" "$GITHUB_RESULT"
+ci:param report "RESULT_PUBLISH_DOCKER" "$DOCKER_RESULT"
+ci:param report "RESULT_PUBLISH_DOCS" "$DOCS_RESULT"
+ci:param report "GITHUB_SHA" "${GITHUB_SHA:-}"
+ci:param report "ENABLE_NPM_PUBLISH" "$ENABLE_NPM_PUBLISH"
+ci:param report "ENABLE_GITHUB_RELEASE" "$ENABLE_GITHUB_RELEASE"
+ci:param report "ENABLE_DOCKER_PUBLISH" "$ENABLE_DOCKER_PUBLISH"
+ci:param report "ENABLE_DOCUMENTATION" "$ENABLE_DOCUMENTATION"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 ENABLE_GITHUB_RELEASE="${ENABLE_GITHUB_RELEASE:-false}"
 ENABLE_DOCKER_PUBLISH="${ENABLE_DOCKER_PUBLISH:-false}"
 ENABLE_DOCUMENTATION="${ENABLE_DOCUMENTATION:-false}"
@@ -73,3 +93,5 @@ ENABLE_DOCUMENTATION="${ENABLE_DOCUMENTATION:-false}"
 # if [ -n "$PR_NUMBER" ]; then
 #   gh pr comment "$PR_NUMBER" --body "Release $VERSION summary..."
 # fi
+
+echo:Success "Release Summary Generated"

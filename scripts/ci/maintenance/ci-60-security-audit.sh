@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Security Audit
 # Purpose: Run security audits on dependencies
 # Customize this script based on your security tools
 
-echo "========================================="
-echo "Running Security Audit"
-echo "========================================="
+echo:Maint "Running Security Audit"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 EXIT_CODE=0
 
@@ -36,17 +37,13 @@ EXIT_CODE=0
 # fi
 
 # Add your security audit commands here
-echo "✓ Security audit stub executed"
-echo "  Customize this script in scripts/maintenance/security-audit.sh"
+echo:Success "✓ Security audit stub executed"
+echo:Maint "  Customize this script in scripts/maintenance/security-audit.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
-    echo "========================================="
-    echo "⚠ Security vulnerabilities found"
-    echo "========================================="
+    echo:Error "⚠ Security vulnerabilities found"
     # Don't exit with error for now, just warn
     # exit $EXIT_CODE
 fi
 
-echo "========================================="
-echo "Security Audit Complete"
-echo "========================================="
+echo:Success "Security Audit Complete"

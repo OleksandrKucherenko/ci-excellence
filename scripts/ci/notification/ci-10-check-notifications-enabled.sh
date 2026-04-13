@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Script: Check if Notifications Should Be Enabled
 # Purpose: Auto-detect if notification secrets are available and not explicitly disabled
@@ -34,17 +35,17 @@ TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}"
 TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-}"
 ENABLE_NOTIFICATIONS="${ENABLE_NOTIFICATIONS:-}"
 
-# Debug output (will appear in GitHub Actions logs)
-echo "Checking notification requirements..."
-echo "APPRISE_URLS: $([ -n "$APPRISE_URLS" ] && echo 'SET' || echo 'NOT SET')"
-echo "TELEGRAM_BOT_TOKEN: $([ -n "$TELEGRAM_BOT_TOKEN" ] && echo 'SET' || echo 'NOT SET')"
-echo "TELEGRAM_CHAT_ID: $([ -n "$TELEGRAM_CHAT_ID" ] && echo 'SET' || echo 'NOT SET')"
-echo "ENABLE_NOTIFICATIONS: ${ENABLE_NOTIFICATIONS:-'not set'}"
+echo:Notify "Checking Notification Configuration"
+ci:secret notify "APPRISE_URLS" "$APPRISE_URLS"
+ci:secret notify "TELEGRAM_BOT_TOKEN" "$TELEGRAM_BOT_TOKEN"
+ci:param notify "TELEGRAM_CHAT_ID" "$TELEGRAM_CHAT_ID"
+ci:param notify "ENABLE_NOTIFICATIONS" "$ENABLE_NOTIFICATIONS"
 
 # Check if explicitly disabled
 if [ -n "$ENABLE_NOTIFICATIONS" ] && is_false "$ENABLE_NOTIFICATIONS"; then
-    echo "Notifications explicitly disabled via ENABLE_NOTIFICATIONS=$ENABLE_NOTIFICATIONS"
-    echo "enabled=false" >> $GITHUB_OUTPUT
+    echo:Notify "Notifications explicitly disabled via ENABLE_NOTIFICATIONS=$ENABLE_NOTIFICATIONS"
+    ci:output notify "enabled" "false"
+    echo:Success "Notification Check Complete"
     exit 0
 fi
 
@@ -54,24 +55,29 @@ FINAL_URLS=""
 if [ -n "$APPRISE_URLS" ]; then
     # Use Apprise URLs directly
     FINAL_URLS="$APPRISE_URLS"
-    echo "✓ Using APPRISE_URLS for notifications"
+    echo:Success "✓ Using APPRISE_URLS for notifications"
 elif [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
     # Convert Telegram credentials to Apprise format with HTML formatting
     FINAL_URLS="tgram://${TELEGRAM_BOT_TOKEN}/${TELEGRAM_CHAT_ID}?format=html"
-    echo "✓ Converting Telegram credentials to Apprise format (HTML mode)"
+    echo:Success "✓ Converting Telegram credentials to Apprise format (HTML mode)"
 fi
 
 # Check if we have any notification URLs
 if [ -n "$FINAL_URLS" ]; then
-    echo "✓ Notifications enabled"
-    echo "enabled=true" >> $GITHUB_OUTPUT
-    echo "apprise_urls=$FINAL_URLS" >> $GITHUB_OUTPUT
+    echo:Success "✓ Notifications enabled"
+    ci:output notify "enabled" "true"
+    echo "apprise_urls=$FINAL_URLS" >> "$GITHUB_OUTPUT"
+    ci:secret notify "apprise_urls (output)" "$FINAL_URLS"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
+    echo:Success "Notification Check Complete"
     exit 0
 else
-    echo "✗ No notification credentials available"
-    echo "  Set either:"
-    echo "    - APPRISE_URLS (supports 90+ services)"
-    echo "    - TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID (Telegram only)"
-    echo "enabled=false" >> $GITHUB_OUTPUT
+    echo:Error "✗ No notification credentials available"
+    echo:Notify "  Set either:"
+    echo:Notify "    - APPRISE_URLS (supports 90+ services)"
+    echo:Notify "    - TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID (Telegram only)"
+    ci:output notify "enabled" "false"
+    echo:Success "Notification Check Complete"
     exit 0
 fi

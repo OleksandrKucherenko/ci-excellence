@@ -1,23 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Script: Send Notification
 # Purpose: Send notifications to configured services using Apprise (tech-agnostic)
 
-TITLE="${1:-CI/CD Pipeline}"
-MESSAGE="${2:-Pipeline completed}"
-TYPE="${3:-info}"  # info, success, warning, failure
+TITLE="${NOTIFY_TITLE:-CI/CD Pipeline}"
+MESSAGE="${NOTIFY_MESSAGE:-Pipeline completed}"
+TYPE="${NOTIFY_STATUS:-info}"  # info, success, warning, failure
 
-echo "========================================="
-echo "Sending Notification"
-echo "========================================="
+echo:Notify "Sending Notification"
+ci:param notify "NOTIFY_TITLE" "$TITLE"
+ci:param notify "NOTIFY_MESSAGE" "$MESSAGE"
+ci:param notify "NOTIFY_STATUS" "$TYPE"
+ci:secret notify "APPRISE_URLS" "${APPRISE_URLS:-}"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 # Check if Apprise is installed
 if ! command -v apprise &> /dev/null; then
-    echo "Installing Apprise..."
+    echo:Notify "Installing Apprise..."
     pip3 install apprise || pip install apprise || {
-        echo "⚠ Failed to install Apprise"
-        echo "  Notifications will be skipped"
+        echo:Error "⚠ Failed to install Apprise"
+        echo:Notify "  Notifications will be skipped"
         exit 0
     }
 fi
@@ -26,17 +31,17 @@ fi
 NOTIFICATION_URLS="${APPRISE_URLS:-}"
 
 if [ -z "$NOTIFICATION_URLS" ]; then
-    echo "⚠ No notification URLs configured"
-    echo "  Set APPRISE_URLS environment variable or GitHub secret"
-    echo "  Example formats:"
-    echo "    Slack:    slack://token_a/token_b/token_c"
-    echo "    Teams:    msteams://webhook_url"
-    echo "    Discord:  discord://webhook_id/webhook_token"
-    echo "    Telegram: tgram://bot_token/chat_id"
-    echo "    Email:    mailto://user:pass@domain.com"
-    echo ""
-    echo "  Multiple services: separate with spaces"
-    echo "  See: https://github.com/caronc/apprise/wiki"
+    echo:Error "⚠ No notification URLs configured"
+    echo:Notify "  Set APPRISE_URLS environment variable or GitHub secret"
+    echo:Notify "  Example formats:"
+    echo:Notify "    Slack:    slack://token_a/token_b/token_c"
+    echo:Notify "    Teams:    msteams://webhook_url"
+    echo:Notify "    Discord:  discord://webhook_id/webhook_token"
+    echo:Notify "    Telegram: tgram://bot_token/chat_id"
+    echo:Notify "    Email:    mailto://user:pass@domain.com"
+    echo:Notify ""
+    echo:Notify "  Multiple services: separate with spaces"
+    echo:Notify "  See: https://github.com/caronc/apprise/wiki"
     exit 0
 fi
 
@@ -87,7 +92,7 @@ if [ -n "${GITHUB_ACTOR:-}" ]; then
 fi
 
 # Send notification using Apprise
-echo "Sending notification to configured services..."
+echo:Notify "Sending notification to configured services..."
 
 # Convert space-separated URLs to individual arguments
 IFS=' ' read -ra URL_ARRAY <<< "$NOTIFICATION_URLS"
@@ -105,12 +110,10 @@ if apprise \
     --input-format=html \
     --tag="$TYPE" \
     "${APPRISE_ARGS[@]}" 2>&1; then
-    echo "✓ Notification sent successfully"
+    echo:Success "✓ Notification sent successfully"
 else
-    echo "⚠ Failed to send notification (non-fatal)"
+    echo:Error "⚠ Failed to send notification (non-fatal)"
     exit 0
 fi
 
-echo "========================================="
-echo "Notification Complete"
-echo "========================================="
+echo:Success "Notification Complete"

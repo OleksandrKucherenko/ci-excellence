@@ -37,8 +37,8 @@ on:
 
 env:
   # CI Feature Flags
-  ENABLE_COMPILE: ${{ vars.ENABLE_COMPILE || 'true' }}
-  ENABLE_TESTS: ${{ vars.ENABLE_TESTS || 'true' }}
+  ENABLE_COMPILE: ${{ vars.ENABLE_COMPILE || 'false' }}
+  ENABLE_TESTS: ${{ vars.ENABLE_TESTS || 'false' }}
   ENABLE_NPM_PUBLISH: ${{ vars.ENABLE_NPM_PUBLISH || 'false' }}
   ENABLE_GITHUB_RELEASE: ${{ vars.ENABLE_GITHUB_RELEASE || 'false' }}
   ENABLE_DOCKER_PUBLISH: ${{ vars.ENABLE_DOCKER_PUBLISH || 'false' }}
@@ -50,6 +50,10 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     name: Tag New Version
     runs-on: ubuntu-latest
+    env:
+      CI_RELEASE_SCOPE: ${{ github.event.inputs.release-scope }}
+      CI_PRE_RELEASE_TYPE: ${{ github.event.inputs.pre-release-type }}
+      CI_DRY_RUN: ${{ github.event.inputs.dry-run }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -64,28 +68,21 @@ jobs:
 
       - name: Determine version
         id: version
-        run: |
-          NEW_VERSION=$(./scripts/ci/release/ci-10-determine-version.sh \
-            "${{ github.event.inputs.release-scope }}" \
-            "${{ github.event.inputs.pre-release-type }}")
-          echo "version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+        run: ./scripts/ci/release/ci-12-set-version-outputs.sh
 
       - name: Create and Push Tag
         if: ${{ github.event.inputs.dry-run != 'true' }}
-        run: |
-          # Use bot identity for tagging
-          ./scripts/ci/setup/ci-30-github-actions-bot.sh
-          
-          TAG="v${{ steps.version.outputs.version }}"
-          echo "Creating tag: $TAG"
-          git tag -a "$TAG" -m "Release $TAG"
-          git push origin "$TAG"
+        env:
+          CI_VERSION: ${{ steps.version.outputs.version }}
+        run: ./scripts/ci/release/ci-08-create-tag.sh
 
   # Job 2: Tag Trigger -> Build & Publish
   prepare:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     name: Prepare Release
     runs-on: ubuntu-latest
+    env:
+      CI_GIT_REF: ${{ github.ref }}
     outputs:
       version: ${{ steps.parse.outputs.version }}
       is-prerelease: ${{ steps.parse.outputs.is-prerelease }}
@@ -97,36 +94,12 @@ jobs:
 
       - name: Parse Tag
         id: parse
-        run: |
-          # REF format: refs/tags/v1.0.0 or refs/tags/path/v1.0.0
-          REF="${{ github.ref }}"
-          TAG=${REF#refs/tags/}
-          
-          # Use semver script to parse? Or existing ci-12?
-          # Let's extract version from tag.
-          # If tag is like 'v1.2.3', version is '1.2.3'.
-          # If tag is 'pkg/v1.2.3', version is '1.2.3'.
-          
-          # Simple extraction for now, assuming standard v-prefix
-          # Remove everything before the last /v (or just v if at start)
-          VERSION="${TAG##*v}"
-          
-          # Check for pre-release status
-          if [[ "$VERSION" == *"-"* ]]; then
-            IS_PRERELEASE="true"
-          else
-            IS_PRERELEASE="false"
-          fi
-          
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "is-prerelease=$IS_PRERELEASE" >> "$GITHUB_OUTPUT"
-          
-          echo "Detected Version: $VERSION"
-          echo "Is Pre-release: $IS_PRERELEASE"
+        run: ./scripts/ci/release/ci-09-parse-tag.sh
 
       - name: Generate changelog
-        run: |
-          ./scripts/ci/release/ci-20-generate-changelog.sh "${{ steps.parse.outputs.version }}"
+        env:
+          CI_VERSION: ${{ steps.parse.outputs.version }}
+        run: ./scripts/ci/release/ci-20-generate-changelog.sh
 
   build:
     name: Build Release Artifacts
@@ -147,7 +120,7 @@ jobs:
       - name: Bundle
         run: ./scripts/ci/build/ci-40-bundle.sh
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: release-artifacts
           path: |
@@ -172,7 +145,7 @@ jobs:
       - name: Install dependencies
         run: ./scripts/ci/setup/ci-20-install-dependencies.sh
       - name: Download build artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: release-artifacts
       - name: Run unit tests
@@ -200,18 +173,14 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - name: Download build artifacts
         if: ${{ vars.ENABLE_COMPILE == 'true' }}
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: release-artifacts
       - name: Publish to NPM
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          if [ "${{ needs.prepare.outputs.is-prerelease }}" == "true" ]; then
-            ./scripts/ci/release/ci-65-publish-npm.sh --tag next
-          else
-            ./scripts/ci/release/ci-65-publish-npm.sh --tag latest
-          fi
+          CI_IS_PRERELEASE: ${{ needs.prepare.outputs.is-prerelease }}
+        run: ./scripts/ci/release/ci-66-publish-npm-release.sh
 
   publish-github:
     name: Create GitHub Release
@@ -225,6 +194,9 @@ jobs:
       vars.ENABLE_GITHUB_RELEASE == 'true'
     permissions:
       contents: write
+    env:
+      CI_VERSION: ${{ needs.prepare.outputs.version }}
+      CI_IS_PRERELEASE: ${{ needs.prepare.outputs.is-prerelease }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -232,25 +204,23 @@ jobs:
           fetch-depth: 0
       - name: Download build artifacts
         if: ${{ vars.ENABLE_COMPILE == 'true' }}
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: release-artifacts
       - name: Generate release notes
         id: notes
-        run: ./scripts/ci/release/ci-27-write-release-notes-output.sh "${{ needs.prepare.outputs.version }}"
+        run: ./scripts/ci/release/ci-27-write-release-notes-output.sh
       - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.prepare.outputs.version }}
-          release_name: Release v${{ needs.prepare.outputs.version }}
+          name: Release v${{ needs.prepare.outputs.version }}
           body: ${{ steps.notes.outputs.notes }}
           draft: false
           prerelease: ${{ needs.prepare.outputs.is-prerelease }}
       - name: Upload Release Assets
         if: ${{ vars.ENABLE_COMPILE == 'true' }}
-        run: ./scripts/ci/release/ci-30-upload-assets.sh "v${{ needs.prepare.outputs.version }}"
+        run: ./scripts/ci/release/ci-30-upload-assets.sh
 
   publish-docker:
     name: Publish Docker Image
@@ -279,7 +249,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and push Docker image
-        run: ./scripts/ci/release/ci-80-publish-docker.sh "${{ needs.prepare.outputs.version }}" "${{ needs.prepare.outputs.is-prerelease }}"
+        env:
+          CI_VERSION: ${{ needs.prepare.outputs.version }}
+          CI_IS_PRERELEASE: ${{ needs.prepare.outputs.is-prerelease }}
+        run: ./scripts/ci/release/ci-80-publish-docker.sh
 
   publish-documentation:
     name: Publish Documentation
@@ -302,7 +275,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Build documentation
-        run: ./scripts/ci/release/ci-50-build-docs.sh "${{ needs.prepare.outputs.version }}"
+        env:
+          CI_VERSION: ${{ needs.prepare.outputs.version }}
+        run: ./scripts/ci/release/ci-50-build-docs.sh
       - name: Publish documentation
         run: ./scripts/ci/release/ci-55-publish-docs.sh
 
@@ -311,19 +286,20 @@ jobs:
     runs-on: ubuntu-latest
     needs: [prepare, publish-npm, publish-github, publish-docker, publish-documentation]
     if: always()
+    env:
+      CI_VERSION: ${{ needs.prepare.outputs.version }}
+      CI_IS_PRERELEASE: ${{ needs.prepare.outputs.is-prerelease }}
+      RESULT_PUBLISH_NPM: ${{ needs['publish-npm'].result }}
+      RESULT_PUBLISH_GITHUB: ${{ needs['publish-github'].result }}
+      RESULT_PUBLISH_DOCKER: ${{ needs['publish-docker'].result }}
+      RESULT_PUBLISH_DOCS: ${{ needs['publish-documentation'].result }}
+      RESULT_PREPARE: ${{ needs.prepare.result }}
     steps:
-      - name: Generate summary
-        run: |
-          ./scripts/ci/reports/ci-95-summary-release.sh \
-            "${{ needs.prepare.outputs.version }}" \
-            "${{ needs.prepare.outputs.is-prerelease }}" \
-            "${{ needs['publish-npm'].result }}" \
-            "${{ needs['publish-github'].result }}" \
-            "${{ needs['publish-docker'].result }}" \
-            "${{ needs['publish-documentation'].result }}"
-
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Generate summary
+        run: ./scripts/ci/reports/ci-95-summary-release.sh
 
       - name: Check if notifications enabled
         id: check_notify
@@ -337,19 +313,13 @@ jobs:
       - name: Determine release status
         if: steps.check_notify.outputs.enabled == 'true'
         id: status
-        run: |
-          ./scripts/ci/notification/ci-60-release-status.sh \
-            "${{ needs.prepare.outputs.version }}" \
-            "${{ needs.prepare.result }}" \
-            "${{ needs['publish-npm'].result }}" \
-            "${{ needs['publish-github'].result }}" \
-            "${{ needs['publish-docker'].result }}"
+        run: ./scripts/ci/notification/ci-60-release-status.sh
 
       - name: Send notification
         if: steps.check_notify.outputs.enabled == 'true'
         env:
           APPRISE_URLS: ${{ steps.check_notify.outputs.apprise_urls }}
-        run: ./scripts/ci/notification/ci-30-send-notification.sh \
-            "Release Pipeline" \
-            "${{ steps.status.outputs.message }}" \
-            "${{ steps.status.outputs.status }}"
+          NOTIFY_TITLE: Release Pipeline
+          NOTIFY_MESSAGE: ${{ steps.status.outputs.message }}
+          NOTIFY_STATUS: ${{ steps.status.outputs.status }}
+        run: ./scripts/ci/notification/ci-30-send-notification.sh

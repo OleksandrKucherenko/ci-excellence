@@ -1,42 +1,43 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Script: Security Scan
 # Purpose: Run security vulnerability scans (technology-agnostic stub)
 
-echo "========================================="
-echo "Running Security Scans"
-echo "========================================="
+echo:Security "Running Security Scans"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 EXIT_CODE=0
 
 # Ensure mise is available
 if ! command -v mise &> /dev/null; then
-    echo "❌ mise not found. Please run setup script first."
+    echo:Error "❌ mise not found. Please run setup script first."
     exit 1
 fi
 
 # Run gitleaks via mise
-echo "Running gitleaks secret detection..."
+echo:Security "Running gitleaks secret detection..."
 if mise x -- gitleaks detect --redact --verbose --report-path gitleaks-report.json --report-format json; then
-    echo "✓ No secrets detected by gitleaks"
+    echo:Success "✓ No secrets detected by gitleaks"
 else
-    echo "⚠ Gitleaks found potential secrets!"
+    echo:Error "⚠ Gitleaks found potential secrets!"
     EXIT_CODE=1
 fi
 
-echo ""
+echo:Security ""
 
 # Run trufflehog via mise
-echo "Running trufflehog credential scan..."
+echo:Security "Running trufflehog credential scan..."
 if mise x -- trufflehog git file://. --only-verified --fail --exclude-paths .trufflehogignore --json > trufflehog-report.json 2>&1; then
-    echo "✓ No leaked credentials detected by trufflehog"
+    echo:Success "✓ No leaked credentials detected by trufflehog"
 else
-    echo "⚠ Trufflehog found leaked credentials!"
+    echo:Error "⚠ Trufflehog found leaked credentials!"
     EXIT_CODE=1
 fi
 
-echo ""
+echo:Security ""
 
 # Example: NPM audit
 # if [ -f "package.json" ]; then
@@ -69,8 +70,8 @@ echo ""
 # fi
 
 # Add your security scanning commands here
-echo "✓ Security scan stub executed"
-echo "  Customize this script in scripts/ci/build/ci-30-security-scan.sh"
+echo:Success "✓ Security scan stub executed"
+echo:Security "  Customize this script in scripts/ci/build/ci-30-security-scan.sh"
 
 # Create SARIF output for GitHub Security
 mkdir -p .
@@ -84,7 +85,7 @@ cat > security-results.sarif <<EOF
         "driver": {
           "name": "Security Scan",
           "version": "1.0.0",
-          "informationUri": "https://github.com/your-org/ci-excellence"
+          "informationUri": "${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-your-org/ci-excellence}"
         }
       },
       "results": []
@@ -94,27 +95,23 @@ cat > security-results.sarif <<EOF
 EOF
 
 if [ $EXIT_CODE -ne 0 ]; then
-    echo "========================================="
-    echo "⚠ Security issues found"
-    echo "========================================="
+    echo:Error "⚠ Security issues found"
 
     # Show summary of findings
     if [ -f "gitleaks-report.json" ]; then
-        echo ""
-        echo "Gitleaks findings:"
-        cat gitleaks-report.json | head -20
+        echo:Security ""
+        echo:Security "Gitleaks findings:"
+        echo:Security "$(cat gitleaks-report.json | head -20)"
     fi
 
     if [ -f "trufflehog-report.json" ]; then
-        echo ""
-        echo "Trufflehog findings:"
-        cat trufflehog-report.json | head -20
+        echo:Security ""
+        echo:Security "Trufflehog findings:"
+        echo:Security "$(cat trufflehog-report.json | head -20)"
     fi
 
     # Exit with error code to fail the build
     exit $EXIT_CODE
 fi
 
-echo "========================================="
-echo "Security Scan Complete"
-echo "========================================="
+echo:Success "Security Scan Complete"

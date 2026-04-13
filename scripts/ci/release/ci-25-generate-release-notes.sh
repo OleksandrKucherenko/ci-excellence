@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Generate Release Notes
 # Purpose: Generate release notes for GitHub release
 # Customize this script based on your release notes format
 
-VERSION="${1:?Version is required}"
+VERSION="${CI_VERSION:?CI_VERSION is required}"
 
-echo "========================================="
-echo "Generating Release Notes"
-echo "Version: $VERSION"
-echo "=========================================" >&2
+echo:Release "Generating Release Notes"
+ci:param release "CI_VERSION" "$VERSION"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
+
 
 # Example: Extract from CHANGELOG.md
 # if [ -f "CHANGELOG.md" ]; then
@@ -50,6 +52,4 @@ npm install mypackage@$VERSION
 See [CHANGELOG.md](CHANGELOG.md) for detailed changes.
 EOF
 
-echo "=========================================" >&2
-echo "Release Notes Generated" >&2
-echo "=========================================" >&2
+echo:Success "Release Notes Generated"

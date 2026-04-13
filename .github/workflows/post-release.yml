@@ -32,6 +32,10 @@ jobs:
     if: |
       github.event_name == 'release' ||
       github.event.inputs.action == 'verify-deployment'
+    env:
+      CI_EVENT_NAME: ${{ github.event_name }}
+      CI_RELEASE_TAG: ${{ github.event.release.tag_name }}
+      CI_VERSION: ${{ github.event.inputs.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -43,31 +47,36 @@ jobs:
 
       - name: Determine version
         id: version
-        run: ./scripts/ci/release/ci-05-select-version.sh \
-          "${{ github.event_name }}" \
-          "${{ github.event.release.tag_name }}" \
-          "${{ github.event.inputs.version }}"
+        run: ./scripts/ci/release/ci-05-select-version.sh
 
       - name: Verify NPM deployment
         if: vars.ENABLE_NPM_PUBLISH == 'true'
-        run: ./scripts/ci/release/ci-70-verify-npm-deployment.sh "${{ steps.version.outputs.version }}"
+        env:
+          CI_VERSION: ${{ steps.version.outputs.version }}
+        run: ./scripts/ci/release/ci-70-verify-npm-deployment.sh
 
       - name: Verify GitHub release
         if: vars.ENABLE_GITHUB_RELEASE == 'true'
-        run: |
-          ./scripts/ci/release/ci-35-verify-github-release.sh "${{ steps.version.outputs.version }}"
+        env:
+          CI_VERSION: ${{ steps.version.outputs.version }}
+        run: ./scripts/ci/release/ci-35-verify-github-release.sh
 
       - name: Verify Docker deployment
         if: vars.ENABLE_DOCKER_PUBLISH == 'true'
-        run: |
-          ./scripts/ci/release/ci-85-verify-docker-deployment.sh "${{ steps.version.outputs.version }}"
+        env:
+          CI_VERSION: ${{ steps.version.outputs.version }}
+        run: ./scripts/ci/release/ci-85-verify-docker-deployment.sh
 
       - name: Run smoke tests
-        run: ./scripts/ci/test/ci-40-smoke-tests.sh "${{ steps.version.outputs.version }}"
+        env:
+          CI_VERSION: ${{ steps.version.outputs.version }}
+        run: ./scripts/ci/test/ci-40-smoke-tests.sh
 
       - name: Report verification results
         if: always()
-        run: ./scripts/ci/reports/ci-80-summary-post-release-verify.sh "${{ steps.version.outputs.version }}"
+        env:
+          CI_VERSION: ${{ steps.version.outputs.version }}
+        run: ./scripts/ci/reports/ci-80-summary-post-release-verify.sh
 
   tag-stable:
     name: Tag as Stable
@@ -77,6 +86,9 @@ jobs:
       vars.ENABLE_STABILITY_TAGGING == 'true'
     permissions:
       contents: write
+    env:
+      CI_VERSION: ${{ github.event.inputs.version }}
+      CI_STABILITY_TAG: stable
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -84,7 +96,7 @@ jobs:
           fetch-depth: 0
 
       - name: Create stable tag
-        run: ./scripts/ci/release/ci-07-apply-stability-tag.sh stable "${{ github.event.inputs.version }}"
+        run: ./scripts/ci/release/ci-07-apply-stability-tag.sh
 
   tag-unstable:
     name: Tag as Unstable
@@ -94,6 +106,9 @@ jobs:
       vars.ENABLE_STABILITY_TAGGING == 'true'
     permissions:
       contents: write
+    env:
+      CI_VERSION: ${{ github.event.inputs.version }}
+      CI_STABILITY_TAG: unstable
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -101,7 +116,7 @@ jobs:
           fetch-depth: 0
 
       - name: Create unstable tag
-        run: ./scripts/ci/release/ci-07-apply-stability-tag.sh unstable "${{ github.event.inputs.version }}"
+        run: ./scripts/ci/release/ci-07-apply-stability-tag.sh
 
   rollback:
     name: Rollback Release
@@ -111,6 +126,8 @@ jobs:
       vars.ENABLE_ROLLBACK == 'true'
     permissions:
       contents: write
+    env:
+      CI_VERSION: ${{ github.event.inputs.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -123,45 +140,43 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Confirm rollback
-        run: ./scripts/ci/release/ci-77-confirm-rollback.sh "${{ github.event.inputs.version }}"
+        run: ./scripts/ci/release/ci-77-confirm-rollback.sh
 
       - name: Rollback NPM release
         if: vars.ENABLE_NPM_PUBLISH == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: ./scripts/ci/release/ci-75-rollback-npm.sh "${{ github.event.inputs.version }}"
+        run: ./scripts/ci/release/ci-75-rollback-npm.sh
 
       - name: Update GitHub release
         if: vars.ENABLE_GITHUB_RELEASE == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ./scripts/ci/release/ci-40-rollback-github.sh "${{ github.event.inputs.version }}"
+        run: ./scripts/ci/release/ci-40-rollback-github.sh
 
       - name: Tag Docker images as deprecated
         if: vars.ENABLE_DOCKER_PUBLISH == 'true'
-        run: |
-          ./scripts/ci/release/ci-90-rollback-docker.sh "${{ github.event.inputs.version }}"
+        run: ./scripts/ci/release/ci-90-rollback-docker.sh
 
       - name: Report rollback results
-        run: ./scripts/ci/reports/ci-85-summary-rollback.sh "${{ github.event.inputs.version }}"
+        run: ./scripts/ci/reports/ci-85-summary-rollback.sh
 
   notify:
     name: Notify Post-Release Actions
     runs-on: ubuntu-latest
     needs: [verify-deployment, tag-stable, tag-unstable, rollback]
     if: always()
+    env:
+      RESULT_VERIFY: ${{ needs['verify-deployment'].result }}
+      RESULT_TAG_STABLE: ${{ needs['tag-stable'].result }}
+      RESULT_TAG_UNSTABLE: ${{ needs['tag-unstable'].result }}
+      RESULT_ROLLBACK: ${{ needs.rollback.result }}
     steps:
-      - name: Generate summary
-        run: |
-          ./scripts/ci/reports/ci-90-summary-post-release.sh \
-            "${{ needs['verify-deployment'].result }}" \
-            "${{ needs['tag-stable'].result }}" \
-            "${{ needs['tag-unstable'].result }}" \
-            "${{ needs.rollback.result }}"
-
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Generate summary
+        run: ./scripts/ci/reports/ci-90-summary-post-release.sh
 
       - name: Check if notifications enabled
         id: check_notify
@@ -175,18 +190,13 @@ jobs:
       - name: Determine action type and status
         if: steps.check_notify.outputs.enabled == 'true'
         id: status
-        run: |
-          ./scripts/ci/notification/ci-50-post-release-status.sh \
-            "${{ needs['verify-deployment'].result }}" \
-            "${{ needs['tag-stable'].result }}" \
-            "${{ needs['tag-unstable'].result }}" \
-            "${{ needs.rollback.result }}"
+        run: ./scripts/ci/notification/ci-50-post-release-status.sh
 
       - name: Send notification
         if: steps.check_notify.outputs.enabled == 'true'
         env:
           APPRISE_URLS: ${{ steps.check_notify.outputs.apprise_urls }}
-        run: ./scripts/ci/notification/ci-30-send-notification.sh \
-            "Post-Release Pipeline" \
-            "${{ steps.status.outputs.message }}" \
-            "${{ steps.status.outputs.status }}"
+          NOTIFY_TITLE: Post-Release Pipeline
+          NOTIFY_MESSAGE: ${{ steps.status.outputs.message }}
+          NOTIFY_STATUS: ${{ steps.status.outputs.status }}
+        run: ./scripts/ci/notification/ci-30-send-notification.sh

@@ -1,16 +1,36 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Script: Maintenance Pipeline Summary
 # Purpose: Generate maintenance pipeline summary table
 
-CLEANUP_RESULT="${1:-unknown}"
-SYNC_RESULT="${2:-unknown}"
-DEPRECATION_RESULT="${3:-unknown}"
-SECURITY_RESULT="${4:-unknown}"
-DEPENDENCY_RESULT="${5:-unknown}"
+echo:Report "Generating Maintenance Summary"
+
+CLEANUP_RESULT="${RESULT_CLEANUP:-unknown}"
+SYNC_RESULT="${RESULT_SYNC:-unknown}"
+DEPRECATION_RESULT="${RESULT_DEPRECATION:-unknown}"
+SECURITY_RESULT="${RESULT_SECURITY:-unknown}"
+DEPENDENCY_RESULT="${RESULT_DEPENDENCY:-unknown}"
 
 ENABLE_CLEANUP="${ENABLE_CLEANUP:-false}"
+ENABLE_FILE_SYNC="${ENABLE_FILE_SYNC:-false}"
+ENABLE_DEPRECATION="${ENABLE_DEPRECATION:-false}"
+ENABLE_SECURITY_AUDIT="${ENABLE_SECURITY_AUDIT:-false}"
+ENABLE_DEPENDENCY_UPDATE="${ENABLE_DEPENDENCY_UPDATE:-false}"
+
+ci:param report "RESULT_CLEANUP" "$CLEANUP_RESULT"
+ci:param report "RESULT_SYNC" "$SYNC_RESULT"
+ci:param report "RESULT_DEPRECATION" "$DEPRECATION_RESULT"
+ci:param report "RESULT_SECURITY" "$SECURITY_RESULT"
+ci:param report "RESULT_DEPENDENCY" "$DEPENDENCY_RESULT"
+ci:param report "ENABLE_CLEANUP" "$ENABLE_CLEANUP"
+ci:param report "ENABLE_FILE_SYNC" "$ENABLE_FILE_SYNC"
+ci:param report "ENABLE_DEPRECATION" "$ENABLE_DEPRECATION"
+ci:param report "ENABLE_SECURITY_AUDIT" "$ENABLE_SECURITY_AUDIT"
+ci:param report "ENABLE_DEPENDENCY_UPDATE" "$ENABLE_DEPENDENCY_UPDATE"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 ENABLE_FILE_SYNC="${ENABLE_FILE_SYNC:-false}"
 ENABLE_DEPRECATION="${ENABLE_DEPRECATION:-false}"
 ENABLE_SECURITY_AUDIT="${ENABLE_SECURITY_AUDIT:-false}"
@@ -27,3 +47,5 @@ ENABLE_DEPENDENCY_UPDATE="${ENABLE_DEPENDENCY_UPDATE:-false}"
   echo "| Security Audit | $SECURITY_RESULT | $ENABLE_SECURITY_AUDIT |"
   echo "| Dependency Update | $DEPENDENCY_RESULT | $ENABLE_DEPENDENCY_UPDATE |"
 } >> "${GITHUB_STEP_SUMMARY}"
+
+echo:Success "Maintenance Summary Generated"

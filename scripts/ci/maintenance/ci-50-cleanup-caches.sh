@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Cleanup Old Caches
 # Purpose: Delete old GitHub Actions caches
 # Customize this script based on your cache policy
 
-echo "========================================="
-echo "Cleaning Up Old Caches"
-echo "========================================="
+echo:Maint "Cleaning Up Old Caches"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 # Example: Delete unused caches using gh CLI
 # if command -v gh &> /dev/null; then
@@ -23,9 +24,7 @@ echo "========================================="
 # fi
 
 # Add your cleanup commands here
-echo "✓ Caches cleanup stub executed"
-echo "  Customize this script in ${BASH_SOURCE[0]}"
+echo:Success "✓ Caches cleanup stub executed"
+echo:Maint "  Customize this script in ${BASH_SOURCE[0]}"
 
-echo "========================================="
-echo "Caches Cleanup Complete"
-echo "========================================="
+echo:Success "Caches Cleanup Complete"

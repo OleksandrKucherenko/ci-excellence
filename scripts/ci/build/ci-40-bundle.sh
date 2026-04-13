@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Script: Bundle/Package
 # Purpose: Create distribution packages (technology-agnostic stub)
 
-echo "========================================="
-echo "Creating Bundle/Package"
-echo "========================================="
+echo:Build "Creating Bundle/Package"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 # Example: NPM package
 # if [ -f "package.json" ]; then
@@ -39,9 +40,7 @@ echo "========================================="
 # tar -czf dist.tar.gz dist/
 
 # Add your bundling commands here
-echo "✓ Bundle stub executed"
-echo "  Customize this script in scripts/ci/build/ci-40-bundle.sh"
+echo:Success "✓ Bundle stub executed"
+echo:Build "  Customize this script in scripts/ci/build/ci-40-bundle.sh"
 
-echo "========================================="
-echo "Bundling Complete"
-echo "========================================="
+echo:Success "Bundling Complete"

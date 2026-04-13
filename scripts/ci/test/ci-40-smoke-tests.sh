@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Smoke Tests
 # Purpose: Run basic smoke tests to verify deployment
 # Customize this script based on your project's smoke testing needs
 
-VERSION="${1:-latest}"
+VERSION="${CI_VERSION:-latest}"
 
-echo "========================================="
-echo "Running Smoke Tests"
-echo "Version: $VERSION"
-echo "========================================="
+echo:Test "Running Smoke Tests"
+ci:param test "CI_VERSION" "$VERSION"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 EXIT_CODE=0
 
@@ -43,16 +44,12 @@ EXIT_CODE=0
 # fi
 
 # Add your smoke testing commands here
-echo "✓ Smoke test stub executed"
-echo "  Customize this script in scripts/ci/test/ci-40-smoke-tests.sh"
+echo:Success "✓ Smoke test stub executed"
+echo:Test "  Customize this script in scripts/ci/test/ci-40-smoke-tests.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
-    echo "========================================="
-    echo "⚠ Smoke Tests Failed"
-    echo "========================================="
+    echo:Error "⚠ Smoke Tests Failed"
     exit $EXIT_CODE
 fi
 
-echo "========================================="
-echo "Smoke Tests Complete"
-echo "========================================="
+echo:Success "Smoke Tests Complete"

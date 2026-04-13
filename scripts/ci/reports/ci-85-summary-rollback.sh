@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Script: Rollback Summary
 # Purpose: Generate rollback summary for GitHub step summary
 
-VERSION="${1:-unknown}"
+echo:Report "Generating Rollback Summary"
+
+VERSION="${CI_VERSION:-unknown}"
+
+ci:param report "CI_VERSION" "$VERSION"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 {
   echo "## Rollback Summary"
@@ -13,3 +20,5 @@ VERSION="${1:-unknown}"
   echo ""
   echo "Rollback completed successfully"
 } >> "${GITHUB_STEP_SUMMARY}"
+
+echo:Success "Rollback Summary Generated"

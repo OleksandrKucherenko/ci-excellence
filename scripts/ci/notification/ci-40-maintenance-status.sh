@@ -1,25 +1,38 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Script: Maintenance Status
 # Purpose: Determine maintenance pipeline status for notifications
 
-CLEANUP_RESULT="${1:-unknown}"
-SYNC_RESULT="${2:-unknown}"
-DEPRECATION_RESULT="${3:-unknown}"
-SECURITY_RESULT="${4:-unknown}"
-DEPENDENCY_RESULT="${5:-unknown}"
+echo:Notify "Determining Maintenance Status"
+
+CLEANUP_RESULT="${RESULT_CLEANUP:-unknown}"
+SYNC_RESULT="${RESULT_SYNC:-unknown}"
+DEPRECATION_RESULT="${RESULT_DEPRECATION:-unknown}"
+SECURITY_RESULT="${RESULT_SECURITY:-unknown}"
+DEPENDENCY_RESULT="${RESULT_DEPENDENCY:-unknown}"
+
+ci:param notify "RESULT_CLEANUP" "$CLEANUP_RESULT"
+ci:param notify "RESULT_SYNC" "$SYNC_RESULT"
+ci:param notify "RESULT_DEPRECATION" "$DEPRECATION_RESULT"
+ci:param notify "RESULT_SECURITY" "$SECURITY_RESULT"
+ci:param notify "RESULT_DEPENDENCY" "$DEPENDENCY_RESULT"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 if [ "$SECURITY_RESULT" == "failure" ]; then
-  echo "status=failure" >> "$GITHUB_OUTPUT"
-  echo "message=Maintenance: Security Audit Failed ❌" >> "$GITHUB_OUTPUT"
+  ci:output notify "status" "failure"
+  ci:output notify "message" "Maintenance: Security Audit Failed ❌"
 elif [ "$DEPENDENCY_RESULT" == "success" ]; then
-  echo "status=warning" >> "$GITHUB_OUTPUT"
-  echo "message=Maintenance: Dependencies Updated ⚠️" >> "$GITHUB_OUTPUT"
+  ci:output notify "status" "success"
+  ci:output notify "message" "Maintenance: Dependencies Updated ✅"
 elif [ "$SYNC_RESULT" == "success" ]; then
-  echo "status=warning" >> "$GITHUB_OUTPUT"
-  echo "message=Maintenance: Files Synced ⚠️" >> "$GITHUB_OUTPUT"
+  ci:output notify "status" "success"
+  ci:output notify "message" "Maintenance: Files Synced ✅"
 else
-  echo "status=success" >> "$GITHUB_OUTPUT"
-  echo "message=Maintenance Completed ✅" >> "$GITHUB_OUTPUT"
+  ci:output notify "status" "success"
+  ci:output notify "message" "Maintenance Completed ✅"
 fi
+
+echo:Success "Maintenance Status Determined"

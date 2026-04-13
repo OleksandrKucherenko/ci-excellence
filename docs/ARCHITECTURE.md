@@ -354,6 +354,11 @@ APPRISE_URLS                      # Notifications
 
 ### Script Template Structure
 
+All CI scripts source the e-bash logger via `_ci-common.sh`. Instead of plain `echo`, scripts use
+`echo:Tag` (e.g. `echo:Build`, `echo:Test`) which routes output through the e-bash logger system.
+This allows controlling verbosity via the `DEBUG` environment variable and makes it trivial to
+rollback to plain bash by string-replacing `echo:Tag` back to `echo`.
+
 ```bash
 #!/usr/bin/env bash
 # Purpose: [What this script does]
@@ -362,25 +367,32 @@ APPRISE_URLS                      # Notifications
 # Exit codes: [Success/failure codes]
 
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
-# Configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+echo:Build "Starting [task name]..."
 
-# Functions
-log_info() { echo "ℹ️  $*"; }
-log_success() { echo "✅ $*"; }
-log_error() { echo "❌ $*" >&2; }
+# Logic here
 
-# Main
-main() {
-    log_info "Starting..."
-    # Logic here
-    log_success "Done"
-}
-
-main "$@"
+echo:Build "✓ [task] complete"
+echo:Build "[task name] Complete"
 ```
+
+Each tag has a distinct **color and style** configured in `_ci-common.sh`, so separator lines
+(`=====`) are unnecessary — the colored `[tag]` prefix is enough to visually distinguish scripts.
+
+**Logger tags by domain:**
+- `echo:Build` — build pipeline scripts (**cyan**, bold)
+- `echo:Security` — security scanning (**red**, bold)
+- `echo:Test` — test pipeline scripts (**green**, bold)
+- `echo:Release` — release pipeline scripts (**purple**, bold)
+- `echo:Setup` — environment setup scripts (**blue**, bold)
+- `echo:Maint` — maintenance scripts (grey, italic)
+- `echo:Notify` — notification scripts (yellow)
+- `echo:Report` — report/summary scripts (grey)
+- `echo:Ops` — operations scripts (light purple, bold)
+- `echo:Ops` — operations scripts
+
+**Controlling output:** `DEBUG=build,test ./script.sh` (see [e-bash logger docs](https://github.com/OleksandrKucherenko/e-bash))
 
 ### Execution Flow
 
@@ -389,9 +401,9 @@ Workflow YAML
     ↓
 Calls script: ./scripts/ci/category/ci-XX-name.sh
     ↓
-Script loads environment
+Script sources _ci-common.sh (e-bash logger)
     ↓
-Script performs action
+Script performs action (logs via echo:Tag)
     ↓
 Script exits with code:
     - 0: Success
