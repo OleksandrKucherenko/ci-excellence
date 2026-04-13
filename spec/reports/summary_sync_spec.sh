@@ -8,6 +8,7 @@ Describe 'ci-20-summary-sync.sh'
   It 'exits successfully'
     When run bash "$RUN_SCRIPT" "$SCRIPT" false
     The status should equal 0
+    The stderr should be present
   End
 
   It 'announces itself'
@@ -19,5 +20,20 @@ Describe 'ci-20-summary-sync.sh'
     When run bash "$RUN_SCRIPT" "$SCRIPT" false
     The contents of file "$GITHUB_STEP_SUMMARY" should include 'File Sync Summary'
     The status should equal 0
+    The stderr should be present
+  End
+
+  It 'reports files in sync when no changes'
+    When run bash "$RUN_SCRIPT" "$SCRIPT" false
+    The contents of file "$GITHUB_STEP_SUMMARY" should include 'All files are in sync'
+    The status should equal 0
+    The stderr should be present
+  End
+
+  It 'reports PR created when changes exist'
+    When run bash "$RUN_SCRIPT" "$SCRIPT" true
+    The contents of file "$GITHUB_STEP_SUMMARY" should include 'PR created for review'
+    The status should equal 0
+    The stderr should be present
   End
 End

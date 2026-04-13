@@ -8,6 +8,7 @@ Describe 'ci-50-summary-security-audit.sh'
   It 'exits successfully'
     When run bash "$RUN_SCRIPT" "$SCRIPT"
     The status should equal 0
+    The stderr should be present
   End
 
   It 'announces itself'
@@ -19,5 +20,6 @@ Describe 'ci-50-summary-security-audit.sh'
     When run bash "$RUN_SCRIPT" "$SCRIPT"
     The contents of file "$GITHUB_STEP_SUMMARY" should include 'Security Audit Summary'
     The status should equal 0
+    The stderr should be present
   End
 End

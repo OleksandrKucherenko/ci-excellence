@@ -16,5 +16,6 @@ Describe 'ci-65-publish-npm.sh'
   It 'exits successfully when NODE_AUTH_TOKEN is set'
     When run bash -c "export NODE_AUTH_TOKEN=fake-token && bash '$RUN_SCRIPT' '$SCRIPT'"
     The status should equal 0
+    The stderr should be present
   End
 End

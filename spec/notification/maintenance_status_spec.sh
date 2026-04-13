@@ -16,6 +16,7 @@ Describe 'ci-40-maintenance-status.sh'
       The contents of file "$GITHUB_OUTPUT" should include 'status=failure'
       The contents of file "$GITHUB_OUTPUT" should include 'Security Audit Failed'
       The status should equal 0
+      The stderr should be present
     End
   End
 
@@ -25,6 +26,7 @@ Describe 'ci-40-maintenance-status.sh'
       The contents of file "$GITHUB_OUTPUT" should include 'status=success'
       The contents of file "$GITHUB_OUTPUT" should include 'Dependencies Updated'
       The status should equal 0
+      The stderr should be present
     End
   End
 
@@ -34,6 +36,7 @@ Describe 'ci-40-maintenance-status.sh'
       The contents of file "$GITHUB_OUTPUT" should include 'status=success'
       The contents of file "$GITHUB_OUTPUT" should include 'Files Synced'
       The status should equal 0
+      The stderr should be present
     End
   End
 
@@ -43,6 +46,7 @@ Describe 'ci-40-maintenance-status.sh'
       The contents of file "$GITHUB_OUTPUT" should include 'status=success'
       The contents of file "$GITHUB_OUTPUT" should include 'Maintenance Completed'
       The status should equal 0
+      The stderr should be present
     End
   End
 End

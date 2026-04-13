@@ -8,6 +8,7 @@ Describe 'ci-90-summary-post-release.sh'
   It 'exits successfully'
     When run bash "$RUN_SCRIPT" "$SCRIPT" success success success success
     The status should equal 0
+    The stderr should be present
   End
 
   It 'announces itself'
@@ -19,5 +20,6 @@ Describe 'ci-90-summary-post-release.sh'
     When run bash "$RUN_SCRIPT" "$SCRIPT" success success success success
     The contents of file "$GITHUB_STEP_SUMMARY" should include 'Post-Release Actions Summary'
     The status should equal 0
+    The stderr should be present
   End
 End

@@ -8,6 +8,7 @@ Describe 'ci-40-summary-deprecations.sh'
   It 'exits successfully'
     When run bash "$RUN_SCRIPT" "$SCRIPT"
     The status should equal 0
+    The stderr should be present
   End
 
   It 'announces itself'
@@ -19,5 +20,6 @@ Describe 'ci-40-summary-deprecations.sh'
     When run bash "$RUN_SCRIPT" "$SCRIPT"
     The contents of file "$GITHUB_STEP_SUMMARY" should include 'Deprecation Summary'
     The status should equal 0
+    The stderr should be present
   End
 End

@@ -6,5 +6,6 @@ Describe 'verify-semver.sh'
     When run bash "$RUN_SCRIPT" "$SCRIPT"
     The status should equal 0
     The output should include 'e-bash semver library verified successfully'
+    The stderr should be present
   End
 End

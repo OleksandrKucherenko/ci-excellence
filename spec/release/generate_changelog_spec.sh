@@ -5,6 +5,7 @@ Describe 'ci-20-generate-changelog.sh'
   It 'exits successfully with version arg'
     When run bash "$RUN_SCRIPT" "$SCRIPT" "1.0.0"
     The status should equal 0
+    The stderr should be present
   End
 
   It 'announces its title'

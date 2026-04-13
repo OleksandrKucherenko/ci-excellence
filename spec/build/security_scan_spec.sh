@@ -11,17 +11,26 @@ Describe 'ci-30-security-scan.sh'
   End
 
   Describe 'SARIF file creation'
-    sarif_file="$SHELLSPEC_PROJECT_ROOT/security-results.sarif"
+    setup() {
+      MOCK_BIN="$(mktemp -d)"
+      # Create a fake mise that succeeds for all sub-commands
+      printf '#!/usr/bin/env bash\nexit 0\n' > "$MOCK_BIN/mise"
+      chmod +x "$MOCK_BIN/mise"
+      export PATH="$MOCK_BIN:$PATH"
+    }
+    cleanup() {
+      rm -rf "$MOCK_BIN"
+      rm -f security-results.sarif gitleaks-report.json trufflehog-report.json
+    }
+    BeforeEach 'setup'
+    AfterEach 'cleanup'
 
-    setup() { rm -f "$sarif_file"; }
-    Before 'setup'
-    cleanup() { rm -f "$sarif_file"; }
-    After 'cleanup'
-
-    It 'does not create SARIF file when mise is missing (exits before SARIF step)'
+    It 'creates security-results.sarif in the current directory'
       When run bash "$RUN_SCRIPT" "$SCRIPT"
-      The status should equal 1
-      The file "$sarif_file" should not be exist
+      The status should equal 0
+      The stderr should include 'Security Scan Complete'
+      Path security-results-sarif="security-results.sarif"
+      The path security-results-sarif should be file
     End
   End
 End

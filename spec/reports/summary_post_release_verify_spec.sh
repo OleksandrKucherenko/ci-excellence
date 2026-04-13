@@ -6,18 +6,20 @@ Describe 'ci-80-summary-post-release-verify.sh'
   Before 'setup'
 
   It 'exits successfully'
-    When run bash "$RUN_SCRIPT" "$SCRIPT" "1.0.0"
+    When run bash "$RUN_SCRIPT" "$SCRIPT" 1.0.0
     The status should equal 0
+    The stderr should be present
   End
 
   It 'announces itself'
-    When run bash "$RUN_SCRIPT" "$SCRIPT" "1.0.0"
+    When run bash "$RUN_SCRIPT" "$SCRIPT" 1.0.0
     The stderr should include 'Generating Post-Release Verification Summary'
   End
 
   It 'writes to GITHUB_STEP_SUMMARY'
-    When run bash "$RUN_SCRIPT" "$SCRIPT" "1.0.0"
+    When run bash "$RUN_SCRIPT" "$SCRIPT" 1.0.0
     The contents of file "$GITHUB_STEP_SUMMARY" should include 'Deployment Verification Results'
     The status should equal 0
+    The stderr should be present
   End
 End

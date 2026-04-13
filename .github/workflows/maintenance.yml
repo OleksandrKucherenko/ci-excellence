@@ -135,8 +135,7 @@ jobs:
           vars.ENABLE_NPM_PUBLISH == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          ./scripts/ci/maintenance/ci-75-deprecate-npm-versions.sh
+        run: ./scripts/ci/maintenance/ci-75-deprecate-npm-versions.sh
 
       - name: Update GitHub releases
         if: |
@@ -144,8 +143,7 @@ jobs:
           vars.ENABLE_GITHUB_RELEASE == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ./scripts/ci/maintenance/ci-80-deprecate-github-releases.sh
+        run: ./scripts/ci/maintenance/ci-80-deprecate-github-releases.sh
 
       - name: Report deprecation results
         run: ./scripts/ci/reports/ci-40-summary-deprecations.sh
@@ -219,7 +217,7 @@ jobs:
 
       - name: Run tests
         if: ${{ vars.ENABLE_DEPENDENCY_UPDATE == 'true' }}
-        run: ./scripts/ci/test/ci-10-unit-tests.sh || echo "Tests failed, will be noted in PR"
+        run: ./scripts/ci/maintenance/ci-91-test-after-update.sh
 
       - name: Check for changes
         id: changes
@@ -261,13 +259,13 @@ jobs:
           ENABLE_DEPRECATION: ${{ vars.ENABLE_DEPRECATION || 'false' }}
           ENABLE_SECURITY_AUDIT: ${{ vars.ENABLE_SECURITY_AUDIT || 'false' }}
           ENABLE_DEPENDENCY_UPDATE: ${{ vars.ENABLE_DEPENDENCY_UPDATE || 'false' }}
-        run: |
-          ./scripts/ci/reports/ci-70-summary-maintenance.sh \
-            "${{ needs.cleanup.result }}" \
-            "${{ needs['sync-files'].result }}" \
-            "${{ needs['deprecate-old-versions'].result }}" \
-            "${{ needs['security-audit'].result }}" \
-            "${{ needs['dependency-update'].result }}"
+        run: >-
+          ./scripts/ci/reports/ci-70-summary-maintenance.sh
+          "${{ needs.cleanup.result }}"
+          "${{ needs['sync-files'].result }}"
+          "${{ needs['deprecate-old-versions'].result }}"
+          "${{ needs['security-audit'].result }}"
+          "${{ needs['dependency-update'].result }}"
 
       - name: Check if notifications enabled
         id: check_notify
@@ -281,13 +279,13 @@ jobs:
       - name: Determine maintenance status
         if: steps.check_notify.outputs.enabled == 'true'
         id: status
-        run: |
-          ./scripts/ci/notification/ci-40-maintenance-status.sh \
-            "${{ needs.cleanup.result }}" \
-            "${{ needs['sync-files'].result }}" \
-            "${{ needs['deprecate-old-versions'].result }}" \
-            "${{ needs['security-audit'].result }}" \
-            "${{ needs['dependency-update'].result }}"
+        run: >-
+          ./scripts/ci/notification/ci-40-maintenance-status.sh
+          "${{ needs.cleanup.result }}"
+          "${{ needs['sync-files'].result }}"
+          "${{ needs['deprecate-old-versions'].result }}"
+          "${{ needs['security-audit'].result }}"
+          "${{ needs['dependency-update'].result }}"
 
       - name: Send notification
         if: steps.check_notify.outputs.enabled == 'true'

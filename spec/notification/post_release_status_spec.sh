@@ -11,47 +11,52 @@ Describe 'ci-50-post-release-status.sh'
   End
 
   Describe 'rollback success'
-    It 'sets status to warning for rollback completed'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" unknown unknown unknown success
+    It 'sets status to warning'
+      When run bash "$RUN_SCRIPT" "$SCRIPT" success skipped skipped success
       The contents of file "$GITHUB_OUTPUT" should include 'status=warning'
       The contents of file "$GITHUB_OUTPUT" should include 'Rollback Completed'
       The status should equal 0
+      The stderr should be present
     End
   End
 
   Describe 'tag stable success'
-    It 'sets status to success for version tagged as stable'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" unknown success unknown unknown
+    It 'sets status to success with stable tag message'
+      When run bash "$RUN_SCRIPT" "$SCRIPT" success success skipped skipped
       The contents of file "$GITHUB_OUTPUT" should include 'status=success'
       The contents of file "$GITHUB_OUTPUT" should include 'Version Tagged as Stable'
       The status should equal 0
+      The stderr should be present
     End
   End
 
-  Describe 'verify success'
-    It 'sets status to success for deployment verified'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" success unknown unknown unknown
+  Describe 'verify success only'
+    It 'sets status to success with verify message'
+      When run bash "$RUN_SCRIPT" "$SCRIPT" success skipped skipped skipped
       The contents of file "$GITHUB_OUTPUT" should include 'status=success'
       The contents of file "$GITHUB_OUTPUT" should include 'Deployment Verified'
       The status should equal 0
+      The stderr should be present
     End
   End
 
   Describe 'rollback failure'
-    It 'sets status to failure for rollback failed'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" unknown unknown unknown failure
+    It 'sets status to failure'
+      When run bash "$RUN_SCRIPT" "$SCRIPT" skipped skipped skipped failure
       The contents of file "$GITHUB_OUTPUT" should include 'status=failure'
       The contents of file "$GITHUB_OUTPUT" should include 'Rollback Failed'
       The status should equal 0
+      The stderr should be present
     End
   End
 
   Describe 'default'
-    It 'sets status to info for generic completion'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" unknown unknown unknown unknown
+    It 'sets status to info'
+      When run bash "$RUN_SCRIPT" "$SCRIPT" skipped skipped skipped skipped
       The contents of file "$GITHUB_OUTPUT" should include 'status=info'
       The contents of file "$GITHUB_OUTPUT" should include 'Post-Release Actions Completed'
       The status should equal 0
+      The stderr should be present
     End
   End
 End

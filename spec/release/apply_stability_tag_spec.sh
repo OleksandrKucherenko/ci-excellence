@@ -40,7 +40,7 @@ Describe 'ci-07-apply-stability-tag.sh'
     After 'cleanup_git_repo'
 
     It 'exits 1 when version tag does not exist'
-      When run bash -c "cd '$_tmp_repo' && bash '$RUN_SCRIPT' '$SCRIPT' stable 9.9.9"
+      When run bash -c "GIT_DIR='$_tmp_repo/.git' GIT_WORK_TREE='$_tmp_repo' bash '$RUN_SCRIPT' '$SCRIPT' stable 9.9.9"
       The status should equal 1
       The stderr should include 'not found'
     End

@@ -54,13 +54,11 @@ jobs:
 
       - name: Verify GitHub release
         if: vars.ENABLE_GITHUB_RELEASE == 'true'
-        run: |
-          ./scripts/ci/release/ci-35-verify-github-release.sh "${{ steps.version.outputs.version }}"
+        run: ./scripts/ci/release/ci-35-verify-github-release.sh "${{ steps.version.outputs.version }}"
 
       - name: Verify Docker deployment
         if: vars.ENABLE_DOCKER_PUBLISH == 'true'
-        run: |
-          ./scripts/ci/release/ci-85-verify-docker-deployment.sh "${{ steps.version.outputs.version }}"
+        run: ./scripts/ci/release/ci-85-verify-docker-deployment.sh "${{ steps.version.outputs.version }}"
 
       - name: Run smoke tests
         run: ./scripts/ci/test/ci-40-smoke-tests.sh "${{ steps.version.outputs.version }}"
@@ -135,13 +133,11 @@ jobs:
         if: vars.ENABLE_GITHUB_RELEASE == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ./scripts/ci/release/ci-40-rollback-github.sh "${{ github.event.inputs.version }}"
+        run: ./scripts/ci/release/ci-40-rollback-github.sh "${{ github.event.inputs.version }}"
 
       - name: Tag Docker images as deprecated
         if: vars.ENABLE_DOCKER_PUBLISH == 'true'
-        run: |
-          ./scripts/ci/release/ci-90-rollback-docker.sh "${{ github.event.inputs.version }}"
+        run: ./scripts/ci/release/ci-90-rollback-docker.sh "${{ github.event.inputs.version }}"
 
       - name: Report rollback results
         run: ./scripts/ci/reports/ci-85-summary-rollback.sh "${{ github.event.inputs.version }}"
@@ -156,12 +152,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Generate summary
-        run: |
-          ./scripts/ci/reports/ci-90-summary-post-release.sh \
-            "${{ needs['verify-deployment'].result }}" \
-            "${{ needs['tag-stable'].result }}" \
-            "${{ needs['tag-unstable'].result }}" \
-            "${{ needs.rollback.result }}"
+        run: >-
+          ./scripts/ci/reports/ci-90-summary-post-release.sh
+          "${{ needs['verify-deployment'].result }}"
+          "${{ needs['tag-stable'].result }}"
+          "${{ needs['tag-unstable'].result }}"
+          "${{ needs.rollback.result }}"
 
       - name: Check if notifications enabled
         id: check_notify
@@ -175,12 +171,12 @@ jobs:
       - name: Determine action type and status
         if: steps.check_notify.outputs.enabled == 'true'
         id: status
-        run: |
-          ./scripts/ci/notification/ci-50-post-release-status.sh \
-            "${{ needs['verify-deployment'].result }}" \
-            "${{ needs['tag-stable'].result }}" \
-            "${{ needs['tag-unstable'].result }}" \
-            "${{ needs.rollback.result }}"
+        run: >-
+          ./scripts/ci/notification/ci-50-post-release-status.sh
+          "${{ needs['verify-deployment'].result }}"
+          "${{ needs['tag-stable'].result }}"
+          "${{ needs['tag-unstable'].result }}"
+          "${{ needs.rollback.result }}"
 
       - name: Send notification
         if: steps.check_notify.outputs.enabled == 'true'

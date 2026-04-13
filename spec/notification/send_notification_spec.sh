@@ -8,18 +8,16 @@ Describe 'ci-30-send-notification.sh'
   }
   Before 'setup'
 
-  It 'exits successfully when APPRISE_URLS is empty'
-    When run bash "$RUN_SCRIPT" "$SCRIPT" "Test Title" "Test Message" "info"
-    The status should equal 0
+  Describe 'when APPRISE_URLS is empty'
+    It 'exits successfully with graceful skip'
+      When run bash "$RUN_SCRIPT" "$SCRIPT" "Test Title" "Test Message" "info"
+      The status should equal 0
+      The stderr should include 'No notification URLs configured'
+    End
   End
 
   It 'announces itself'
-    When run bash "$RUN_SCRIPT" "$SCRIPT" "Test Title" "Test Message" "info"
+    When run bash "$RUN_SCRIPT" "$SCRIPT"
     The stderr should include 'Sending Notification'
-  End
-
-  It 'reports no notification URLs configured'
-    When run bash "$RUN_SCRIPT" "$SCRIPT" "Test Title" "Test Message" "info"
-    The stderr should include 'No notification URLs configured'
   End
 End

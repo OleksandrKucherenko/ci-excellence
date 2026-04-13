@@ -306,28 +306,28 @@ jobs:
           ENABLE_E2E_TESTS: ${{ vars.ENABLE_E2E_TESTS || 'false' }}
           ENABLE_SECURITY_SCAN: ${{ vars.ENABLE_SECURITY_SCAN || 'false' }}
           ENABLE_BUNDLE: ${{ vars.ENABLE_BUNDLE || 'false' }}
-        run: |
-          ./scripts/ci/reports/ci-10-summary-pre-release.sh \
-            "${{ needs.setup.result }}" \
-            "${{ needs.compile.result }}" \
-            "${{ needs.lint.result }}" \
-            "${{ needs.unit-tests.result }}" \
-            "${{ needs.integration-tests.result }}" \
-            "${{ needs.e2e-tests.result }}" \
-            "${{ needs.security-scan.result }}" \
-            "${{ needs.bundle.result }}"
+        run: >-
+          ./scripts/ci/reports/ci-10-summary-pre-release.sh
+          "${{ needs.setup.result }}"
+          "${{ needs.compile.result }}"
+          "${{ needs.lint.result }}"
+          "${{ needs.unit-tests.result }}"
+          "${{ needs.integration-tests.result }}"
+          "${{ needs.e2e-tests.result }}"
+          "${{ needs.security-scan.result }}"
+          "${{ needs.bundle.result }}"
 
       - name: Check for failures
-        run: |
-          ./scripts/ci/build/ci-60-check-failures.sh \
-            "${{ needs.setup.result }}" \
-            "${{ needs.compile.result }}" \
-            "${{ needs.lint.result }}" \
-            "${{ needs.unit-tests.result }}" \
-            "${{ needs.integration-tests.result }}" \
-            "${{ needs.e2e-tests.result }}" \
-            "${{ needs.security-scan.result }}" \
-            "${{ needs.bundle.result }}"
+        run: >-
+          ./scripts/ci/build/ci-60-check-failures.sh
+          "${{ needs.setup.result }}"
+          "${{ needs.compile.result }}"
+          "${{ needs.lint.result }}"
+          "${{ needs.unit-tests.result }}"
+          "${{ needs.integration-tests.result }}"
+          "${{ needs.e2e-tests.result }}"
+          "${{ needs.security-scan.result }}"
+          "${{ needs.bundle.result }}"
 
   notify:
     name: Send Notifications

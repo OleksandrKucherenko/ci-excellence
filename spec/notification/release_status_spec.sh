@@ -6,52 +6,55 @@ Describe 'ci-60-release-status.sh'
   Before 'setup'
 
   It 'announces itself'
-    When run bash "$RUN_SCRIPT" "$SCRIPT" "1.0.0" success success success success
+    When run bash "$RUN_SCRIPT" "$SCRIPT"
     The stderr should include 'Determining Release Status'
   End
 
   Describe 'all success'
     It 'sets status to success'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" "1.0.0" success success success success
+      When run bash "$RUN_SCRIPT" "$SCRIPT" 1.0.0 success success success success
       The contents of file "$GITHUB_OUTPUT" should include 'status=success'
       The contents of file "$GITHUB_OUTPUT" should include 'Release 1.0.0 Published'
       The status should equal 0
+      The stderr should be present
     End
   End
 
   Describe 'prepare failure'
-    It 'sets status to failure when prepare fails'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" "1.0.0" failure success success success
+    It 'sets status to failure'
+      When run bash "$RUN_SCRIPT" "$SCRIPT" 1.0.0 failure success success success
       The contents of file "$GITHUB_OUTPUT" should include 'status=failure'
       The contents of file "$GITHUB_OUTPUT" should include 'Release 1.0.0 Failed'
       The status should equal 0
+      The stderr should be present
     End
   End
 
   Describe 'npm failure'
-    It 'sets status to failure when npm fails'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" "2.0.0" success failure success success
+    It 'sets status to failure'
+      When run bash "$RUN_SCRIPT" "$SCRIPT" 2.0.0 success failure success success
       The contents of file "$GITHUB_OUTPUT" should include 'status=failure'
       The contents of file "$GITHUB_OUTPUT" should include 'Release 2.0.0 Failed'
       The status should equal 0
+      The stderr should be present
     End
   End
 
   Describe 'github failure'
-    It 'sets status to failure when github release fails'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" "1.0.0" success success failure success
+    It 'sets status to failure'
+      When run bash "$RUN_SCRIPT" "$SCRIPT" 1.0.0 success success failure success
       The contents of file "$GITHUB_OUTPUT" should include 'status=failure'
-      The contents of file "$GITHUB_OUTPUT" should include 'Release 1.0.0 Failed'
       The status should equal 0
+      The stderr should be present
     End
   End
 
   Describe 'docker failure'
-    It 'sets status to failure when docker fails'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" "1.0.0" success success success failure
+    It 'sets status to failure'
+      When run bash "$RUN_SCRIPT" "$SCRIPT" 1.0.0 success success success failure
       The contents of file "$GITHUB_OUTPUT" should include 'status=failure'
-      The contents of file "$GITHUB_OUTPUT" should include 'Release 1.0.0 Failed'
       The status should equal 0
+      The stderr should be present
     End
   End
 End

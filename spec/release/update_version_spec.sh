@@ -5,6 +5,7 @@ Describe 'ci-15-update-version.sh'
   It 'exits successfully'
     When run bash "$RUN_SCRIPT" "$SCRIPT" "1.2.3"
     The status should equal 0
+    The stderr should be present
   End
 
   It 'announces its title'

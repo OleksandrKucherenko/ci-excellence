@@ -8,6 +8,7 @@ Describe 'ci-60-summary-dependency-update.sh'
   It 'exits successfully'
     When run bash "$RUN_SCRIPT" "$SCRIPT" false
     The status should equal 0
+    The stderr should be present
   End
 
   It 'announces itself'
@@ -19,5 +20,6 @@ Describe 'ci-60-summary-dependency-update.sh'
     When run bash "$RUN_SCRIPT" "$SCRIPT" false
     The contents of file "$GITHUB_STEP_SUMMARY" should include 'Dependency Update Summary'
     The status should equal 0
+    The stderr should be present
   End
 End
