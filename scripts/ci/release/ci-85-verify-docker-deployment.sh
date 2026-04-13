@@ -2,35 +2,19 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
-# CI Pipeline Stub: Verify Docker Deployment
+# CI Script: Verify Docker Deployment
 # Purpose: Verify that Docker image is available
-
-VERSION="${CI_VERSION:?CI_VERSION is required}"
+# Hooks: begin, verify, end (automatic)
+#   ci-cd/ci-85-verify-docker-deployment/begin_*.sh  - pre-verify setup
+#   ci-cd/ci-85-verify-docker-deployment/verify_*.sh - docker verification commands
+#   ci-cd/ci-85-verify-docker-deployment/end_*.sh    - post-verify reporting
 
 echo:Release "Verifying Docker Deployment"
-ci:param release "CI_VERSION" "$VERSION"
+ci:param release "CI_VERSION" "${CI_VERSION:?CI_VERSION is required}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
-
-# Example: Verify Docker image availability
-# IMAGE_NAME="myorg/myapp"
-#
-# echo "Checking Docker registry for $IMAGE_NAME:$VERSION..."
-# if docker manifest inspect "$IMAGE_NAME:$VERSION" &> /dev/null; then
-#     echo "✓ Docker image found"
-#
-#     # Verify image metadata
-#     IMAGE_LABELS=$(docker inspect "$IMAGE_NAME:$VERSION" --format='{{json .Config.Labels}}')
-#     echo "Image labels: $IMAGE_LABELS"
-# else
-#     echo "⚠ Docker image not found"
-#     exit 1
-# fi
-
-# Example: Test docker image
-# echo "Testing Docker image..."
-# docker run --rm "$IMAGE_NAME:$VERSION" --version
-
+hooks:declare verify
+hooks:do verify
 
 echo:Success "Docker Deployment Verification Complete"

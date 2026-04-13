@@ -2,25 +2,11 @@
 Describe 'ci-77-confirm-rollback.sh'
   SCRIPT="$SHELLSPEC_PROJECT_ROOT/scripts/ci/release/ci-77-confirm-rollback.sh"
 
-  It 'exits successfully'
+  It 'exits 0 and announces confirming rollback'
     export CI_VERSION="1.0.0"
     When run bash "$RUN_SCRIPT" "$SCRIPT"
     The status should equal 0
-    The stdout should be present
-    The stderr should be present
-  End
-
-  It 'prints rollback warning to stdout'
-    export CI_VERSION="1.0.0"
-    When run bash "$RUN_SCRIPT" "$SCRIPT"
-    The output should include 'WARNING: Rolling back version'
-    The stderr should be present
-  End
-
-  It 'announces confirming rollback'
-    export CI_VERSION="1.0.0"
-    When run bash "$RUN_SCRIPT" "$SCRIPT"
     The stderr should include 'Confirming Rollback'
-    The stdout should be present
+    The stderr should include 'Rollback Confirmed'
   End
 End

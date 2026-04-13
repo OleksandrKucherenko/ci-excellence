@@ -3,41 +3,17 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Script: Bundle/Package
-# Purpose: Create distribution packages (technology-agnostic stub)
+# Purpose: Create distribution packages
+# Hooks: begin, bundle, end (automatic)
+#   ci-cd/ci-40-bundle/begin_*.sh  - pre-bundle setup
+#   ci-cd/ci-40-bundle/bundle_*.sh - bundling commands
+#   ci-cd/ci-40-bundle/end_*.sh    - post-bundle verification
 
 echo:Build "Creating Bundle/Package"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
-# Example: NPM package
-# if [ -f "package.json" ]; then
-#     echo "Creating NPM package..."
-#     npm pack
-# fi
-
-# Example: Python wheel
-# if [ -f "setup.py" ] || [ -f "pyproject.toml" ]; then
-#     echo "Building Python package..."
-#     python3 -m build
-# fi
-
-# Example: Go binary
-# if [ -f "go.mod" ]; then
-#     echo "Building Go binaries..."
-#     GOOS=linux GOARCH=amd64 go build -o dist/app-linux-amd64
-#     GOOS=darwin GOARCH=amd64 go build -o dist/app-darwin-amd64
-#     GOOS=windows GOARCH=amd64 go build -o dist/app-windows-amd64.exe
-# fi
-
-# Example: Docker image
-# if [ -f "Dockerfile" ]; then
-#     echo "Building Docker image..."
-#     docker build -t myapp:latest .
-# fi
-
-# Example: Create tarball
-# echo "Creating distribution tarball..."
-# tar -czf dist.tar.gz dist/
-
+hooks:declare bundle
+hooks:do bundle
 
 echo:Success "Bundling Complete"

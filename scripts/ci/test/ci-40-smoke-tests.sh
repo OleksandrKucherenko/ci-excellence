@@ -2,50 +2,19 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
-# CI Pipeline Stub: Smoke Tests
+# CI Script: Smoke Tests
 # Purpose: Run basic smoke tests to verify deployment
-
-VERSION="${CI_VERSION:-latest}"
+# Hooks: begin, test, end (automatic)
+#   ci-cd/ci-40-smoke-tests/begin_*.sh - pre-test setup
+#   ci-cd/ci-40-smoke-tests/test_*.sh  - smoke test commands
+#   ci-cd/ci-40-smoke-tests/end_*.sh   - post-test reporting
 
 echo:Test "Running Smoke Tests"
-ci:param test "CI_VERSION" "$VERSION"
+ci:param test "CI_VERSION" "${CI_VERSION:-latest}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
-EXIT_CODE=0
-
-# Example: Health check endpoint
-# echo "Checking health endpoint..."
-# curl -f https://api.example.com/health || EXIT_CODE=$?
-
-# Example: Version endpoint
-# echo "Checking version endpoint..."
-# DEPLOYED_VERSION=$(curl -s https://api.example.com/version | jq -r '.version')
-# if [ "$DEPLOYED_VERSION" != "$VERSION" ]; then
-#     echo "⚠ Version mismatch: expected $VERSION, got $DEPLOYED_VERSION"
-#     EXIT_CODE=1
-# fi
-
-# Example: Basic API endpoint test
-# echo "Testing basic API functionality..."
-# curl -f https://api.example.com/ping || EXIT_CODE=$?
-
-# Example: NPM package availability
-# if [ "$VERSION" != "latest" ]; then
-#     echo "Checking NPM package availability..."
-#     npm view mypackage@$VERSION version || EXIT_CODE=$?
-# fi
-
-# Example: Docker image availability
-# if [ "$VERSION" != "latest" ]; then
-#     echo "Checking Docker image availability..."
-#     docker pull myorg/myapp:$VERSION || EXIT_CODE=$?
-# fi
-
-
-if [ $EXIT_CODE -ne 0 ]; then
-    echo:Error "⚠ Smoke Tests Failed"
-    exit $EXIT_CODE
-fi
+hooks:declare test
+hooks:do test
 
 echo:Success "Smoke Tests Complete"

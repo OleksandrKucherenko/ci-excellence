@@ -2,27 +2,18 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
-# CI Pipeline Stub: Identify Deprecated Versions
+# CI Script: Identify Deprecated Versions
 # Purpose: Identify versions that should be deprecated
+# Hooks: begin, identify, end (automatic)
+#   ci-cd/ci-70-identify-deprecated-versions/begin_*.sh    - pre-identify setup
+#   ci-cd/ci-70-identify-deprecated-versions/identify_*.sh - version identification commands
+#   ci-cd/ci-70-identify-deprecated-versions/end_*.sh      - post-identify reporting
 
 echo:Maint "Identifying Deprecated Versions"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
-# Example: List versions older than 1 year
-# if [ -f "package.json" ] && command -v npm &> /dev/null; then
-#     PACKAGE_NAME=$(jq -r '.name' package.json)
-#     CUTOFF_DATE=$(date -d "1 year ago" +%Y-%m-%d)
-#
-#     echo "Versions published before $CUTOFF_DATE:"
-#     npm view "$PACKAGE_NAME" time --json | \
-#         jq -r "to_entries[] | select(.value < \"$CUTOFF_DATE\") | .key" | \
-#         grep -v "created\|modified"
-# fi
-
-# Example: List pre-release versions that are superseded
-# npm view "$PACKAGE_NAME" versions --json | \
-#     jq -r '.[] | select(test("-alpha|-beta|-rc"))'
-
+hooks:declare identify
+hooks:do identify
 
 echo:Success "Deprecated Versions Identification Complete"

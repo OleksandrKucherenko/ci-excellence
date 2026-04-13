@@ -4,21 +4,17 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Script: Confirm Rollback
 # Purpose: Print rollback warning and planned actions
-
-VERSION="${CI_VERSION:-unknown}"
+# Hooks: begin, confirm, end (automatic)
+#   ci-cd/ci-77-confirm-rollback/begin_*.sh   - pre-confirm setup
+#   ci-cd/ci-77-confirm-rollback/confirm_*.sh - rollback confirmation commands
+#   ci-cd/ci-77-confirm-rollback/end_*.sh     - post-confirm verification
 
 echo:Release "Confirming Rollback"
-ci:param release "CI_VERSION" "$VERSION"
+ci:param release "CI_VERSION" "${CI_VERSION:-unknown}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
-
-cat <<EOF
-WARNING: Rolling back version ${VERSION}
-This action will:
-  - Deprecate NPM package version (if enabled)
-  - Mark GitHub release as draft (if enabled)
-  - Tag Docker images as deprecated (if enabled)
-EOF
+hooks:declare confirm
+hooks:do confirm
 
 echo:Success "Rollback Confirmed"

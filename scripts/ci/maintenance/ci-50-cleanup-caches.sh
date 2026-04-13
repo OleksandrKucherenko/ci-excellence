@@ -2,25 +2,18 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
-# CI Pipeline Stub: Cleanup Old Caches
+# CI Script: Cleanup Old Caches
 # Purpose: Delete old GitHub Actions caches
+# Hooks: begin, cleanup, end (automatic)
+#   ci-cd/ci-50-cleanup-caches/begin_*.sh   - pre-cleanup setup
+#   ci-cd/ci-50-cleanup-caches/cleanup_*.sh - cache cleanup commands
+#   ci-cd/ci-50-cleanup-caches/end_*.sh     - post-cleanup reporting
 
 echo:Maint "Cleaning Up Old Caches"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
-# Example: Delete unused caches using gh CLI
-# if command -v gh &> /dev/null; then
-#     echo "Deleting unused caches..."
-#
-#     gh api repos/:owner/:repo/actions/caches \
-#         --paginate \
-#         --jq ".actions_caches[] | select(.last_accessed_at < (now - (7 * 86400))) | .id" | \
-#     while read -r cache_id; do
-#         echo "Deleting cache $cache_id..."
-#         gh api -X DELETE "repos/:owner/:repo/actions/caches/$cache_id" || true
-#     done
-# fi
-
+hooks:declare cleanup
+hooks:do cleanup
 
 echo:Success "Caches Cleanup Complete"

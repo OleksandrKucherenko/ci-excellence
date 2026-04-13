@@ -2,35 +2,20 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
-# CI Pipeline Stub: Rollback NPM Release
+# CI Script: Rollback NPM Release
 # Purpose: Deprecate NPM package version
-
-VERSION="${CI_VERSION:?CI_VERSION is required}"
+# Hooks: begin, rollback, end (automatic)
+#   ci-cd/ci-75-rollback-npm/begin_*.sh    - pre-rollback setup
+#   ci-cd/ci-75-rollback-npm/rollback_*.sh - npm rollback commands
+#   ci-cd/ci-75-rollback-npm/end_*.sh      - post-rollback verification
 
 echo:Release "Rolling Back NPM Release"
-ci:param release "CI_VERSION" "$VERSION"
+ci:param release "CI_VERSION" "${CI_VERSION:?CI_VERSION is required}"
 ci:secret release "NODE_AUTH_TOKEN" "${NODE_AUTH_TOKEN:-}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
-
-# Check if NODE_AUTH_TOKEN is set
-if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
-    echo:Error "⚠ NODE_AUTH_TOKEN is not set"
-    echo:Release "  Set this secret in GitHub to enable NPM operations"
-    exit 1
-fi
-
-# Example: Deprecate NPM package version
-# if [ -f "package.json" ]; then
-#     PACKAGE_NAME=$(jq -r '.name' package.json)
-#     echo "Deprecating $PACKAGE_NAME@$VERSION..."
-#     npm deprecate "$PACKAGE_NAME@$VERSION" "This version has been rolled back due to issues"
-# fi
-
-# Note: npm unpublish can only be used within 72 hours of publishing
-# and requires special permissions
-# npm unpublish "$PACKAGE_NAME@$VERSION"
-
+hooks:declare rollback
+hooks:do rollback
 
 echo:Success "NPM Rollback Complete"

@@ -3,48 +3,17 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Script: E2E Tests
-# Purpose: Run end-to-end tests (technology-agnostic stub)
+# Purpose: Run end-to-end tests
+# Hooks: begin, test, end (automatic)
+#   ci-cd/ci-30-e2e-tests/begin_*.sh - pre-test setup (browser, services)
+#   ci-cd/ci-30-e2e-tests/test_*.sh  - e2e test commands
+#   ci-cd/ci-30-e2e-tests/end_*.sh   - post-test cleanup
 
 echo:Test "Running End-to-End Tests"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
-EXIT_CODE=0
-
-# Example: Playwright
-# if [ -f "playwright.config.ts" ]; then
-#     echo "Running Playwright E2E tests..."
-#     npx playwright test || EXIT_CODE=$?
-# fi
-
-# Example: Cypress
-# if [ -f "cypress.config.js" ] || [ -f "cypress.json" ]; then
-#     echo "Running Cypress E2E tests..."
-#     npx cypress run || EXIT_CODE=$?
-# fi
-
-# Example: Puppeteer
-# if [ -f "puppeteer.config.js" ]; then
-#     echo "Running Puppeteer E2E tests..."
-#     npm run test:e2e || EXIT_CODE=$?
-# fi
-
-# Example: Selenium
-# if [ -f "selenium.config.js" ]; then
-#     echo "Running Selenium E2E tests..."
-#     npm run test:selenium || EXIT_CODE=$?
-# fi
-
-# Example: TestCafe
-# if [ -f ".testcaferc.json" ]; then
-#     echo "Running TestCafe tests..."
-#     testcafe chrome tests/ || EXIT_CODE=$?
-# fi
-
-
-if [ $EXIT_CODE -ne 0 ]; then
-    echo:Error "⚠ E2E Tests Failed"
-    exit $EXIT_CODE
-fi
+hooks:declare test
+hooks:do test
 
 echo:Success "E2E Tests Complete"

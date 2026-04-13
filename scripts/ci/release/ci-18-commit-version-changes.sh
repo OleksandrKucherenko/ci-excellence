@@ -4,26 +4,18 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Script: Commit Version Changes
 # Purpose: Commit and push version bump changes
-
-TARGET_BRANCH="${CI_TARGET_BRANCH:-main}"
-VERSION="${CI_VERSION:-}"
+# Hooks: begin, commit, end (automatic)
+#   ci-cd/ci-18-commit-version-changes/begin_*.sh  - pre-commit setup
+#   ci-cd/ci-18-commit-version-changes/commit_*.sh - commit commands
+#   ci-cd/ci-18-commit-version-changes/end_*.sh    - post-commit verification
 
 echo:Release "Committing Version Changes"
-ci:param release "CI_TARGET_BRANCH" "$TARGET_BRANCH"
-ci:param release "CI_VERSION" "$VERSION"
+ci:param release "CI_TARGET_BRANCH" "${CI_TARGET_BRANCH:-main}"
+ci:param release "CI_VERSION" "${CI_VERSION:-}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
-
-if [ -z "$VERSION" ]; then
-  echo:Release "Version is required"
-  exit 1
-fi
-
-./scripts/ci/setup/ci-30-github-actions-bot.sh
-
-git add .
-git commit -m "chore(release): bump version to ${VERSION}" || echo "No changes to commit"
-git push origin "HEAD:${TARGET_BRANCH}" || echo "Nothing to push"
+hooks:declare commit
+hooks:do commit
 
 echo:Success "Version Changes Committed"
