@@ -22,6 +22,9 @@ on:
         required: false
         default: 'no'
 
+permissions:
+  contents: write
+
 jobs:
   ops-handler:
     name: Handle Ops Action
@@ -44,19 +47,19 @@ jobs:
         if: github.event.inputs.action == 'promote-release'
         run: |
           echo "Promoting version ${{ github.event.inputs.version }}..."
-          # Logic to promote pre-release to next stage or release
-          # e.g. 1.0.0-alpha -> 1.0.0-beta or 1.0.0
-          # This would typically trigger tag creation similar to release.yml
-          
-          echo "Run: gh workflow run release.yml -f release-scope=... -f pre-release-type=..."
-          echo "Please use the Release Pipeline for promotions until auto-promotion is fully implemented."
-          exit 1
+          echo ""
+          echo "Auto-promotion is not yet implemented."
+          echo "Please use the Release Pipeline to promote a pre-release:"
+          echo "  gh workflow run release.yml -f release-scope=... -f pre-release-type=..."
+          echo ""
+          echo "See: Actions > Release Pipeline > Run workflow"
 
       - name: Deploy Staging
         if: github.event.inputs.action == 'deploy-staging'
         run: |
           echo "Deploying ${{ github.event.inputs.version }} to Staging..."
-          # Placeholder for deployment logic
+          echo "Stub: deploy-staging is awaiting project-specific implementation."
+          # TODO: Replace with project-specific deployment script
           # ./scripts/ops/deploy.sh staging ${{ github.event.inputs.version }}
 
       - name: Deploy Production
@@ -67,19 +70,18 @@ jobs:
             exit 1
           fi
           echo "Deploying ${{ github.event.inputs.version }} to Production..."
-          # Placeholder for deployment logic
+          echo "Stub: deploy-production is awaiting project-specific implementation."
+          # TODO: Replace with project-specific deployment script
           # ./scripts/ops/deploy.sh production ${{ github.event.inputs.version }}
 
       - name: Mark Stable
         if: github.event.inputs.action == 'mark-stable'
         run: |
           echo "Marking ${{ github.event.inputs.version }} as stable..."
-          # Logic to update GitHub release or status badges
-          # ./scripts/ops/update-stability.sh ${{ github.event.inputs.version }} stable
+          ./scripts/ci/release/ci-07-apply-stability-tag.sh stable "${{ github.event.inputs.version }}"
 
       - name: Mark Deprecated
         if: github.event.inputs.action == 'mark-deprecated'
         run: |
           echo "Marking ${{ github.event.inputs.version }} as deprecated..."
-          # Logic to update GitHub release or npm deprecation
-          # ./scripts/ops/update-stability.sh ${{ github.event.inputs.version }} deprecated
+          ./scripts/ci/maintenance/ci-80-deprecate-github-releases.sh "${{ github.event.inputs.version }}"

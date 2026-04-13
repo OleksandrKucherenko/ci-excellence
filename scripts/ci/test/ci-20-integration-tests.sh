@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Script: Integration Tests
 # Purpose: Run integration tests (technology-agnostic stub)
 
-echo "========================================="
-echo "Running Integration Tests"
-echo "========================================="
+echo:Test "========================================="
+echo:Test "Running Integration Tests"
+echo:Test "========================================="
 
 EXIT_CODE=0
 
@@ -44,16 +45,16 @@ EXIT_CODE=0
 # fi
 
 # Add your integration testing commands here
-echo "✓ Integration test stub executed"
-echo "  Customize this script in scripts/ci/test/ci-20-integration-tests.sh"
+echo:Test "✓ Integration test stub executed"
+echo:Test "  Customize this script in scripts/ci/test/ci-20-integration-tests.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
-    echo "========================================="
-    echo "⚠ Integration Tests Failed"
-    echo "========================================="
+    echo:Test "========================================="
+    echo:Test "⚠ Integration Tests Failed"
+    echo:Test "========================================="
     exit $EXIT_CODE
 fi
 
-echo "========================================="
-echo "Integration Tests Complete"
-echo "========================================="
+echo:Test "========================================="
+echo:Test "Integration Tests Complete"
+echo:Test "========================================="

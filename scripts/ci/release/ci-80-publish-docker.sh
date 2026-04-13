@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Publish Docker Image
 # Purpose: Build and publish Docker images
@@ -8,11 +9,11 @@ set -euo pipefail
 VERSION="${1:?Version is required}"
 IS_PRERELEASE="${2:-false}"
 
-echo "========================================="
-echo "Publishing Docker Image"
-echo "Version: $VERSION"
-echo "Pre-release: $IS_PRERELEASE"
-echo "========================================="
+echo:Release "========================================="
+echo:Release "Publishing Docker Image"
+echo:Release "Version: $VERSION"
+echo:Release "Pre-release: $IS_PRERELEASE"
+echo:Release "========================================="
 
 # Example: Build and push to Docker Hub
 # IMAGE_NAME="myorg/myapp"
@@ -49,9 +50,9 @@ echo "========================================="
 # docker push "$IMAGE_NAME:latest"
 
 # Add your Docker publishing commands here
-echo "✓ Docker publish stub executed"
-echo "  Customize this script in scripts/ci/release/ci-80-publish-docker.sh"
+echo:Release "✓ Docker publish stub executed"
+echo:Release "  Customize this script in scripts/ci/release/ci-80-publish-docker.sh"
 
-echo "========================================="
-echo "Docker Publishing Complete"
-echo "========================================="
+echo:Release "========================================="
+echo:Release "Docker Publishing Complete"
+echo:Release "========================================="

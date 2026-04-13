@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-#!/usr/bin/env bash
 # set -euo pipefail
 
 # Test script for e-bash semver integration

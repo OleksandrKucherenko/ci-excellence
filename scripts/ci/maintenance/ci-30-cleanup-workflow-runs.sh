@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Cleanup Old Workflow Runs
 # Purpose: Delete old GitHub Actions workflow runs
 # Customize this script based on your retention policy
 
-echo "========================================="
-echo "Cleaning Up Old Workflow Runs"
-echo "========================================="
+echo:Maint "========================================="
+echo:Maint "Cleaning Up Old Workflow Runs"
+echo:Maint "========================================="
 
 # Example: Delete workflow runs older than 30 days using gh CLI
 # if command -v gh &> /dev/null; then
@@ -25,9 +26,9 @@ echo "========================================="
 # fi
 
 # Add your cleanup commands here
-echo "✓ Workflow runs cleanup stub executed"
-echo "  Customize this script in ${BASH_SOURCE[0]}"
+echo:Maint "✓ Workflow runs cleanup stub executed"
+echo:Maint "  Customize this script in ${BASH_SOURCE[0]}"
 
-echo "========================================="
-echo "Workflow Runs Cleanup Complete"
-echo "========================================="
+echo:Maint "========================================="
+echo:Maint "Workflow Runs Cleanup Complete"
+echo:Maint "========================================="

@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Script: Check for Changes
 # Purpose: Check if git working tree has changes
 
 if git diff --quiet; then
   echo "has-changes=false" >> $GITHUB_OUTPUT
-  echo "No changes detected"
+  echo:Maint "No changes detected"
 else
   echo "has-changes=true" >> $GITHUB_OUTPUT
-  echo "Changes detected"
+  echo:Maint "Changes detected"
 fi

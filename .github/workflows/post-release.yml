@@ -152,6 +152,9 @@ jobs:
     needs: [verify-deployment, tag-stable, tag-unstable, rollback]
     if: always()
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Generate summary
         run: |
           ./scripts/ci/reports/ci-90-summary-post-release.sh \
@@ -159,9 +162,6 @@ jobs:
             "${{ needs['tag-stable'].result }}" \
             "${{ needs['tag-unstable'].result }}" \
             "${{ needs.rollback.result }}"
-
-      - name: Checkout code
-        uses: actions/checkout@v4
 
       - name: Check if notifications enabled
         id: check_notify

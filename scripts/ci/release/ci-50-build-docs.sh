@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Build Documentation
 # Purpose: Build project documentation
@@ -7,10 +8,10 @@ set -euo pipefail
 
 VERSION="${1:?Version is required}"
 
-echo "========================================="
-echo "Building Documentation"
-echo "Version: $VERSION"
-echo "========================================="
+echo:Release "========================================="
+echo:Release "Building Documentation"
+echo:Release "Version: $VERSION"
+echo:Release "========================================="
 
 # Example: Sphinx for Python
 # if [ -f "docs/conf.py" ]; then
@@ -51,9 +52,9 @@ echo "========================================="
 # fi
 
 # Add your documentation build commands here
-echo "✓ Documentation build stub executed"
-echo "  Customize this script in scripts/ci/release/ci-50-build-docs.sh"
+echo:Release "✓ Documentation build stub executed"
+echo:Release "  Customize this script in scripts/ci/release/ci-50-build-docs.sh"
 
-echo "========================================="
-echo "Documentation Build Complete"
-echo "========================================="
+echo:Release "========================================="
+echo:Release "Documentation Build Complete"
+echo:Release "========================================="

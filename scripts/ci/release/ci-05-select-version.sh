@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Script: Select Version
 # Purpose: Choose version based on event context and expose via GITHUB_OUTPUT
@@ -13,7 +14,7 @@ if [ "$EVENT_NAME" == "release" ] && [ -n "$RELEASE_TAG" ]; then
 elif [ -n "$INPUT_VERSION" ]; then
   VERSION="$INPUT_VERSION"
 else
-  echo "Version not provided" >&2
+  echo:Release "Version not provided"
   exit 1
 fi
 

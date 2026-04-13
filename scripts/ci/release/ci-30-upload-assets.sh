@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Upload Release Assets
 # Purpose: Upload build artifacts to GitHub release
@@ -7,10 +8,10 @@ set -euo pipefail
 
 TAG="${1:?Tag is required}"
 
-echo "========================================="
-echo "Uploading Release Assets"
-echo "Tag: $TAG"
-echo "========================================="
+echo:Release "========================================="
+echo:Release "Uploading Release Assets"
+echo:Release "Tag: $TAG"
+echo:Release "========================================="
 
 # Example: Upload assets using gh CLI
 # if command -v gh &> /dev/null; then
@@ -26,9 +27,9 @@ echo "========================================="
 #     --clobber
 
 # Add your asset upload commands here
-echo "✓ Asset upload stub executed"
-echo "  Customize this script in scripts/ci/release/ci-30-upload-assets.sh"
+echo:Release "✓ Asset upload stub executed"
+echo:Release "  Customize this script in scripts/ci/release/ci-30-upload-assets.sh"
 
-echo "========================================="
-echo "Release Assets Uploaded"
-echo "========================================="
+echo:Release "========================================="
+echo:Release "Release Assets Uploaded"
+echo:Release "========================================="

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Verify Docker Deployment
 # Purpose: Verify that Docker image is available
@@ -7,10 +8,10 @@ set -euo pipefail
 
 VERSION="${1:?Version is required}"
 
-echo "========================================="
-echo "Verifying Docker Deployment"
-echo "Version: $VERSION"
-echo "========================================="
+echo:Release "========================================="
+echo:Release "Verifying Docker Deployment"
+echo:Release "Version: $VERSION"
+echo:Release "========================================="
 
 # Example: Verify Docker image availability
 # IMAGE_NAME="myorg/myapp"
@@ -32,9 +33,9 @@ echo "========================================="
 # docker run --rm "$IMAGE_NAME:$VERSION" --version
 
 # Add your Docker verification commands here
-echo "✓ Docker deployment verification stub executed"
-echo "  Customize this script in scripts/ci/release/ci-85-verify-docker-deployment.sh"
+echo:Release "✓ Docker deployment verification stub executed"
+echo:Release "  Customize this script in scripts/ci/release/ci-85-verify-docker-deployment.sh"
 
-echo "========================================="
-echo "Docker Deployment Verification Complete"
-echo "========================================="
+echo:Release "========================================="
+echo:Release "Docker Deployment Verification Complete"
+echo:Release "========================================="

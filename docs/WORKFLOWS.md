@@ -10,17 +10,19 @@ Complete reference for all CI/CD workflows in this project.
 - [Post-Release Pipeline](#post-release-pipeline)
 - [Maintenance Pipeline](#maintenance-pipeline)
 - [Auto-Fix Quality Pipeline](#auto-fix-quality-pipeline)
+- [Operations Pipeline](#operations-pipeline)
 - [Workflow Activation](#workflow-activation)
 
 ## Overview
 
-This project includes 5 GitHub Actions workflows that handle different stages of the CI/CD lifecycle:
+This project includes 6 GitHub Actions workflows that handle different stages of the CI/CD lifecycle:
 
 1. **Pre-Release** - Validates code quality before release
 2. **Release** - Builds and publishes releases
 3. **Post-Release** - Verifies deployments and handles rollbacks
 4. **Maintenance** - Performs periodic cleanup and updates
 5. **Auto-Fix Quality** - Automatically scans and fixes security issues
+6. **Ops** - Manual operational actions
 
 All workflows are **variable-driven** - they skip gracefully when not enabled (no failures).
 
@@ -242,6 +244,29 @@ PUSH_CHANGES=false            # Auto-push fixes (default: false, use with cautio
 ### Scripts Used
 
 - Security: [`scripts/ci/build/ci-30-security-scan.sh`](../scripts/ci/build/ci-30-security-scan.sh)
+
+## Operations Pipeline
+
+**File:** [`.github/workflows/ops.yml`](../.github/workflows/ops.yml)
+
+### Triggers
+
+- Manual `workflow_dispatch` only
+
+### Available Actions
+
+- `promote-release` - Promote a pre-release to the next stage (stub; use the Release Pipeline)
+- `deploy-staging` - Deploy a version to staging (stub awaiting project-specific implementation)
+- `deploy-production` - Deploy a version to production (stub awaiting project-specific implementation; requires confirmation)
+- `mark-stable` - Mark a GitHub release as stable
+- `mark-deprecated` - Mark a GitHub release as deprecated
+
+> **Note:** The `deploy-staging` and `deploy-production` actions are stubs awaiting project-specific implementation. The `promote-release` action directs users to the Release Pipeline.
+
+### Scripts Used
+
+- Stability tagging: [`scripts/ci/release/ci-07-apply-stability-tag.sh`](../scripts/ci/release/ci-07-apply-stability-tag.sh) (for `mark-stable`)
+- Deprecation: [`scripts/ci/maintenance/ci-80-deprecate-github-releases.sh`](../scripts/ci/maintenance/ci-80-deprecate-github-releases.sh) (for `mark-deprecated`)
 
 ## Workflow Activation
 

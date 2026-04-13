@@ -1,6 +1,6 @@
 # Repository Guidelines
 
-CI Excellence is a self‑configuring, testable CI/CD framework (v2) that helps validate and control the release cycle. It ships workflows for pre‑release, release, post‑release, maintenance, and deploy plus numbered Bash stubs; feature toggles exist to simplify testing and customization. The only prerequisite is Mise installed and activated in your shell—on first `cd`, Mise installs tools, sets up folders, and git hooks.
+CI Excellence is a self‑configuring, testable CI/CD framework (v2) that helps validate and control the release cycle. It ships workflows for pre‑release, release, post‑release, maintenance, and ops plus numbered Bash stubs; feature toggles exist to simplify testing and customization. The only prerequisite is Mise installed and activated in your shell—on first `cd`, Mise installs tools, sets up folders, and git hooks.
 
 ## Project Structure & Module Organization
 

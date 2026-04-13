@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Deprecate NPM Versions
 # Purpose: Deprecate old NPM package versions
 # Customize this script based on your deprecation policy
 
-echo "========================================="
-echo "Deprecating NPM Versions"
-echo "========================================="
+echo:Maint "========================================="
+echo:Maint "Deprecating NPM Versions"
+echo:Maint "========================================="
 
 # Check if NODE_AUTH_TOKEN is set
 if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
-    echo "⚠ NODE_AUTH_TOKEN is not set"
-    echo "  Set this secret in GitHub to enable NPM operations"
+    echo:Maint "⚠ NODE_AUTH_TOKEN is not set"
+    echo:Maint "  Set this secret in GitHub to enable NPM operations"
     exit 1
 fi
 
@@ -32,9 +33,9 @@ fi
 # fi
 
 # Add your NPM deprecation commands here
-echo "✓ NPM deprecation stub executed"
-echo "  Customize this script in scripts/maintenance/deprecate-npm-versions.sh"
+echo:Maint "✓ NPM deprecation stub executed"
+echo:Maint "  Customize this script in scripts/maintenance/deprecate-npm-versions.sh"
 
-echo "========================================="
-echo "NPM Deprecation Complete"
-echo "========================================="
+echo:Maint "========================================="
+echo:Maint "NPM Deprecation Complete"
+echo:Maint "========================================="

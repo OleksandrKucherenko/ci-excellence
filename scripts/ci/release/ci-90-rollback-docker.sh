@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Rollback Docker Release
 # Purpose: Tag Docker images as deprecated
@@ -7,10 +8,10 @@ set -euo pipefail
 
 VERSION="${1:?Version is required}"
 
-echo "========================================="
-echo "Rolling Back Docker Release"
-echo "Version: $VERSION"
-echo "========================================="
+echo:Release "========================================="
+echo:Release "Rolling Back Docker Release"
+echo:Release "Version: $VERSION"
+echo:Release "========================================="
 
 # Example: Tag image as deprecated
 # IMAGE_NAME="myorg/myapp"
@@ -27,11 +28,11 @@ echo "========================================="
 # This typically requires using Docker Hub API or web interface
 
 # Add your Docker rollback commands here
-echo "✓ Docker rollback stub executed"
-echo "  Customize this script in scripts/ci/release/ci-90-rollback-docker.sh"
-echo "  Note: Docker tags cannot be deleted from registries"
-echo "  Consider updating image description or documentation"
+echo:Release "✓ Docker rollback stub executed"
+echo:Release "  Customize this script in scripts/ci/release/ci-90-rollback-docker.sh"
+echo:Release "  Note: Docker tags cannot be deleted from registries"
+echo:Release "  Consider updating image description or documentation"
 
-echo "========================================="
-echo "Docker Rollback Complete"
-echo "========================================="
+echo:Release "========================================="
+echo:Release "Docker Rollback Complete"
+echo:Release "========================================="

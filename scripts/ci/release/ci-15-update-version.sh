@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Script: Update Version
 # Purpose: Update version in project files
 
 VERSION="${1:?Version is required}"
 
-echo "========================================="
-echo "Updating Version Files"
-echo "Version: $VERSION"
-echo "========================================="
+echo:Release "========================================="
+echo:Release "Updating Version Files"
+echo:Release "Version: $VERSION"
+echo:Release "========================================="
 
 # Example: Update package.json
 # if [ -f "package.json" ]; then
@@ -40,9 +41,9 @@ echo "========================================="
 # echo "$VERSION" > VERSION
 
 # Add your version update commands here
-echo "✓ Version update stub executed"
-echo "  Customize this script in scripts/ci/release/ci-15-update-version.sh"
+echo:Release "✓ Version update stub executed"
+echo:Release "  Customize this script in scripts/ci/release/ci-15-update-version.sh"
 
-echo "========================================="
-echo "Version Files Updated"
-echo "========================================="
+echo:Release "========================================="
+echo:Release "Version Files Updated"
+echo:Release "========================================="

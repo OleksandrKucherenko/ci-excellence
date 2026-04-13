@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Generate Changelog
 # Purpose: Generate or update changelog
@@ -7,10 +8,10 @@ set -euo pipefail
 
 VERSION="${1:?Version is required}"
 
-echo "========================================="
-echo "Generating Changelog"
-echo "Version: $VERSION"
-echo "========================================="
+echo:Release "========================================="
+echo:Release "Generating Changelog"
+echo:Release "Version: $VERSION"
+echo:Release "========================================="
 
 # Example: Using conventional-changelog
 # if command -v conventional-changelog &> /dev/null; then
@@ -64,9 +65,9 @@ echo "========================================="
 # fi
 
 # Add your changelog generation commands here
-echo "✓ Changelog generation stub executed"
-echo "  Customize this script in scripts/ci/release/ci-20-generate-changelog.sh"
+echo:Release "✓ Changelog generation stub executed"
+echo:Release "  Customize this script in scripts/ci/release/ci-20-generate-changelog.sh"
 
-echo "========================================="
-echo "Changelog Generated"
-echo "========================================="
+echo:Release "========================================="
+echo:Release "Changelog Generated"
+echo:Release "========================================="

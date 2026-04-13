@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Script: Commit Version Changes
 # Purpose: Commit and push version bump changes
@@ -8,7 +9,7 @@ TARGET_BRANCH="${1:-main}"
 VERSION="${2:-}"
 
 if [ -z "$VERSION" ]; then
-  echo "Version is required" >&2
+  echo:Release "Version is required"
   exit 1
 fi
 

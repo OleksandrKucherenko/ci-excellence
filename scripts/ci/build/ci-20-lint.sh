@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Script: Lint Code
 # Purpose: Run linters and code style checks (technology-agnostic stub)
 
-echo "========================================="
-echo "Running Linters"
-echo "========================================="
+echo:Build "========================================="
+echo:Build "Running Linters"
+echo:Build "========================================="
 
 EXIT_CODE=0
 
@@ -53,16 +54,16 @@ EXIT_CODE=0
 # fi
 
 # Add your linting commands here
-echo "✓ Lint stub executed"
-echo "  Customize this script in scripts/ci/build/ci-20-lint.sh"
+echo:Build "✓ Lint stub executed"
+echo:Build "  Customize this script in scripts/ci/build/ci-20-lint.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
-    echo "========================================="
-    echo "⚠ Linting Failed"
-    echo "========================================="
+    echo:Build "========================================="
+    echo:Build "⚠ Linting Failed"
+    echo:Build "========================================="
     exit $EXIT_CODE
 fi
 
-echo "========================================="
-echo "Linting Complete"
-echo "========================================="
+echo:Build "========================================="
+echo:Build "Linting Complete"
+echo:Build "========================================="

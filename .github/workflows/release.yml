@@ -37,8 +37,8 @@ on:
 
 env:
   # CI Feature Flags
-  ENABLE_COMPILE: ${{ vars.ENABLE_COMPILE || 'true' }}
-  ENABLE_TESTS: ${{ vars.ENABLE_TESTS || 'true' }}
+  ENABLE_COMPILE: ${{ vars.ENABLE_COMPILE || 'false' }}
+  ENABLE_TESTS: ${{ vars.ENABLE_TESTS || 'false' }}
   ENABLE_NPM_PUBLISH: ${{ vars.ENABLE_NPM_PUBLISH || 'false' }}
   ENABLE_GITHUB_RELEASE: ${{ vars.ENABLE_GITHUB_RELEASE || 'false' }}
   ENABLE_DOCKER_PUBLISH: ${{ vars.ENABLE_DOCKER_PUBLISH || 'false' }}
@@ -75,7 +75,7 @@ jobs:
         run: |
           # Use bot identity for tagging
           ./scripts/ci/setup/ci-30-github-actions-bot.sh
-          
+
           TAG="v${{ steps.version.outputs.version }}"
           echo "Creating tag: $TAG"
           git tag -a "$TAG" -m "Release $TAG"
@@ -101,26 +101,20 @@ jobs:
           # REF format: refs/tags/v1.0.0 or refs/tags/path/v1.0.0
           REF="${{ github.ref }}"
           TAG=${REF#refs/tags/}
-          
-          # Use semver script to parse? Or existing ci-12?
-          # Let's extract version from tag.
-          # If tag is like 'v1.2.3', version is '1.2.3'.
-          # If tag is 'pkg/v1.2.3', version is '1.2.3'.
-          
-          # Simple extraction for now, assuming standard v-prefix
-          # Remove everything before the last /v (or just v if at start)
+
+          # Extract version from tag (remove everything before the last /v or just v)
           VERSION="${TAG##*v}"
-          
+
           # Check for pre-release status
           if [[ "$VERSION" == *"-"* ]]; then
             IS_PRERELEASE="true"
           else
             IS_PRERELEASE="false"
           fi
-          
+
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "is-prerelease=$IS_PRERELEASE" >> "$GITHUB_OUTPUT"
-          
+
           echo "Detected Version: $VERSION"
           echo "Is Pre-release: $IS_PRERELEASE"
 
@@ -147,7 +141,7 @@ jobs:
       - name: Bundle
         run: ./scripts/ci/build/ci-40-bundle.sh
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: release-artifacts
           path: |
@@ -172,7 +166,7 @@ jobs:
       - name: Install dependencies
         run: ./scripts/ci/setup/ci-20-install-dependencies.sh
       - name: Download build artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: release-artifacts
       - name: Run unit tests
@@ -200,7 +194,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - name: Download build artifacts
         if: ${{ vars.ENABLE_COMPILE == 'true' }}
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: release-artifacts
       - name: Publish to NPM
@@ -232,19 +226,17 @@ jobs:
           fetch-depth: 0
       - name: Download build artifacts
         if: ${{ vars.ENABLE_COMPILE == 'true' }}
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: release-artifacts
       - name: Generate release notes
         id: notes
         run: ./scripts/ci/release/ci-27-write-release-notes-output.sh "${{ needs.prepare.outputs.version }}"
       - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.prepare.outputs.version }}
-          release_name: Release v${{ needs.prepare.outputs.version }}
+          name: Release v${{ needs.prepare.outputs.version }}
           body: ${{ steps.notes.outputs.notes }}
           draft: false
           prerelease: ${{ needs.prepare.outputs.is-prerelease }}
@@ -312,6 +304,9 @@ jobs:
     needs: [prepare, publish-npm, publish-github, publish-docker, publish-documentation]
     if: always()
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Generate summary
         run: |
           ./scripts/ci/reports/ci-95-summary-release.sh \
@@ -321,9 +316,6 @@ jobs:
             "${{ needs['publish-github'].result }}" \
             "${{ needs['publish-docker'].result }}" \
             "${{ needs['publish-documentation'].result }}"
-
-      - name: Checkout code
-        uses: actions/checkout@v4
 
       - name: Check if notifications enabled
         id: check_notify

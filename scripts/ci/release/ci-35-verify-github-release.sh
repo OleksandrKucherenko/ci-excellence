@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Verify GitHub Release
 # Purpose: Verify that GitHub release exists and is published
@@ -8,10 +9,10 @@ set -euo pipefail
 VERSION="${1:?Version is required}"
 TAG="v$VERSION"
 
-echo "========================================="
-echo "Verifying GitHub Release"
-echo "Version: $VERSION"
-echo "========================================="
+echo:Release "========================================="
+echo:Release "Verifying GitHub Release"
+echo:Release "Version: $VERSION"
+echo:Release "========================================="
 
 # Example: Verify GitHub release using gh CLI
 # if command -v gh &> /dev/null; then
@@ -34,9 +35,9 @@ echo "========================================="
 # fi
 
 # Add your GitHub verification commands here
-echo "✓ GitHub release verification stub executed"
-echo "  Customize this script in scripts/ci/release/ci-35-verify-github-release.sh"
+echo:Release "✓ GitHub release verification stub executed"
+echo:Release "  Customize this script in scripts/ci/release/ci-35-verify-github-release.sh"
 
-echo "========================================="
-echo "GitHub Release Verification Complete"
-echo "========================================="
+echo:Release "========================================="
+echo:Release "GitHub Release Verification Complete"
+echo:Release "========================================="

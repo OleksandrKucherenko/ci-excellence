@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Deprecate GitHub Releases
 # Purpose: Mark old GitHub releases as pre-release or update their descriptions
 # Customize this script based on your deprecation policy
 
-echo "========================================="
-echo "Deprecating GitHub Releases"
-echo "========================================="
+echo:Maint "========================================="
+echo:Maint "Deprecating GitHub Releases"
+echo:Maint "========================================="
 
 # Example: Mark old pre-releases as deprecated
 # if command -v gh &> /dev/null; then
@@ -29,9 +30,9 @@ echo "========================================="
 # fi
 
 # Add your GitHub deprecation commands here
-echo "✓ GitHub deprecation stub executed"
-echo "  Customize this script in scripts/maintenance/deprecate-github-releases.sh"
+echo:Maint "✓ GitHub deprecation stub executed"
+echo:Maint "  Customize this script in scripts/maintenance/deprecate-github-releases.sh"
 
-echo "========================================="
-echo "GitHub Deprecation Complete"
-echo "========================================="
+echo:Maint "========================================="
+echo:Maint "GitHub Deprecation Complete"
+echo:Maint "========================================="

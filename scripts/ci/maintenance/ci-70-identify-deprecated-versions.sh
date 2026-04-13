@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Identify Deprecated Versions
 # Purpose: Identify versions that should be deprecated
 # Customize this script based on your deprecation policy
 
-echo "========================================="
-echo "Identifying Deprecated Versions"
-echo "========================================="
+echo:Maint "========================================="
+echo:Maint "Identifying Deprecated Versions"
+echo:Maint "========================================="
 
 # Example: List versions older than 1 year
 # if [ -f "package.json" ] && command -v npm &> /dev/null; then
@@ -25,9 +26,9 @@ echo "========================================="
 #     jq -r '.[] | select(test("-alpha|-beta|-rc"))'
 
 # Add your version identification commands here
-echo "✓ Deprecated versions identification stub executed"
-echo "  Customize this script in scripts/maintenance/identify-deprecated-versions.sh"
+echo:Maint "✓ Deprecated versions identification stub executed"
+echo:Maint "  Customize this script in scripts/maintenance/identify-deprecated-versions.sh"
 
-echo "========================================="
-echo "Deprecated Versions Identification Complete"
-echo "========================================="
+echo:Maint "========================================="
+echo:Maint "Deprecated Versions Identification Complete"
+echo:Maint "========================================="

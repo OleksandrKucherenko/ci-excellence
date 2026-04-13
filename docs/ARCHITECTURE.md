@@ -354,6 +354,11 @@ APPRISE_URLS                      # Notifications
 
 ### Script Template Structure
 
+All CI scripts source the e-bash logger via `_ci-common.sh`. Instead of plain `echo`, scripts use
+`echo:Tag` (e.g. `echo:Build`, `echo:Test`) which routes output through the e-bash logger system.
+This allows controlling verbosity via the `DEBUG` environment variable and makes it trivial to
+rollback to plain bash by string-replacing `echo:Tag` back to `echo`.
+
 ```bash
 #!/usr/bin/env bash
 # Purpose: [What this script does]
@@ -362,25 +367,34 @@ APPRISE_URLS                      # Notifications
 # Exit codes: [Success/failure codes]
 
 set -euo pipefail
-
-# Configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-
-# Functions
-log_info() { echo "ℹ️  $*"; }
-log_success() { echo "✅ $*"; }
-log_error() { echo "❌ $*" >&2; }
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # Main
 main() {
-    log_info "Starting..."
+    echo:Build "========================================="
+    echo:Build "Starting [task name]..."
+    echo:Build "========================================="
+
     # Logic here
-    log_success "Done"
+
+    echo:Build "✓ [task] complete"
+    echo:Build "========================================="
 }
 
 main "$@"
 ```
+
+**Logger tags by domain:**
+- `echo:Build` / `echo:Security` — build pipeline scripts
+- `echo:Test` — test pipeline scripts
+- `echo:Release` — release pipeline scripts
+- `echo:Setup` — environment setup scripts
+- `echo:Maint` — maintenance scripts
+- `echo:Notify` — notification scripts
+- `echo:Report` — report/summary scripts
+- `echo:Ops` — operations scripts
+
+**Controlling output:** `DEBUG=build,test ./script.sh` (see [e-bash logger docs](https://github.com/OleksandrKucherenko/e-bash))
 
 ### Execution Flow
 
@@ -389,9 +403,9 @@ Workflow YAML
     ↓
 Calls script: ./scripts/ci/category/ci-XX-name.sh
     ↓
-Script loads environment
+Script sources _ci-common.sh (e-bash logger)
     ↓
-Script performs action
+Script performs action (logs via echo:Tag)
     ↓
 Script exits with code:
     - 0: Success
