@@ -79,6 +79,45 @@ hooks:middleware begin _hooks:middleware:modes
 set -eu
 
 # ---------------------------------------------------------------------------
+# Feature flag loading (.env.ci)
+# ---------------------------------------------------------------------------
+# Load ENABLE_* flags from .env.ci files with CWD-scoped resolution.
+# Priority (highest wins): GitHub Variables > package .env.ci > root .env.ci
+#
+# GitHub Variables are set by workflow env: blocks before the script runs,
+# so they're already in the environment. We snapshot them first, then load
+# .env.ci files freely, then restore the GitHub-set values on top.
+_ci_load_env() {
+  local root_env="${_REPO_ROOT}/.env.ci"
+  local pkg_env="${_REPO_ROOT}/${CI_PACKAGE_PATH:+${CI_PACKAGE_PATH}/}.env.ci"
+
+  # Snapshot: remember which ENABLE_* vars were set before .env.ci loading
+  local -A _pre_set=()
+  local varname
+  for varname in $(compgen -v ENABLE_ 2>/dev/null || true); do
+    _pre_set[$varname]="${!varname}"
+  done
+
+  # Load root .env.ci (lowest priority defaults)
+  if [ -f "$root_env" ]; then
+    echo:Ci "Loading flags from .env.ci"
+    set -a; source "$root_env"; set +a
+  fi
+
+  # Load package .env.ci (overrides root)
+  if [ -f "$pkg_env" ] && [ "$pkg_env" != "$root_env" ]; then
+    echo:Ci "Loading package flags from ${CI_PACKAGE_PATH}/.env.ci"
+    set -a; source "$pkg_env"; set +a
+  fi
+
+  # Restore GitHub Variables (highest priority — override .env.ci)
+  for varname in "${!_pre_set[@]}"; do
+    export "$varname=${_pre_set[$varname]}"
+  done
+}
+_ci_load_env
+
+# ---------------------------------------------------------------------------
 # Parameter logging helpers
 # ---------------------------------------------------------------------------
 # Print a safe (non-secret) parameter value to the CI log.
