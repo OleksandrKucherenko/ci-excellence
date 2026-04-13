@@ -41,7 +41,10 @@ on:
 
   push:
     tags:
-      - '**/v*' # Matches v1.0.0, packages/app/v1.0.0
+      - 'v[0-9]*'           # v1.0.0, v1.0.0-rc.1
+      - '**/v[0-9]*'        # packages/core/v1.0.0
+      - '!**-stable'        # exclude stability tags
+      - '!**-unstable'
 
 concurrency:
   group: release-${{ github.ref }}
