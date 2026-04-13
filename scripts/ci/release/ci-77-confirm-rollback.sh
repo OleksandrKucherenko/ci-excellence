@@ -5,10 +5,10 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: Confirm Rollback
 # Purpose: Print rollback warning and planned actions
 
-VERSION="${1:-unknown}"
+VERSION="${CI_VERSION:-unknown}"
 
 echo:Release "Confirming Rollback"
-ci:param release "VERSION" "$VERSION"
+ci:param release "CI_VERSION" "$VERSION"
 
 cat <<EOF
 WARNING: Rolling back version ${VERSION}

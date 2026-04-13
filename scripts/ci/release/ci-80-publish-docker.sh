@@ -6,12 +6,12 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Build and publish Docker images
 # Customize this script based on your Docker publishing needs
 
-VERSION="${1:?Version is required}"
-IS_PRERELEASE="${2:-false}"
+VERSION="${CI_VERSION:?CI_VERSION is required}"
+IS_PRERELEASE="${CI_IS_PRERELEASE:-false}"
 
 echo:Release "Publishing Docker Image"
-ci:param release "VERSION" "$VERSION"
-ci:param release "IS_PRERELEASE" "$IS_PRERELEASE"
+ci:param release "CI_VERSION" "$VERSION"
+ci:param release "CI_IS_PRERELEASE" "$IS_PRERELEASE"
 
 # Example: Build and push to Docker Hub
 # IMAGE_NAME="myorg/myapp"

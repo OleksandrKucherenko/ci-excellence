@@ -7,17 +7,17 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 echo:Notify "Determining Maintenance Status"
 
-CLEANUP_RESULT="${1:-unknown}"
-SYNC_RESULT="${2:-unknown}"
-DEPRECATION_RESULT="${3:-unknown}"
-SECURITY_RESULT="${4:-unknown}"
-DEPENDENCY_RESULT="${5:-unknown}"
+CLEANUP_RESULT="${RESULT_CLEANUP:-unknown}"
+SYNC_RESULT="${RESULT_SYNC:-unknown}"
+DEPRECATION_RESULT="${RESULT_DEPRECATION:-unknown}"
+SECURITY_RESULT="${RESULT_SECURITY:-unknown}"
+DEPENDENCY_RESULT="${RESULT_DEPENDENCY:-unknown}"
 
-ci:param notify "CLEANUP_RESULT" "$CLEANUP_RESULT"
-ci:param notify "SYNC_RESULT" "$SYNC_RESULT"
-ci:param notify "DEPRECATION_RESULT" "$DEPRECATION_RESULT"
-ci:param notify "SECURITY_RESULT" "$SECURITY_RESULT"
-ci:param notify "DEPENDENCY_RESULT" "$DEPENDENCY_RESULT"
+ci:param notify "RESULT_CLEANUP" "$CLEANUP_RESULT"
+ci:param notify "RESULT_SYNC" "$SYNC_RESULT"
+ci:param notify "RESULT_DEPRECATION" "$DEPRECATION_RESULT"
+ci:param notify "RESULT_SECURITY" "$SECURITY_RESULT"
+ci:param notify "RESULT_DEPENDENCY" "$DEPENDENCY_RESULT"
 
 if [ "$SECURITY_RESULT" == "failure" ]; then
   ci:output notify "status" "failure"

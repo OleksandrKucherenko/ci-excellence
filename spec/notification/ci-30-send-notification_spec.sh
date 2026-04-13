@@ -10,7 +10,8 @@ Describe 'ci-30-send-notification.sh'
 
   Describe 'when APPRISE_URLS is empty'
     It 'exits successfully with graceful skip'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" "Test Title" "Test Message" "info"
+      export NOTIFY_TITLE="Test Title" NOTIFY_MESSAGE="Test Message" NOTIFY_STATUS="info"
+      When run bash "$RUN_SCRIPT" "$SCRIPT"
       The status should equal 0
       The stderr should include 'No notification URLs configured'
     End

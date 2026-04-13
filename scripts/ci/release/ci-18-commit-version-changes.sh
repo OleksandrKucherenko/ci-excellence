@@ -5,12 +5,12 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: Commit Version Changes
 # Purpose: Commit and push version bump changes
 
-TARGET_BRANCH="${1:-main}"
-VERSION="${2:-}"
+TARGET_BRANCH="${CI_TARGET_BRANCH:-main}"
+VERSION="${CI_VERSION:-}"
 
 echo:Release "Committing Version Changes"
-ci:param release "TARGET_BRANCH" "$TARGET_BRANCH"
-ci:param release "VERSION" "$VERSION"
+ci:param release "CI_TARGET_BRANCH" "$TARGET_BRANCH"
+ci:param release "CI_VERSION" "$VERSION"
 
 if [ -z "$VERSION" ]; then
   echo:Release "Version is required"

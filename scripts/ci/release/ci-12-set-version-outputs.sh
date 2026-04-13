@@ -5,14 +5,14 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: Set Version Outputs
 # Purpose: Determine version and prerelease flag and write to GITHUB_OUTPUT
 
-RELEASE_TYPE="${1:-patch}"
-PRE_RELEASE_INPUT="${2:-false}"
+RELEASE_TYPE="${CI_RELEASE_SCOPE:-patch}"
+PRE_RELEASE_INPUT="${CI_PRE_RELEASE_TYPE:-false}"
 
 echo:Release "Setting Version Outputs"
-ci:param release "RELEASE_TYPE" "$RELEASE_TYPE"
-ci:param release "PRE_RELEASE_INPUT" "$PRE_RELEASE_INPUT"
+ci:param release "CI_RELEASE_SCOPE" "$RELEASE_TYPE"
+ci:param release "CI_PRE_RELEASE_TYPE" "$PRE_RELEASE_INPUT"
 
-VERSION=$(./scripts/ci/release/ci-10-determine-version.sh "$RELEASE_TYPE")
+VERSION=$(./scripts/ci/release/ci-10-determine-version.sh)
 
 IS_PRERELEASE="$PRE_RELEASE_INPUT"
 if [[ "$VERSION" == *"-"* ]]; then

@@ -12,7 +12,8 @@ Describe 'ci-50-post-release-status.sh'
 
   Describe 'rollback success'
     It 'sets status to warning'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" success skipped skipped success
+      export RESULT_VERIFY=success RESULT_TAG_STABLE=skipped RESULT_TAG_UNSTABLE=skipped RESULT_ROLLBACK=success
+      When run bash "$RUN_SCRIPT" "$SCRIPT"
       The contents of file "$GITHUB_OUTPUT" should include 'status=warning'
       The contents of file "$GITHUB_OUTPUT" should include 'Rollback Completed'
       The status should equal 0
@@ -22,7 +23,8 @@ Describe 'ci-50-post-release-status.sh'
 
   Describe 'tag stable success'
     It 'sets status to success with stable tag message'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" success success skipped skipped
+      export RESULT_VERIFY=success RESULT_TAG_STABLE=success RESULT_TAG_UNSTABLE=skipped RESULT_ROLLBACK=skipped
+      When run bash "$RUN_SCRIPT" "$SCRIPT"
       The contents of file "$GITHUB_OUTPUT" should include 'status=success'
       The contents of file "$GITHUB_OUTPUT" should include 'Version Tagged as Stable'
       The status should equal 0
@@ -32,7 +34,8 @@ Describe 'ci-50-post-release-status.sh'
 
   Describe 'verify success only'
     It 'sets status to success with verify message'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" success skipped skipped skipped
+      export RESULT_VERIFY=success RESULT_TAG_STABLE=skipped RESULT_TAG_UNSTABLE=skipped RESULT_ROLLBACK=skipped
+      When run bash "$RUN_SCRIPT" "$SCRIPT"
       The contents of file "$GITHUB_OUTPUT" should include 'status=success'
       The contents of file "$GITHUB_OUTPUT" should include 'Deployment Verified'
       The status should equal 0
@@ -42,7 +45,8 @@ Describe 'ci-50-post-release-status.sh'
 
   Describe 'rollback failure'
     It 'sets status to failure'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" skipped skipped skipped failure
+      export RESULT_VERIFY=skipped RESULT_TAG_STABLE=skipped RESULT_TAG_UNSTABLE=skipped RESULT_ROLLBACK=failure
+      When run bash "$RUN_SCRIPT" "$SCRIPT"
       The contents of file "$GITHUB_OUTPUT" should include 'status=failure'
       The contents of file "$GITHUB_OUTPUT" should include 'Rollback Failed'
       The status should equal 0
@@ -52,7 +56,8 @@ Describe 'ci-50-post-release-status.sh'
 
   Describe 'default'
     It 'sets status to info'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" skipped skipped skipped skipped
+      export RESULT_VERIFY=skipped RESULT_TAG_STABLE=skipped RESULT_TAG_UNSTABLE=skipped RESULT_ROLLBACK=skipped
+      When run bash "$RUN_SCRIPT" "$SCRIPT"
       The contents of file "$GITHUB_OUTPUT" should include 'status=info'
       The contents of file "$GITHUB_OUTPUT" should include 'Post-Release Actions Completed'
       The status should equal 0

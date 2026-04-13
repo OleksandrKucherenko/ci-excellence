@@ -7,9 +7,9 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 echo:Report "Generating Rollback Summary"
 
-VERSION="${1:-unknown}"
+VERSION="${CI_VERSION:-unknown}"
 
-ci:param report "VERSION" "$VERSION"
+ci:param report "CI_VERSION" "$VERSION"
 
 {
   echo "## Rollback Summary"

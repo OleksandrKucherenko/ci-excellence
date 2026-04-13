@@ -2,21 +2,23 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
-echo:Ops "Mark Stability"
-ci:param ops "ACTION" "${1:?Action required: stable|deprecated}"
-ci:param ops "VERSION" "${2:?Version is required}"
+ACTION="${CI_STABILITY_TAG:?CI_STABILITY_TAG is required}"
+VERSION="${OPS_VERSION:?OPS_VERSION is required}"
 
-ACTION="${1:?Action required: stable|deprecated}"
-VERSION="${2:?Version is required}"
+echo:Ops "Mark Stability"
+ci:param ops "CI_STABILITY_TAG" "$ACTION"
+ci:param ops "OPS_VERSION" "$VERSION"
 
 echo:Ops "Marking ${VERSION} as ${ACTION}..."
 
+export CI_VERSION="$VERSION"
+
 case "$ACTION" in
   stable)
-    ./scripts/ci/release/ci-07-apply-stability-tag.sh stable "$VERSION"
+    ./scripts/ci/release/ci-07-apply-stability-tag.sh
     ;;
   deprecated)
-    ./scripts/ci/maintenance/ci-80-deprecate-github-releases.sh "$VERSION"
+    ./scripts/ci/maintenance/ci-80-deprecate-github-releases.sh
     ;;
   *)
     echo:Ops "Error: Unknown action '${ACTION}'. Use 'stable' or 'deprecated'."

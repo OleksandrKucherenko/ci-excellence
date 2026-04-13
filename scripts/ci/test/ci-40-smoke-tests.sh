@@ -6,10 +6,10 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Run basic smoke tests to verify deployment
 # Customize this script based on your project's smoke testing needs
 
-VERSION="${1:-latest}"
+VERSION="${CI_VERSION:-latest}"
 
 echo:Test "Running Smoke Tests"
-ci:param test "VERSION" "$VERSION"
+ci:param test "CI_VERSION" "$VERSION"
 
 EXIT_CODE=0
 

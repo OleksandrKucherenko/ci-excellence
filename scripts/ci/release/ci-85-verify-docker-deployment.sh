@@ -6,10 +6,10 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Verify that Docker image is available
 # Customize this script based on your verification needs
 
-VERSION="${1:?Version is required}"
+VERSION="${CI_VERSION:?CI_VERSION is required}"
 
 echo:Release "Verifying Docker Deployment"
-ci:param release "VERSION" "$VERSION"
+ci:param release "CI_VERSION" "$VERSION"
 
 # Example: Verify Docker image availability
 # IMAGE_NAME="myorg/myapp"

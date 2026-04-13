@@ -6,10 +6,10 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Deprecate NPM package version
 # Customize this script based on your rollback strategy
 
-VERSION="${1:?Version is required}"
+VERSION="${CI_VERSION:?CI_VERSION is required}"
 
 echo:Release "Rolling Back NPM Release"
-ci:param release "VERSION" "$VERSION"
+ci:param release "CI_VERSION" "$VERSION"
 ci:secret release "NODE_AUTH_TOKEN" "${NODE_AUTH_TOKEN:-}"
 
 # Check if NODE_AUTH_TOKEN is set

@@ -9,7 +9,8 @@
 # _ci-common.sh or _semver.sh, the "already loaded" guards skip
 # re-initialization and no error occurs.
 #
-# Usage: bash spec/support/run_script.sh <script> [args...]
+# Usage: bash spec/support/run_script.sh <script>
+# Scripts read inputs from environment variables (not positional args).
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 export E_BASH="${E_BASH:-$REPO_ROOT/scripts/lib}"
@@ -74,10 +75,24 @@ ci:output:multiline() {
   local preview="${value%%$'\n'*}"
   printf:${tag^} "  output %-18s = %s... (%d lines)\n" "$name" "${preview:0:60}" "$(echo "$value" | wc -l)" 2>/dev/null
 }
+ci:require() {
+  local tag="${1}" var_name="${2}"
+  local value="${!var_name:-}"
+  if [ -z "$value" ]; then
+    echo:${tag^} "Error: ${var_name} is required but not set" 2>/dev/null
+    exit 1
+  fi
+  ci:param "$tag" "$var_name" "$value"
+}
+ci:optional() {
+  local tag="${1}" var_name="${2}" default="${3:-}"
+  local value="${!var_name:-$default}"
+  ci:param "$tag" "$var_name" "$value"
+}
 
 # Do NOT re-enable errexit -- let each target script set its own options
 set +eu
 
-# Source the target script in this process (so it inherits loaded logger state)
+# Source the target script in this process (so it inherits env vars + loaded logger state)
 SCRIPT="$1"; shift
-source "$SCRIPT" "$@"
+source "$SCRIPT"

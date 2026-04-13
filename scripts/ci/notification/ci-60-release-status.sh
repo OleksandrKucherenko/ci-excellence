@@ -7,17 +7,17 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 echo:Notify "Determining Release Status"
 
-VERSION="${1:-unknown}"
-PREPARE_RESULT="${2:-unknown}"
-NPM_RESULT="${3:-unknown}"
-GITHUB_RESULT="${4:-unknown}"
-DOCKER_RESULT="${5:-unknown}"
+VERSION="${CI_VERSION:-unknown}"
+PREPARE_RESULT="${RESULT_PREPARE:-unknown}"
+NPM_RESULT="${RESULT_PUBLISH_NPM:-unknown}"
+GITHUB_RESULT="${RESULT_PUBLISH_GITHUB:-unknown}"
+DOCKER_RESULT="${RESULT_PUBLISH_DOCKER:-unknown}"
 
-ci:param notify "VERSION" "$VERSION"
-ci:param notify "PREPARE_RESULT" "$PREPARE_RESULT"
-ci:param notify "NPM_RESULT" "$NPM_RESULT"
-ci:param notify "GITHUB_RESULT" "$GITHUB_RESULT"
-ci:param notify "DOCKER_RESULT" "$DOCKER_RESULT"
+ci:param notify "CI_VERSION" "$VERSION"
+ci:param notify "RESULT_PREPARE" "$PREPARE_RESULT"
+ci:param notify "RESULT_PUBLISH_NPM" "$NPM_RESULT"
+ci:param notify "RESULT_PUBLISH_GITHUB" "$GITHUB_RESULT"
+ci:param notify "RESULT_PUBLISH_DOCKER" "$DOCKER_RESULT"
 
 if [ "$PREPARE_RESULT" == "failure" ] || \
    [ "$NPM_RESULT" == "failure" ] || \

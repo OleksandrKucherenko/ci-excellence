@@ -6,10 +6,10 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Publish package to NPM registry
 # Customize this script based on your NPM publishing needs
 
-TAG="${1:---tag latest}"
+TAG="${CI_NPM_TAG:---tag latest}"
 
 echo:Release "Publishing to NPM"
-ci:param release "TAG" "${TAG}"
+ci:param release "CI_NPM_TAG" "${TAG}"
 ci:secret release "NODE_AUTH_TOKEN" "${NODE_AUTH_TOKEN:-}"
 
 # Check if NODE_AUTH_TOKEN is set

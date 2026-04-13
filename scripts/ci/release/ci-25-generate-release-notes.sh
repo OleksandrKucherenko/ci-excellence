@@ -6,10 +6,10 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Generate release notes for GitHub release
 # Customize this script based on your release notes format
 
-VERSION="${1:?Version is required}"
+VERSION="${CI_VERSION:?CI_VERSION is required}"
 
 echo:Release "Generating Release Notes"
-ci:param release "VERSION" "$VERSION"
+ci:param release "CI_VERSION" "$VERSION"
 
 # Example: Extract from CHANGELOG.md
 # if [ -f "CHANGELOG.md" ]; then

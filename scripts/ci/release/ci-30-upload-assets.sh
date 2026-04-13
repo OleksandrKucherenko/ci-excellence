@@ -6,10 +6,11 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Upload build artifacts to GitHub release
 # Customize this script based on your release assets
 
-TAG="${1:?Tag is required}"
+VERSION="${CI_VERSION:?CI_VERSION is required}"
+TAG="v${VERSION}"
 
 echo:Release "Uploading Release Assets"
-ci:param release "TAG" "$TAG"
+ci:param release "CI_VERSION" "$VERSION"
 
 # Example: Upload assets using gh CLI
 # if command -v gh &> /dev/null; then

@@ -6,15 +6,15 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Tag a version as stable/unstable per STATES.md convention
 # Tags follow format: v{SemVer}-stable or v{SemVer}-unstable
 
-TAG_NAME="${1:-}"
-VERSION="${2:-}"
+TAG_NAME="${CI_STABILITY_TAG:-}"
+VERSION="${CI_VERSION:-}"
 
 echo:Release "Applying Stability Tag"
-ci:param release "TAG_NAME" "$TAG_NAME"
-ci:param release "VERSION" "$VERSION"
+ci:param release "CI_STABILITY_TAG" "$TAG_NAME"
+ci:param release "CI_VERSION" "$VERSION"
 
 if [ -z "$TAG_NAME" ] || [ -z "$VERSION" ]; then
-  echo:Release "Usage: $0 <stable|unstable> <version>"
+  echo:Release "Usage: CI_STABILITY_TAG=<stable|unstable> CI_VERSION=<version> $0"
   exit 1
 fi
 

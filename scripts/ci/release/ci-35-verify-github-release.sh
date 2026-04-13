@@ -6,11 +6,11 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Verify that GitHub release exists and is published
 # Customize this script based on your verification needs
 
-VERSION="${1:?Version is required}"
+VERSION="${CI_VERSION:?CI_VERSION is required}"
 TAG="v$VERSION"
 
 echo:Release "Verifying GitHub Release"
-ci:param release "VERSION" "$VERSION"
+ci:param release "CI_VERSION" "$VERSION"
 
 # Example: Verify GitHub release using gh CLI
 # if command -v gh &> /dev/null; then

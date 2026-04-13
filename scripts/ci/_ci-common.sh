@@ -96,3 +96,27 @@ ci:output:multiline() {
   local preview="${value%%$'\n'*}"
   printf:${tag^} "  ${cl_green}output${cl_reset} %-18s = %s... (%d lines)\n" "$name" "${preview:0:60}" "$(echo "$value" | wc -l)"
 }
+
+# ---------------------------------------------------------------------------
+# Environment variable helpers
+# ---------------------------------------------------------------------------
+# Verify a required env var is set, log it, and exit 1 if missing.
+# Use this instead of positional args — scripts read from env vars set by workflows.
+#   ci:require <tag> <var_name>
+ci:require() {
+  local tag="${1}" var_name="${2}"
+  local value="${!var_name:-}"
+  if [ -z "$value" ]; then
+    echo:${tag^} "Error: ${var_name} is required but not set"
+    exit 1
+  fi
+  ci:param "$tag" "$var_name" "$value"
+}
+
+# Log an optional env var (no error if empty).
+#   ci:optional <tag> <var_name> [default]
+ci:optional() {
+  local tag="${1}" var_name="${2}" default="${3:-}"
+  local value="${!var_name:-$default}"
+  ci:param "$tag" "$var_name" "$value"
+}

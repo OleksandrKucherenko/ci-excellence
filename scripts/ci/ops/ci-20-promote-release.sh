@@ -2,10 +2,12 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
-echo:Ops "Promote Release"
-ci:param ops "VERSION" "${1}"
+VERSION="${OPS_VERSION:?OPS_VERSION is required}"
 
-echo:Ops "Promoting version ${1}..."
+echo:Ops "Promote Release"
+ci:param ops "OPS_VERSION" "$VERSION"
+
+echo:Ops "Promoting version ${VERSION}..."
 echo:Ops ""
 echo:Ops "Auto-promotion is not yet implemented."
 echo:Ops "Please use the Release Pipeline to promote a pre-release:"

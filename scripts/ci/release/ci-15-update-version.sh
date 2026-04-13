@@ -5,10 +5,10 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: Update Version
 # Purpose: Update version in project files
 
-VERSION="${1:?Version is required}"
+VERSION="${CI_VERSION:?CI_VERSION is required}"
 
 echo:Release "Updating Version Files"
-ci:param release "VERSION" "$VERSION"
+ci:param release "CI_VERSION" "$VERSION"
 
 # Example: Update package.json
 # if [ -f "package.json" ]; then

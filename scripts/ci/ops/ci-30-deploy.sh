@@ -2,14 +2,14 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
-echo:Ops "Deploy"
-ci:param ops "ENVIRONMENT" "${1:?Environment is required}"
-ci:param ops "VERSION" "${2:?Version is required}"
-ci:param ops "CONFIRM" "${3:-no}"
+ENVIRONMENT="${OPS_ENVIRONMENT:?OPS_ENVIRONMENT is required}"
+VERSION="${OPS_VERSION:?OPS_VERSION is required}"
+CONFIRM="${OPS_CONFIRM:-no}"
 
-ENVIRONMENT="${1:?Environment is required}"
-VERSION="${2:?Version is required}"
-CONFIRM="${3:-no}"
+echo:Ops "Deploy"
+ci:param ops "OPS_ENVIRONMENT" "$ENVIRONMENT"
+ci:param ops "OPS_VERSION" "$VERSION"
+ci:param ops "OPS_CONFIRM" "$CONFIRM"
 
 if [ "$ENVIRONMENT" == "production" ] && [ "$CONFIRM" != "yes" ]; then
   echo:Ops "Error: Production deployment requires confirmation 'yes'"

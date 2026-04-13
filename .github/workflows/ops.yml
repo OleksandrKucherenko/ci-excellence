@@ -29,29 +29,41 @@ jobs:
   ops-handler:
     name: Handle Ops Action
     runs-on: ubuntu-latest
+    env:
+      OPS_ACTION: ${{ github.event.inputs.action }}
+      OPS_VERSION: ${{ github.event.inputs.version }}
+      OPS_CONFIRM: ${{ github.event.inputs.confirm }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Validate Inputs
-        run: ./scripts/ci/ops/ci-10-validate-inputs.sh "${{ github.event.inputs.action }}" "${{ github.event.inputs.version }}"
+        run: ./scripts/ci/ops/ci-10-validate-inputs.sh
 
       - name: Promote Release
         if: github.event.inputs.action == 'promote-release'
-        run: ./scripts/ci/ops/ci-20-promote-release.sh "${{ github.event.inputs.version }}"
+        run: ./scripts/ci/ops/ci-20-promote-release.sh
 
       - name: Deploy Staging
         if: github.event.inputs.action == 'deploy-staging'
-        run: ./scripts/ci/ops/ci-30-deploy.sh staging "${{ github.event.inputs.version }}"
+        env:
+          OPS_ENVIRONMENT: staging
+        run: ./scripts/ci/ops/ci-30-deploy.sh
 
       - name: Deploy Production
         if: github.event.inputs.action == 'deploy-production'
-        run: ./scripts/ci/ops/ci-30-deploy.sh production "${{ github.event.inputs.version }}" "${{ github.event.inputs.confirm }}"
+        env:
+          OPS_ENVIRONMENT: production
+        run: ./scripts/ci/ops/ci-30-deploy.sh
 
       - name: Mark Stable
         if: github.event.inputs.action == 'mark-stable'
-        run: ./scripts/ci/ops/ci-40-mark-stability.sh stable "${{ github.event.inputs.version }}"
+        env:
+          CI_STABILITY_TAG: stable
+        run: ./scripts/ci/ops/ci-40-mark-stability.sh
 
       - name: Mark Deprecated
         if: github.event.inputs.action == 'mark-deprecated'
-        run: ./scripts/ci/ops/ci-40-mark-stability.sh deprecated "${{ github.event.inputs.version }}"
+        env:
+          CI_STABILITY_TAG: deprecated
+        run: ./scripts/ci/ops/ci-40-mark-stability.sh

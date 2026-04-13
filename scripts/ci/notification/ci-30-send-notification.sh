@@ -5,14 +5,14 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: Send Notification
 # Purpose: Send notifications to configured services using Apprise (tech-agnostic)
 
-TITLE="${1:-CI/CD Pipeline}"
-MESSAGE="${2:-Pipeline completed}"
-TYPE="${3:-info}"  # info, success, warning, failure
+TITLE="${NOTIFY_TITLE:-CI/CD Pipeline}"
+MESSAGE="${NOTIFY_MESSAGE:-Pipeline completed}"
+TYPE="${NOTIFY_STATUS:-info}"  # info, success, warning, failure
 
 echo:Notify "Sending Notification"
-ci:param notify "TITLE" "$TITLE"
-ci:param notify "MESSAGE" "$MESSAGE"
-ci:param notify "TYPE" "$TYPE"
+ci:param notify "NOTIFY_TITLE" "$TITLE"
+ci:param notify "NOTIFY_MESSAGE" "$MESSAGE"
+ci:param notify "NOTIFY_STATUS" "$TYPE"
 ci:secret notify "APPRISE_URLS" "${APPRISE_URLS:-}"
 
 # Check if Apprise is installed

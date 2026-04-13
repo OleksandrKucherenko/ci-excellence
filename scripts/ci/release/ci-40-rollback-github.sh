@@ -6,11 +6,11 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Mark GitHub release as draft or delete it
 # Customize this script based on your rollback strategy
 
-VERSION="${1:?Version is required}"
+VERSION="${CI_VERSION:?CI_VERSION is required}"
 TAG="v$VERSION"
 
 echo:Release "Rolling Back GitHub Release"
-ci:param release "VERSION" "$VERSION"
+ci:param release "CI_VERSION" "$VERSION"
 
 # Example: Mark release as draft using gh CLI
 # if command -v gh &> /dev/null; then

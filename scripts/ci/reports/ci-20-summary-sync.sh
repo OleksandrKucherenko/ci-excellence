@@ -7,9 +7,9 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 echo:Report "Generating Sync Summary"
 
-HAS_CHANGES="${1:-false}"
+HAS_CHANGES="${MAINT_HAS_CHANGES:-false}"
 
-ci:param report "HAS_CHANGES" "$HAS_CHANGES"
+ci:param report "MAINT_HAS_CHANGES" "$HAS_CHANGES"
 
 echo "## File Sync Summary" >> $GITHUB_STEP_SUMMARY
 echo "" >> $GITHUB_STEP_SUMMARY

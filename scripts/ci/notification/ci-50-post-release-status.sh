@@ -7,15 +7,15 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 echo:Notify "Determining Post-Release Status"
 
-VERIFY_RESULT="${1:-unknown}"
-TAG_STABLE_RESULT="${2:-unknown}"
-TAG_UNSTABLE_RESULT="${3:-unknown}"
-ROLLBACK_RESULT="${4:-unknown}"
+VERIFY_RESULT="${RESULT_VERIFY:-unknown}"
+TAG_STABLE_RESULT="${RESULT_TAG_STABLE:-unknown}"
+TAG_UNSTABLE_RESULT="${RESULT_TAG_UNSTABLE:-unknown}"
+ROLLBACK_RESULT="${RESULT_ROLLBACK:-unknown}"
 
-ci:param notify "VERIFY_RESULT" "$VERIFY_RESULT"
-ci:param notify "TAG_STABLE_RESULT" "$TAG_STABLE_RESULT"
-ci:param notify "TAG_UNSTABLE_RESULT" "$TAG_UNSTABLE_RESULT"
-ci:param notify "ROLLBACK_RESULT" "$ROLLBACK_RESULT"
+ci:param notify "RESULT_VERIFY" "$VERIFY_RESULT"
+ci:param notify "RESULT_TAG_STABLE" "$TAG_STABLE_RESULT"
+ci:param notify "RESULT_TAG_UNSTABLE" "$TAG_UNSTABLE_RESULT"
+ci:param notify "RESULT_ROLLBACK" "$ROLLBACK_RESULT"
 
 if [ "$ROLLBACK_RESULT" == "success" ]; then
   ci:output notify "status" "warning"

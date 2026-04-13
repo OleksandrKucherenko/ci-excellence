@@ -2,13 +2,17 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
-echo:Release "Publish NPM Release"
-ci:param release "IS_PRERELEASE" "${1:-false}"
+IS_PRERELEASE="${CI_IS_PRERELEASE:-false}"
 
-if [ "${1:-false}" == "true" ]; then
-  ./scripts/ci/release/ci-65-publish-npm.sh --tag next
+echo:Release "Publish NPM Release"
+ci:param release "CI_IS_PRERELEASE" "$IS_PRERELEASE"
+
+if [ "$IS_PRERELEASE" == "true" ]; then
+  export CI_NPM_TAG="--tag next"
 else
-  ./scripts/ci/release/ci-65-publish-npm.sh --tag latest
+  export CI_NPM_TAG="--tag latest"
 fi
+
+./scripts/ci/release/ci-65-publish-npm.sh
 
 echo:Release "Publish NPM Release Done"

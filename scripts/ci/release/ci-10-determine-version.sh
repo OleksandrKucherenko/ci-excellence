@@ -4,8 +4,8 @@
 # CI Script: Determine Version
 # Purpose: Calculate next version based on release type using e-bash semver lib
 
-RELEASE_TYPE="${1:-patch}"
-PRE_RELEASE_TYPE="${2:-alpha}" 
+RELEASE_TYPE="${CI_RELEASE_SCOPE:-patch}"
+PRE_RELEASE_TYPE="${CI_PRE_RELEASE_TYPE:-alpha}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../../" && pwd)"
@@ -28,8 +28,8 @@ source "$LIB_DIR/_semver.sh"
 set -u
 
 echo:Release "Determining Next Version"
-ci:param release "RELEASE_TYPE" "$RELEASE_TYPE"
-ci:param release "PRE_RELEASE_TYPE" "$PRE_RELEASE_TYPE"
+ci:param release "CI_RELEASE_SCOPE" "$RELEASE_TYPE"
+ci:param release "CI_PRE_RELEASE_TYPE" "$PRE_RELEASE_TYPE"
 
 # Get current version details
 # Find the latest tag that looks like a semver version v*.*.*

@@ -7,9 +7,9 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 echo:Notify "Determining Pipeline Status"
 
-SUMMARY_RESULT="${1:-unknown}"
+SUMMARY_RESULT="${RESULT_SUMMARY:-unknown}"
 
-ci:param notify "SUMMARY_RESULT" "$SUMMARY_RESULT"
+ci:param notify "RESULT_SUMMARY" "$SUMMARY_RESULT"
 ci:param notify "GITHUB_RUN_NUMBER" "${GITHUB_RUN_NUMBER:-}"
 ci:param notify "GITHUB_SHA" "${GITHUB_SHA:-}"
 ci:param notify "GITHUB_REF_NAME" "${GITHUB_REF_NAME:-}"

@@ -12,7 +12,8 @@ Describe 'ci-40-maintenance-status.sh'
 
   Describe 'security failure'
     It 'sets status to failure when security audit fails'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" success success success failure success
+      export RESULT_CLEANUP=success RESULT_SYNC=success RESULT_DEPRECATION=success RESULT_SECURITY=failure RESULT_DEPENDENCY=success
+      When run bash "$RUN_SCRIPT" "$SCRIPT"
       The contents of file "$GITHUB_OUTPUT" should include 'status=failure'
       The contents of file "$GITHUB_OUTPUT" should include 'Security Audit Failed'
       The status should equal 0
@@ -22,7 +23,8 @@ Describe 'ci-40-maintenance-status.sh'
 
   Describe 'dependency success'
     It 'sets status to success when dependencies updated'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" success success success success success
+      export RESULT_CLEANUP=success RESULT_SYNC=success RESULT_DEPRECATION=success RESULT_SECURITY=success RESULT_DEPENDENCY=success
+      When run bash "$RUN_SCRIPT" "$SCRIPT"
       The contents of file "$GITHUB_OUTPUT" should include 'status=success'
       The contents of file "$GITHUB_OUTPUT" should include 'Dependencies Updated'
       The status should equal 0
@@ -32,7 +34,8 @@ Describe 'ci-40-maintenance-status.sh'
 
   Describe 'sync success'
     It 'sets status to success when files synced'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" success success success success skipped
+      export RESULT_CLEANUP=success RESULT_SYNC=success RESULT_DEPRECATION=success RESULT_SECURITY=success RESULT_DEPENDENCY=skipped
+      When run bash "$RUN_SCRIPT" "$SCRIPT"
       The contents of file "$GITHUB_OUTPUT" should include 'status=success'
       The contents of file "$GITHUB_OUTPUT" should include 'Files Synced'
       The status should equal 0
@@ -42,7 +45,8 @@ Describe 'ci-40-maintenance-status.sh'
 
   Describe 'default'
     It 'sets status to success with default message'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" success skipped success success skipped
+      export RESULT_CLEANUP=success RESULT_SYNC=skipped RESULT_DEPRECATION=success RESULT_SECURITY=success RESULT_DEPENDENCY=skipped
+      When run bash "$RUN_SCRIPT" "$SCRIPT"
       The contents of file "$GITHUB_OUTPUT" should include 'status=success'
       The contents of file "$GITHUB_OUTPUT" should include 'Maintenance Completed'
       The status should equal 0

@@ -2,10 +2,10 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
-echo:Release "Parse Tag"
-ci:param release "REF" "${1:?Git ref is required}"
+REF="${CI_GIT_REF:?CI_GIT_REF is required}"
 
-REF="${1:?Git ref is required}"
+echo:Release "Parse Tag"
+ci:param release "CI_GIT_REF" "$REF"
 TAG=${REF#refs/tags/}
 VERSION="${TAG##*v}"
 
