@@ -86,14 +86,6 @@ if [ -n "${GITHUB_RUN_ID:-}" ] && [ -n "${GITHUB_SERVER_URL:-}" ] && [ -n "${GIT
 <b>Run:</b> <a href=\"${RUN_URL}\">View Logs</a>"
 fi
 
-if [ -n "${GITHUB_SHA:-}" ]; then
-    COMMIT_MSG=$(git log -1 --format='%s' "${GITHUB_SHA}" 2>/dev/null || echo "")
-    if [ -n "$COMMIT_MSG" ]; then
-        FULL_MESSAGE="${FULL_MESSAGE}
-<b>Commit:</b> <code>${GITHUB_SHA:0:7}</code> ${COMMIT_MSG}"
-    fi
-fi
-
 if [ -n "${GITHUB_ACTOR:-}" ]; then
     FULL_MESSAGE="${FULL_MESSAGE}
 <b>Triggered by:</b> ${GITHUB_ACTOR}"
