@@ -12,6 +12,9 @@ TAG="v$VERSION"
 echo:Release "Verifying GitHub Release"
 ci:param release "CI_VERSION" "$VERSION"
 
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
+
 # Example: Verify GitHub release using gh CLI
 # if command -v gh &> /dev/null; then
 #     echo "Checking for GitHub release $TAG..."

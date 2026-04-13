@@ -40,6 +40,8 @@ ci:secret notify "APPRISE_URLS" "$APPRISE_URLS"
 ci:secret notify "TELEGRAM_BOT_TOKEN" "$TELEGRAM_BOT_TOKEN"
 ci:param notify "TELEGRAM_CHAT_ID" "$TELEGRAM_CHAT_ID"
 ci:param notify "ENABLE_NOTIFICATIONS" "$ENABLE_NOTIFICATIONS"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 # Check if explicitly disabled
 if [ -n "$ENABLE_NOTIFICATIONS" ] && is_false "$ENABLE_NOTIFICATIONS"; then

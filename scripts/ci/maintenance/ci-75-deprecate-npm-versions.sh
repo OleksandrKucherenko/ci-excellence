@@ -8,6 +8,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 echo:Maint "Deprecating NPM Versions"
 ci:secret maint "NODE_AUTH_TOKEN" "${NODE_AUTH_TOKEN:-}"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 # Check if NODE_AUTH_TOKEN is set
 if [ -z "${NODE_AUTH_TOKEN:-}" ]; then

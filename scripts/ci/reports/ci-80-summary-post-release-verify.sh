@@ -10,6 +10,8 @@ echo:Report "Generating Post-Release Verification Summary"
 VERSION="${CI_VERSION:-unknown}"
 
 ci:param report "CI_VERSION" "$VERSION"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 {
   echo "## Deployment Verification Results"

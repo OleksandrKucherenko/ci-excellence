@@ -9,6 +9,9 @@ echo:Ops "Validate Inputs"
 ci:param ops "OPS_ACTION" "$ACTION"
 ci:param ops "OPS_VERSION" "$VERSION"
 
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
+
 if [[ -z "$VERSION" ]]; then
   echo:Error "Error: Version is required"
   exit 1

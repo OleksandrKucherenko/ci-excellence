@@ -14,6 +14,8 @@ ci:param notify "NOTIFY_TITLE" "$TITLE"
 ci:param notify "NOTIFY_MESSAGE" "$MESSAGE"
 ci:param notify "NOTIFY_STATUS" "$TYPE"
 ci:secret notify "APPRISE_URLS" "${APPRISE_URLS:-}"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 # Check if Apprise is installed
 if ! command -v apprise &> /dev/null; then

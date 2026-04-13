@@ -6,6 +6,10 @@ REF="${CI_GIT_REF:?CI_GIT_REF is required}"
 
 echo:Release "Parse Tag"
 ci:param release "CI_GIT_REF" "$REF"
+
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
+
 TAG=${REF#refs/tags/}
 VERSION="${TAG##*v}"
 

@@ -6,6 +6,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Run security vulnerability scans (technology-agnostic stub)
 
 echo:Security "Running Security Scans"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 EXIT_CODE=0
 

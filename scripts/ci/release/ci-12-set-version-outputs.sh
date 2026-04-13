@@ -12,6 +12,9 @@ echo:Release "Setting Version Outputs"
 ci:param release "CI_RELEASE_SCOPE" "$RELEASE_TYPE"
 ci:param release "CI_PRE_RELEASE_TYPE" "$PRE_RELEASE_INPUT"
 
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
+
 VERSION=$(./scripts/ci/release/ci-10-determine-version.sh)
 
 IS_PRERELEASE="$PRE_RELEASE_INPUT"

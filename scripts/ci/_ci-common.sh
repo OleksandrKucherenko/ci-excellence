@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2034,SC2154
-# CI Common Bootstrap: Sources e-bash logger for all CI scripts
+# CI Common Bootstrap: Sources e-bash logger and hooks for all CI scripts
 #
 # Usage: source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 #
-# This file initializes the e-bash logger system with domain-specific tags.
+# This file initializes:
+# 1. e-bash logger with domain-specific colored tags
+# 2. e-bash hooks system with per-script HOOKS_DIR and middleware
+#
 # Scripts replace `echo` with `echo:Tag` (e.g. echo:Build, echo:Test).
 # To rollback to plain bash: string-replace `echo:Tag` back to `echo`.
 #
@@ -12,20 +15,25 @@
 #   DEBUG=build,test ./script.sh     # enable only build and test logs
 #   DEBUG=*,-setup  ./script.sh      # enable all except setup
 #   DEBUG=*         ./script.sh      # enable everything
+#
+# Hooks: consuming projects drop scripts in ci-cd/{step_name}/ directories.
+# Scripts matching {hook}-*.sh are auto-discovered and executed via middleware.
 
 _CI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 _REPO_ROOT="$(cd "$_CI_DIR/../.." && pwd)"
 export E_BASH="${E_BASH:-$_REPO_ROOT/scripts/lib}"
 
-# Source e-bash logger (disable unbound variable check for vendored code)
+# Source e-bash core (disable unbound variable check for vendored code)
 set +u
 # shellcheck disable=SC1090,SC1091
 source "$E_BASH/_logger.sh"
+# shellcheck disable=SC1090,SC1091
+source "$E_BASH/_hooks.sh"
 set -u
 
 # Default: enable all CI loggers (CI environment is always verbose)
 # In local dev, user can control via DEBUG=build,test,-setup
-export DEBUG="${DEBUG:-ci,build,test,release,setup,notify,maint,report,security,ops,success,error}"
+export DEBUG="${DEBUG:-ci,build,test,release,setup,notify,maint,report,security,ops,success,error,hooks}"
 
 # Register domain loggers with colored prefixes, redirect to stderr.
 # Each tag has a distinct color for easy recognition in CI logs.
@@ -45,6 +53,22 @@ logger:init "ops"      "${cl_lpurple}${st_bold}[ops]${cl_reset} "    ">&2"
 # Grep for [SUCCESS] or [ERROR] to get a quick pass/fail summary of any pipeline.
 logger:init "success"  "${cl_green}${st_bold}[SUCCESS]${cl_reset} "  ">&2"
 logger:init "error"    "${cl_red}${st_bold}[ERROR]${cl_reset} "      ">&2"
+
+# ---------------------------------------------------------------------------
+# Hooks system: per-script extension points
+# ---------------------------------------------------------------------------
+# Each script gets its own HOOKS_DIR based on its filename.
+# Consuming projects drop scripts in ci-cd/{step_name}/ to extend behavior.
+# BASH_SOURCE[1] is the caller of _ci-common.sh (the step script itself).
+_CI_SCRIPT_NAME="$(basename "${BASH_SOURCE[1]:-unknown}" .sh)"
+export HOOKS_DIR="${HOOKS_DIR:-ci-cd/${_CI_SCRIPT_NAME}}"
+
+# Bootstrap: declare begin + end hooks, install EXIT trap for end hooks
+hooks:bootstrap
+
+# Register middleware for contract-based hook communication (exec mode).
+# Hook scripts emit contract:env:NAME=VALUE on stdout to safely set env vars.
+hooks:middleware begin _hooks:middleware:modes
 
 # ---------------------------------------------------------------------------
 # Parameter logging helpers

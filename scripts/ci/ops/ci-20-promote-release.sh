@@ -7,6 +7,9 @@ VERSION="${OPS_VERSION:?OPS_VERSION is required}"
 echo:Ops "Promote Release"
 ci:param ops "OPS_VERSION" "$VERSION"
 
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
+
 echo:Ops "Promoting version ${VERSION}..."
 echo:Ops ""
 echo:Ops "Auto-promotion is not yet implemented."

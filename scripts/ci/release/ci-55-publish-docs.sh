@@ -8,6 +8,9 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 echo:Release "Publishing Documentation"
 
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
+
 # Example: GitHub Pages
 # if [ -d "docs/_build/html" ] || [ -d "build/docs" ]; then
 #     echo "Publishing to GitHub Pages..."

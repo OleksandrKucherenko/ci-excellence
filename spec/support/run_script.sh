@@ -35,9 +35,15 @@ logger:init "ops"      "${cl_lpurple:-}${st_bold:-}[ops]${cl_reset:-} "    ">&2"
 logger:init "success"  "${cl_green:-}${st_bold:-}[SUCCESS]${cl_reset:-} "  ">&2" 2>/dev/null
 logger:init "error"    "${cl_red:-}${st_bold:-}[ERROR]${cl_reset:-} "      ">&2" 2>/dev/null
 
-# Pre-source semver library (used by release scripts)
+# Pre-source hooks and semver libraries
+# shellcheck disable=SC1090,SC1091
+source "$E_BASH/_hooks.sh" 2>/dev/null
 # shellcheck disable=SC1090,SC1091
 source "$E_BASH/_semver.sh" 2>/dev/null
+
+# Pre-bootstrap hooks so _ci-common.sh bootstrap is a no-op
+hooks:bootstrap 2>/dev/null
+hooks:middleware begin _hooks:middleware:modes 2>/dev/null
 
 # Initialize loggers that _semver.sh creates at its bottom
 logger:init "semver" "" ">&2" 2>/dev/null

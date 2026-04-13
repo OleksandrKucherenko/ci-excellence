@@ -6,6 +6,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Set git user name and email for automated commits
 
 echo:Setup "Set GitHub Username and Email for Bot"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 git config user.name "github-actions[bot]"
 git config user.email "github-actions[bot]@users.noreply.github.com"

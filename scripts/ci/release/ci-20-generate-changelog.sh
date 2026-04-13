@@ -11,6 +11,9 @@ VERSION="${CI_VERSION:?CI_VERSION is required}"
 echo:Release "Generating Changelog"
 ci:param release "CI_VERSION" "$VERSION"
 
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
+
 # Example: Using conventional-changelog
 # if command -v conventional-changelog &> /dev/null; then
 #     echo "Generating changelog with conventional-changelog..."

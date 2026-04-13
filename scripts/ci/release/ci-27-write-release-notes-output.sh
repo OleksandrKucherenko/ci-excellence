@@ -10,6 +10,9 @@ VERSION="${CI_VERSION:?CI_VERSION is required}"
 echo:Release "Writing Release Notes Output"
 ci:param release "CI_VERSION" "$VERSION"
 
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
+
 NOTES=$(./scripts/ci/release/ci-25-generate-release-notes.sh)
 
 ci:output:multiline release "notes" "$NOTES"

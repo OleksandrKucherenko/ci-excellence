@@ -13,6 +13,9 @@ echo:Release "Applying Stability Tag"
 ci:param release "CI_STABILITY_TAG" "$TAG_NAME"
 ci:param release "CI_VERSION" "$VERSION"
 
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
+
 if [ -z "$TAG_NAME" ] || [ -z "$VERSION" ]; then
   echo:Release "Usage: CI_STABILITY_TAG=<stable|unstable> CI_VERSION=<version> $0"
   exit 1

@@ -10,6 +10,8 @@ VERSION="${CI_VERSION:-latest}"
 
 echo:Test "Running Smoke Tests"
 ci:param test "CI_VERSION" "$VERSION"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 EXIT_CODE=0
 

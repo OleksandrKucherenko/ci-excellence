@@ -6,6 +6,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Generate deprecation summary for GitHub step summary
 
 echo:Report "Generating Deprecation Summary"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 {
   echo "## Deprecation Summary"

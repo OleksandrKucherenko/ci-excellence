@@ -18,6 +18,8 @@ ci:param notify "RESULT_PREPARE" "$PREPARE_RESULT"
 ci:param notify "RESULT_PUBLISH_NPM" "$NPM_RESULT"
 ci:param notify "RESULT_PUBLISH_GITHUB" "$GITHUB_RESULT"
 ci:param notify "RESULT_PUBLISH_DOCKER" "$DOCKER_RESULT"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 if [ "$PREPARE_RESULT" == "failure" ] || \
    [ "$NPM_RESULT" == "failure" ] || \

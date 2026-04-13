@@ -12,6 +12,9 @@ echo:Release "Rolling Back NPM Release"
 ci:param release "CI_VERSION" "$VERSION"
 ci:secret release "NODE_AUTH_TOKEN" "${NODE_AUTH_TOKEN:-}"
 
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
+
 # Check if NODE_AUTH_TOKEN is set
 if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
     echo:Error "⚠ NODE_AUTH_TOKEN is not set"
