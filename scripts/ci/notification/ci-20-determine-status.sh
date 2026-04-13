@@ -5,6 +5,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: Determine Notification Status
 # Purpose: Determine pipeline status for notifications with detailed context
 
+echo:Notify "--- Determining Pipeline Status ---"
+
 SUMMARY_RESULT="${1:-unknown}"
 
 # Get context information
@@ -47,3 +49,5 @@ else
     echo "EOF_MESSAGE"
   } >> $GITHUB_OUTPUT
 fi
+
+echo:Notify "--- Pipeline Status Determined ---"

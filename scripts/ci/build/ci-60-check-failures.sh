@@ -14,6 +14,10 @@ E2E_RESULT="${6:-success}"
 SECURITY_RESULT="${7:-success}"
 BUNDLE_RESULT="${8:-success}"
 
+echo:Build "========================================="
+echo:Build "Checking Pipeline Results"
+echo:Build "========================================="
+
 if [ "$SETUP_RESULT" == "failure" ] || \
    [ "$COMPILE_RESULT" == "failure" ] || \
    [ "$LINT_RESULT" == "failure" ] || \
@@ -25,3 +29,7 @@ if [ "$SETUP_RESULT" == "failure" ] || \
   echo "::error::One or more pipeline jobs failed"
   exit 1
 fi
+
+echo:Build "========================================="
+echo:Build "Pipeline Check Complete"
+echo:Build "========================================="

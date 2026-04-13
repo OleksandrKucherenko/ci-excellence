@@ -5,6 +5,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: Pre-Release Summary
 # Purpose: Generate pre-release pipeline summary
 
+echo:Report "--- Generating Pre-Release Summary ---"
+
 SETUP_RESULT="${1:-unknown}"
 COMPILE_RESULT="${2:-unknown}"
 LINT_RESULT="${3:-unknown}"
@@ -36,3 +38,5 @@ ENABLE_BUNDLE="${ENABLE_BUNDLE:-false}"
     echo "| Security Scan | $SECURITY_RESULT | $ENABLE_SECURITY_SCAN |"
     echo "| Bundle | $BUNDLE_RESULT | $ENABLE_BUNDLE |" 
 } >> "${GITHUB_STEP_SUMMARY}"
+
+echo:Report "--- Pre-Release Summary Generated ---"

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+# shellcheck shell=bash
 # Tests for scripts/ci/release/ci-10-determine-version.sh
 #
 # This script uses `git describe --tags` to find the current version, then
@@ -18,7 +18,8 @@ Describe 'ci-10-determine-version.sh'
     git -C "$_tmp_repo" init -q
     git -C "$_tmp_repo" config user.email "test@test.com"
     git -C "$_tmp_repo" config user.name "Test"
-    # Need a commit so we can tag it
+    git -C "$_tmp_repo" config commit.gpgsign false
+    git -C "$_tmp_repo" config tag.gpgsign false
     touch "$_tmp_repo/README"
     git -C "$_tmp_repo" add README
     git -C "$_tmp_repo" commit -q -m "initial"
@@ -28,25 +29,15 @@ Describe 'ci-10-determine-version.sh'
     rm -rf "$_tmp_repo" 2>/dev/null || true
   }
 
-  BeforeEach 'setup_git_repo'
-  AfterEach 'cleanup_git_repo'
+  Before 'setup_git_repo'
+  After 'cleanup_git_repo'
 
   # Helper: tag the fixture repo, then run the script inside it.
-  # We copy the entire scripts/ tree into the temp repo so that relative
-  # source paths (_ci-common.sh -> ../../lib) resolve correctly.
   run_determine_version() {
     local tag="$1"; shift
     git -C "$_tmp_repo" tag "$tag"
-
-    # Mirror the script tree so `source` paths work
-    mkdir -p "$_tmp_repo/scripts/ci/release"
-    mkdir -p "$_tmp_repo/scripts/lib"
-    cp -a "$SHELLSPEC_PROJECT_ROOT/scripts/lib/." "$_tmp_repo/scripts/lib/"
-    cp -a "$SHELLSPEC_PROJECT_ROOT/scripts/ci/_ci-common.sh" "$_tmp_repo/scripts/ci/"
-    cp -a "$SCRIPT" "$_tmp_repo/scripts/ci/release/"
-
     # Run inside the temp repo so `git describe` finds our tag
-    (cd "$_tmp_repo" && bash scripts/ci/release/ci-10-determine-version.sh "$@")
+    (cd "$_tmp_repo" && bash "$RUN_SCRIPT" "$SCRIPT" "$@")
   }
 
   Describe 'patch increment'
@@ -54,6 +45,7 @@ Describe 'ci-10-determine-version.sh'
       When call run_determine_version "v1.0.0" patch
       The output should include '1.0.1'
       The status should equal 0
+      The stderr should be present
     End
   End
 
@@ -62,6 +54,7 @@ Describe 'ci-10-determine-version.sh'
       When call run_determine_version "v1.0.0" minor
       The output should include '1.1.0'
       The status should equal 0
+      The stderr should be present
     End
   End
 
@@ -70,6 +63,7 @@ Describe 'ci-10-determine-version.sh'
       When call run_determine_version "v1.0.0" major
       The output should include '2.0.0'
       The status should equal 0
+      The stderr should be present
     End
   End
 
@@ -78,6 +72,7 @@ Describe 'ci-10-determine-version.sh'
       When call run_determine_version "v1.0.0-alpha" prerelease alpha
       The output should include '1.0.0-alpha.1'
       The status should equal 0
+      The stderr should be present
     End
   End
 End
