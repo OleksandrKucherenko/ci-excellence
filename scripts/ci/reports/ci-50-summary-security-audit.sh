@@ -6,8 +6,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Generate security audit summary for GitHub step summary
 
 echo:Report "Generating Security Audit Summary"
-hooks:do begin "${BASH_SOURCE[0]##*/}"
-hooks:flow:apply
 
 {
   echo "## Security Audit Summary"

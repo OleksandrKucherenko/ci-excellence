@@ -7,8 +7,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 echo:Setup "Installing Required Tools"
 ci:secret setup "GITHUB_TOKEN" "${GITHUB_TOKEN:-}"
-hooks:do begin "${BASH_SOURCE[0]##*/}"
-hooks:flow:apply
 
 # Install mise if not already installed
 if ! command -v mise &> /dev/null; then

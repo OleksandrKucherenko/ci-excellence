@@ -6,8 +6,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Generate cleanup summary for GitHub
 
 echo:Report "Generating Cleanup Summary"
-hooks:do begin "${BASH_SOURCE[0]##*/}"
-hooks:flow:apply
 
 echo "## Cleanup Summary" >> $GITHUB_STEP_SUMMARY
 echo "" >> $GITHUB_STEP_SUMMARY

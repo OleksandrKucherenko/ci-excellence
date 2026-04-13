@@ -7,8 +7,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Customize this script based on your package manager
 
 echo:Maint "Updating Dependencies"
-hooks:do begin "${BASH_SOURCE[0]##*/}"
-hooks:flow:apply
 
 # Example: Update NPM dependencies
 # if [ -f "package.json" ]; then

@@ -7,8 +7,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Customize this script based on your deprecation policy
 
 echo:Maint "Deprecating GitHub Releases"
-hooks:do begin "${BASH_SOURCE[0]##*/}"
-hooks:flow:apply
 
 # Example: Mark old pre-releases as deprecated
 # if command -v gh &> /dev/null; then

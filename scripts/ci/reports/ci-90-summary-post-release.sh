@@ -16,8 +16,6 @@ ci:param report "RESULT_VERIFY" "$VERIFY_RESULT"
 ci:param report "RESULT_TAG_STABLE" "$TAG_STABLE_RESULT"
 ci:param report "RESULT_TAG_UNSTABLE" "$TAG_UNSTABLE_RESULT"
 ci:param report "RESULT_ROLLBACK" "$ROLLBACK_RESULT"
-hooks:do begin "${BASH_SOURCE[0]##*/}"
-hooks:flow:apply
 
 {
   echo "## Post-Release Actions Summary"

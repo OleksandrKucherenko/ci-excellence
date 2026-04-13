@@ -11,8 +11,6 @@ ci:param ops "OPS_ENVIRONMENT" "$ENVIRONMENT"
 ci:param ops "OPS_VERSION" "$VERSION"
 ci:param ops "OPS_CONFIRM" "$CONFIRM"
 
-hooks:do begin "${BASH_SOURCE[0]##*/}"
-hooks:flow:apply
 
 if [ "$ENVIRONMENT" == "production" ] && [ "$CONFIRM" != "yes" ]; then
   echo:Error "Error: Production deployment requires confirmation 'yes'"

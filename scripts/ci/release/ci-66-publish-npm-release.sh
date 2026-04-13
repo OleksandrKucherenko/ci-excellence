@@ -7,8 +7,6 @@ IS_PRERELEASE="${CI_IS_PRERELEASE:-false}"
 echo:Release "Publish NPM Release"
 ci:param release "CI_IS_PRERELEASE" "$IS_PRERELEASE"
 
-hooks:do begin "${BASH_SOURCE[0]##*/}"
-hooks:flow:apply
 
 if [ "$IS_PRERELEASE" == "true" ]; then
   export CI_NPM_TAG="--tag next"

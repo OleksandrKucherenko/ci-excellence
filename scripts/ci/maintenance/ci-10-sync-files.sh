@@ -6,8 +6,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Synchronize version files (tech-agnostic stub)
 
 echo:Maint "Synchronizing Version Files"
-hooks:do begin "${BASH_SOURCE[0]##*/}"
-hooks:flow:apply
 
 # Example: Get latest version from NPM and update package.json
 # if [ -f "package.json" ] && command -v npm &> /dev/null; then

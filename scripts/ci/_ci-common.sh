@@ -23,6 +23,11 @@ _CI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 _REPO_ROOT="$(cd "$_CI_DIR/../.." && pwd)"
 export E_BASH="${E_BASH:-$_REPO_ROOT/scripts/lib}"
 
+# Default: enable all CI loggers (CI environment is always verbose).
+# MUST be set before sourcing _hooks.sh, which sets DEBUG="error" if unset.
+# In local dev, user can control via DEBUG=build,test,-setup
+export DEBUG="${DEBUG:-ci,build,test,release,setup,notify,maint,report,security,ops,success,error,hooks}"
+
 # Source e-bash core and initialize all loggers and hooks.
 # The entire block runs with errexit and nounset disabled because the logger's
 # eval-based dynamic function creation triggers a bash-internal
@@ -32,12 +37,6 @@ export E_BASH="${E_BASH:-$_REPO_ROOT/scripts/lib}"
 set +eu
 # shellcheck disable=SC1090,SC1091
 source "$E_BASH/_logger.sh"
-# shellcheck disable=SC1090,SC1091
-source "$E_BASH/_hooks.sh"
-
-# Default: enable all CI loggers (CI environment is always verbose)
-# In local dev, user can control via DEBUG=build,test,-setup
-export DEBUG="${DEBUG:-ci,build,test,release,setup,notify,maint,report,security,ops,success,error,hooks}"
 
 # Register domain loggers with colored prefixes, redirect to stderr.
 # Each tag has a distinct color for easy recognition in CI logs.
@@ -58,24 +57,33 @@ logger:init "ops"      "${cl_lpurple}${st_bold}[ops]${cl_reset} "    ">&2"
 logger:init "success"  "${cl_green}${st_bold}[SUCCESS]${cl_reset} "  ">&2"
 logger:init "error"    "${cl_red}${st_bold}[ERROR]${cl_reset} "      ">&2"
 
+# Restore strict mode for the calling script
+set -eu
+
 # ---------------------------------------------------------------------------
-# Hooks system: per-script extension points
+# Hooks system: per-script extension points (opt-in)
 # ---------------------------------------------------------------------------
 # Each script gets its own HOOKS_DIR based on its filename.
 # Consuming projects drop scripts in ci-cd/{step_name}/ to extend behavior.
-# BASH_SOURCE[1] is the caller of _ci-common.sh (the step script itself).
-_CI_SCRIPT_NAME="$(basename "${BASH_SOURCE[1]:-unknown}" .sh)"
-export HOOKS_DIR="${HOOKS_DIR:-ci-cd/${_CI_SCRIPT_NAME}}"
+#
+# Hooks are NOT auto-loaded here because _hooks.sh installs an EXIT trap
+# (via _traps.sh) whose Trap::dispatch conflicts with set -e in CI scripts.
+# See: https://github.com/OleksandrKucherenko/e-bash/issues/XXX
+#
+# Scripts that need hooks should call ci:hooks:init after sourcing _ci-common.sh.
+# This initializes HOOKS_DIR, bootstraps begin/end hooks, and registers middleware.
+ci:hooks:init() {
+  local script_name="${1:-$(basename "${BASH_SOURCE[1]:-unknown}" .sh)}"
+  export HOOKS_DIR="${HOOKS_DIR:-ci-cd/${script_name}}"
+  export HOOKS_AUTO_TRAP=false  # EXIT trap conflicts with set -e
 
-# Bootstrap: declare begin + end hooks, install EXIT trap for end hooks
-hooks:bootstrap
-
-# Register middleware for contract-based hook communication (exec mode).
-# Hook scripts emit contract:env:NAME=VALUE on stdout to safely set env vars.
-hooks:middleware begin _hooks:middleware:modes
-
-# Restore strict mode for the calling script
-set -eu
+  set +eu
+  # shellcheck disable=SC1090,SC1091
+  source "$E_BASH/_hooks.sh"
+  hooks:bootstrap
+  hooks:middleware begin _hooks:middleware:modes
+  set -eu
+}
 
 # ---------------------------------------------------------------------------
 # Parameter logging helpers

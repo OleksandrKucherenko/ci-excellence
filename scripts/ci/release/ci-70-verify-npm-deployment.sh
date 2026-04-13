@@ -11,8 +11,6 @@ VERSION="${CI_VERSION:?CI_VERSION is required}"
 echo:Release "Verifying NPM Deployment"
 ci:param release "CI_VERSION" "$VERSION"
 
-hooks:do begin "${BASH_SOURCE[0]##*/}"
-hooks:flow:apply
 
 # Example: Verify NPM package availability
 # if [ -f "package.json" ]; then

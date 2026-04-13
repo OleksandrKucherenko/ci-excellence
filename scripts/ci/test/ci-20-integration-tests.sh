@@ -6,8 +6,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Run integration tests (technology-agnostic stub)
 
 echo:Test "Running Integration Tests"
-hooks:do begin "${BASH_SOURCE[0]##*/}"
-hooks:flow:apply
 
 EXIT_CODE=0
 

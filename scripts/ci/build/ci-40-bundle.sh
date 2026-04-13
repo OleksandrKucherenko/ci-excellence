@@ -6,8 +6,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Create distribution packages (technology-agnostic stub)
 
 echo:Build "Creating Bundle/Package"
-hooks:do begin "${BASH_SOURCE[0]##*/}"
-hooks:flow:apply
 
 # Example: NPM package
 # if [ -f "package.json" ]; then

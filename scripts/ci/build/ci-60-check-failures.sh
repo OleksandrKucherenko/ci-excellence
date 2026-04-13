@@ -23,8 +23,6 @@ ci:param build "RESULT_INTEGRATION_TESTS" "$INTEGRATION_RESULT"
 ci:param build "RESULT_E2E_TESTS" "$E2E_RESULT"
 ci:param build "RESULT_SECURITY_SCAN" "$SECURITY_RESULT"
 ci:param build "RESULT_BUNDLE" "$BUNDLE_RESULT"
-hooks:do begin "${BASH_SOURCE[0]##*/}"
-hooks:flow:apply
 
 if [ "$SETUP_RESULT" == "failure" ] || \
    [ "$COMPILE_RESULT" == "failure" ] || \

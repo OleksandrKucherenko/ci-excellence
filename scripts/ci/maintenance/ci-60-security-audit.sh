@@ -7,8 +7,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Customize this script based on your security tools
 
 echo:Maint "Running Security Audit"
-hooks:do begin "${BASH_SOURCE[0]##*/}"
-hooks:flow:apply
 
 EXIT_CODE=0
 

@@ -11,8 +11,6 @@ VERSION="${CI_VERSION:?CI_VERSION is required}"
 echo:Release "Building Documentation"
 ci:param release "CI_VERSION" "$VERSION"
 
-hooks:do begin "${BASH_SOURCE[0]##*/}"
-hooks:flow:apply
 
 # Example: Sphinx for Python
 # if [ -f "docs/conf.py" ]; then

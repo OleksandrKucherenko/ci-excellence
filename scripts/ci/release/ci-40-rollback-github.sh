@@ -12,8 +12,6 @@ TAG="v$VERSION"
 echo:Release "Rolling Back GitHub Release"
 ci:param release "CI_VERSION" "$VERSION"
 
-hooks:do begin "${BASH_SOURCE[0]##*/}"
-hooks:flow:apply
 
 # Example: Mark release as draft using gh CLI
 # if command -v gh &> /dev/null; then

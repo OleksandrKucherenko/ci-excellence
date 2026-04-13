@@ -10,8 +10,6 @@ echo:Report "Generating Sync Summary"
 HAS_CHANGES="${MAINT_HAS_CHANGES:-false}"
 
 ci:param report "MAINT_HAS_CHANGES" "$HAS_CHANGES"
-hooks:do begin "${BASH_SOURCE[0]##*/}"
-hooks:flow:apply
 
 echo "## File Sync Summary" >> $GITHUB_STEP_SUMMARY
 echo "" >> $GITHUB_STEP_SUMMARY

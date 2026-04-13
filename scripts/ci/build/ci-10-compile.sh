@@ -6,8 +6,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Compile or build the project (technology-agnostic stub)
 
 echo:Build "Compiling/Building Project"
-hooks:do begin "${BASH_SOURCE[0]##*/}"
-hooks:flow:apply
 
 # Example: TypeScript compilation
 # if [ -f "tsconfig.json" ]; then

@@ -12,8 +12,6 @@ TAG="v${VERSION}"
 echo:Release "Uploading Release Assets"
 ci:param release "CI_VERSION" "$VERSION"
 
-hooks:do begin "${BASH_SOURCE[0]##*/}"
-hooks:flow:apply
 
 # Example: Upload assets using gh CLI
 # if command -v gh &> /dev/null; then

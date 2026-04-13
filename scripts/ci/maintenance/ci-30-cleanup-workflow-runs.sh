@@ -7,8 +7,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Customize this script based on your retention policy
 
 echo:Maint "Cleaning Up Old Workflow Runs"
-hooks:do begin "${BASH_SOURCE[0]##*/}"
-hooks:flow:apply
 
 # Example: Delete workflow runs older than 30 days using gh CLI
 # if command -v gh &> /dev/null; then

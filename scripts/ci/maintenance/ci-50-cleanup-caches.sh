@@ -7,8 +7,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Customize this script based on your cache policy
 
 echo:Maint "Cleaning Up Old Caches"
-hooks:do begin "${BASH_SOURCE[0]##*/}"
-hooks:flow:apply
 
 # Example: Delete unused caches using gh CLI
 # if command -v gh &> /dev/null; then

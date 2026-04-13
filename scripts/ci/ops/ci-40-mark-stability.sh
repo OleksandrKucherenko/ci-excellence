@@ -9,8 +9,6 @@ echo:Ops "Mark Stability"
 ci:param ops "CI_STABILITY_TAG" "$ACTION"
 ci:param ops "OPS_VERSION" "$VERSION"
 
-hooks:do begin "${BASH_SOURCE[0]##*/}"
-hooks:flow:apply
 
 echo:Ops "Marking ${VERSION} as ${ACTION}..."
 

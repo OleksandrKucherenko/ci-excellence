@@ -13,8 +13,6 @@ ci:param notify "RESULT_SUMMARY" "$SUMMARY_RESULT"
 ci:param notify "GITHUB_RUN_NUMBER" "${GITHUB_RUN_NUMBER:-}"
 ci:param notify "GITHUB_SHA" "${GITHUB_SHA:-}"
 ci:param notify "GITHUB_REF_NAME" "${GITHUB_REF_NAME:-}"
-hooks:do begin "${BASH_SOURCE[0]##*/}"
-hooks:flow:apply
 
 # Get context information
 RUN_NUMBER="${GITHUB_RUN_NUMBER:-???}"
