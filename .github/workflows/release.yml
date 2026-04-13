@@ -28,6 +28,11 @@ on:
           - hotfix
           - canary
           - nightly
+      package-path:
+        description: 'Package path for monorepo (e.g., packages/core). Leave empty for unified release.'
+        required: false
+        type: string
+        default: ''
       dry-run:
         description: 'Dry run (calculate version only)'
         required: false
@@ -61,6 +66,7 @@ jobs:
     env:
       CI_RELEASE_SCOPE: ${{ github.event.inputs.release-scope }}
       CI_PRE_RELEASE_TYPE: ${{ github.event.inputs.pre-release-type }}
+      CI_PACKAGE_PATH: ${{ github.event.inputs.package-path }}
       CI_DRY_RUN: ${{ github.event.inputs.dry-run }}
     steps:
       - name: Checkout code
@@ -95,6 +101,8 @@ jobs:
     outputs:
       version: ${{ steps.parse.outputs.version }}
       is-prerelease: ${{ steps.parse.outputs.is-prerelease }}
+      package-path: ${{ steps.parse.outputs.package-path }}
+      package-name: ${{ steps.parse.outputs.package-name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -108,6 +116,7 @@ jobs:
       - name: Generate changelog
         env:
           CI_VERSION: ${{ steps.parse.outputs.version }}
+          CI_PACKAGE_PATH: ${{ steps.parse.outputs.package-path }}
         run: ./scripts/ci/release/ci-20-generate-changelog.sh
 
   build:
@@ -212,6 +221,7 @@ jobs:
       contents: write
     env:
       CI_VERSION: ${{ needs.prepare.outputs.version }}
+      CI_PACKAGE_PATH: ${{ needs.prepare.outputs.package-path }}
       CI_IS_PRERELEASE: ${{ needs.prepare.outputs.is-prerelease }}
     steps:
       - name: Checkout code
@@ -265,6 +275,7 @@ jobs:
       - name: Build and push Docker image
         env:
           CI_VERSION: ${{ needs.prepare.outputs.version }}
+          CI_PACKAGE_PATH: ${{ needs.prepare.outputs.package-path }}
           CI_IS_PRERELEASE: ${{ needs.prepare.outputs.is-prerelease }}
         run: ./scripts/ci/release/ci-80-publish-docker.sh
 
@@ -292,6 +303,7 @@ jobs:
       - name: Build documentation
         env:
           CI_VERSION: ${{ needs.prepare.outputs.version }}
+          CI_PACKAGE_PATH: ${{ needs.prepare.outputs.package-path }}
         run: ./scripts/ci/release/ci-50-build-docs.sh
       - name: Publish documentation
         run: ./scripts/ci/release/ci-55-publish-docs.sh
@@ -304,6 +316,7 @@ jobs:
     if: always()
     env:
       CI_VERSION: ${{ needs.prepare.outputs.version }}
+      CI_PACKAGE_PATH: ${{ needs.prepare.outputs.package-path }}
       CI_IS_PRERELEASE: ${{ needs.prepare.outputs.is-prerelease }}
       RESULT_PUBLISH_NPM: ${{ needs['publish-npm'].result }}
       RESULT_PUBLISH_GITHUB: ${{ needs['publish-github'].result }}
