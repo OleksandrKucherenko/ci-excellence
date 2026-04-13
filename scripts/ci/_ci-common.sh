@@ -164,7 +164,7 @@ ci:has_hooks() {
 ci:skip_if_no_hooks() {
   local hook_name="${1}"
   if ! ci:has_hooks "$hook_name"; then
-    echo:CI "No hooks for '${hook_name}' in ${HOOKS_DIR:-<unset>}, skipping"
+    echo:Ci "No hooks for '${hook_name}' in ${HOOKS_DIR:-<unset>}, skipping"
     exit 0
   fi
 }
