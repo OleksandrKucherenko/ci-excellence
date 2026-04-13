@@ -9,7 +9,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 VERSION="${1:-latest}"
 
 echo:Test "Running Smoke Tests"
-echo:Test "Version: $VERSION"
+ci:param test "VERSION" "$VERSION"
 
 EXIT_CODE=0
 

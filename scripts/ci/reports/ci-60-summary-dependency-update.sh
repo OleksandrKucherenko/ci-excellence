@@ -9,6 +9,8 @@ echo:Report "Generating Dependency Update Summary"
 
 HAS_CHANGES="${1:-false}"
 
+ci:param report "HAS_CHANGES" "$HAS_CHANGES"
+
 {
   echo "## Dependency Update Summary"
   echo ""

@@ -8,6 +8,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 VERSION="${1:-unknown}"
 
 echo:Release "Confirming Rollback"
+ci:param release "VERSION" "$VERSION"
 
 cat <<EOF
 WARNING: Rolling back version ${VERSION}

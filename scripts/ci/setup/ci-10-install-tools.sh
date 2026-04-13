@@ -6,6 +6,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Install required tools for the project using mise
 
 echo:Setup "Installing Required Tools"
+ci:secret setup "GITHUB_TOKEN" "${GITHUB_TOKEN:-}"
 
 # Install mise if not already installed
 if ! command -v mise &> /dev/null; then

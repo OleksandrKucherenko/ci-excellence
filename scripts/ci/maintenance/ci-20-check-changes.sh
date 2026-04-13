@@ -8,10 +8,10 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 echo:Maint "Checking for Changes"
 
 if git diff --quiet; then
-  echo "has-changes=false" >> $GITHUB_OUTPUT
+  ci:output maint "has-changes" "false"
   echo:Maint "No changes detected"
 else
-  echo "has-changes=true" >> $GITHUB_OUTPUT
+  ci:output maint "has-changes" "true"
   echo:Maint "Changes detected"
 fi
 

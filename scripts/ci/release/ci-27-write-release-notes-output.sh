@@ -8,13 +8,10 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 VERSION="${1:?Version is required}"
 
 echo:Release "Writing Release Notes Output"
+ci:param release "VERSION" "$VERSION"
 
 NOTES=$(./scripts/ci/release/ci-25-generate-release-notes.sh "$VERSION")
 
-{
-  echo "notes<<EOF"
-  echo "$NOTES"
-  echo "EOF"
-} >> "$GITHUB_OUTPUT"
+ci:output:multiline release "notes" "$NOTES"
 
 echo:Release "Release Notes Output Written"

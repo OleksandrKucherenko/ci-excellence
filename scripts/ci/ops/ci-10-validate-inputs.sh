@@ -3,9 +3,8 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 echo:Ops "Validate Inputs"
-
-echo:Ops "Action: $1"
-echo:Ops "Version: $2"
+ci:param ops "ACTION" "${1:-}"
+ci:param ops "VERSION" "${2:-}"
 
 if [[ -z "${2:-}" ]]; then
   echo:Ops "Error: Version is required"

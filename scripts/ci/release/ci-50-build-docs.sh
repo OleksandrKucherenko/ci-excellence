@@ -9,7 +9,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 VERSION="${1:?Version is required}"
 
 echo:Release "Building Documentation"
-echo:Release "Version: $VERSION"
+ci:param release "VERSION" "$VERSION"
 
 # Example: Sphinx for Python
 # if [ -f "docs/conf.py" ]; then

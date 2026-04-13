@@ -9,7 +9,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 VERSION="${1:?Version is required}"
 
 echo:Release "Rolling Back Docker Release"
-echo:Release "Version: $VERSION"
+ci:param release "VERSION" "$VERSION"
 
 # Example: Tag image as deprecated
 # IMAGE_NAME="myorg/myapp"

@@ -9,7 +9,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 VERSION="${1:?Version is required}"
 
 echo:Release "Verifying NPM Deployment"
-echo:Release "Version: $VERSION"
+ci:param release "VERSION" "$VERSION"
 
 # Example: Verify NPM package availability
 # if [ -f "package.json" ]; then

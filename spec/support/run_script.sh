@@ -42,6 +42,39 @@ logger:init "regex"  "" ">&2" 2>/dev/null
 logger:init "simple" "" ">&2" 2>/dev/null
 logger:init "loader" "" ">&2" 2>/dev/null
 
+# Parameter logging helpers (match _ci-common.sh)
+ci:param() {
+  local tag="${1}" name="${2}" value="${3:-}"
+  if [ -z "$value" ]; then
+    printf:${tag^} "  %-24s = ${cl_grey:-}(empty)${cl_reset:-}\n" "$name" 2>/dev/null
+  else
+    printf:${tag^} "  %-24s = %s\n" "$name" "$value" 2>/dev/null
+  fi
+}
+ci:secret() {
+  local tag="${1}" name="${2}" value="${3:-}"
+  local masked
+  if [ -z "$value" ]; then
+    masked="${cl_grey:-}(not set)${cl_reset:-}"
+  elif [ "${#value}" -le 6 ]; then
+    masked="***"
+  else
+    masked="${value:0:3}***${value: -3}"
+  fi
+  printf:${tag^} "  %-24s = %s\n" "$name" "$masked" 2>/dev/null
+}
+ci:output() {
+  local tag="${1}" name="${2}" value="${3:-}"
+  echo "${name}=${value}" >> "$GITHUB_OUTPUT"
+  printf:${tag^} "  output %-18s = %s\n" "$name" "$value" 2>/dev/null
+}
+ci:output:multiline() {
+  local tag="${1}" name="${2}" value="${3:-}"
+  { echo "${name}<<EOF"; echo "$value"; echo "EOF"; } >> "$GITHUB_OUTPUT"
+  local preview="${value%%$'\n'*}"
+  printf:${tag^} "  output %-18s = %s... (%d lines)\n" "$name" "${preview:0:60}" "$(echo "$value" | wc -l)" 2>/dev/null
+}
+
 # Do NOT re-enable errexit -- let each target script set its own options
 set +eu
 

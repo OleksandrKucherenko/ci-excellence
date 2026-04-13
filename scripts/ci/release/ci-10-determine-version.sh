@@ -28,6 +28,8 @@ source "$LIB_DIR/_semver.sh"
 set -u
 
 echo:Release "Determining Next Version"
+ci:param release "RELEASE_TYPE" "$RELEASE_TYPE"
+ci:param release "PRE_RELEASE_TYPE" "$PRE_RELEASE_TYPE"
 
 # Get current version details
 # Find the latest tag that looks like a semver version v*.*.*

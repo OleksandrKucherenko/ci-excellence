@@ -13,15 +13,21 @@ NPM_RESULT="${3:-unknown}"
 GITHUB_RESULT="${4:-unknown}"
 DOCKER_RESULT="${5:-unknown}"
 
+ci:param notify "VERSION" "$VERSION"
+ci:param notify "PREPARE_RESULT" "$PREPARE_RESULT"
+ci:param notify "NPM_RESULT" "$NPM_RESULT"
+ci:param notify "GITHUB_RESULT" "$GITHUB_RESULT"
+ci:param notify "DOCKER_RESULT" "$DOCKER_RESULT"
+
 if [ "$PREPARE_RESULT" == "failure" ] || \
    [ "$NPM_RESULT" == "failure" ] || \
    [ "$GITHUB_RESULT" == "failure" ] || \
    [ "$DOCKER_RESULT" == "failure" ]; then
-  echo "status=failure" >> "$GITHUB_OUTPUT"
-  echo "message=Release $VERSION Failed ❌" >> "$GITHUB_OUTPUT"
+  ci:output notify "status" "failure"
+  ci:output notify "message" "Release $VERSION Failed ❌"
 else
-  echo "status=success" >> "$GITHUB_OUTPUT"
-  echo "message=Release $VERSION Published ✅" >> "$GITHUB_OUTPUT"
+  ci:output notify "status" "success"
+  ci:output notify "message" "Release $VERSION Published ✅"
 fi
 
 echo:Notify "Release Status Determined"

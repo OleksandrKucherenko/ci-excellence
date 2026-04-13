@@ -15,6 +15,14 @@ SECURITY_RESULT="${7:-success}"
 BUNDLE_RESULT="${8:-success}"
 
 echo:Build "Checking Pipeline Results"
+ci:param build "SETUP_RESULT" "$SETUP_RESULT"
+ci:param build "COMPILE_RESULT" "$COMPILE_RESULT"
+ci:param build "LINT_RESULT" "$LINT_RESULT"
+ci:param build "UNIT_RESULT" "$UNIT_RESULT"
+ci:param build "INTEGRATION_RESULT" "$INTEGRATION_RESULT"
+ci:param build "E2E_RESULT" "$E2E_RESULT"
+ci:param build "SECURITY_RESULT" "$SECURITY_RESULT"
+ci:param build "BUNDLE_RESULT" "$BUNDLE_RESULT"
 
 if [ "$SETUP_RESULT" == "failure" ] || \
    [ "$COMPILE_RESULT" == "failure" ] || \

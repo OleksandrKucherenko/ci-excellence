@@ -9,6 +9,8 @@ echo:Report "Generating Post-Release Verification Summary"
 
 VERSION="${1:-unknown}"
 
+ci:param report "VERSION" "$VERSION"
+
 {
   echo "## Deployment Verification Results"
   echo ""

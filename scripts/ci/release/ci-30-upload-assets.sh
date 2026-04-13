@@ -9,7 +9,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 TAG="${1:?Tag is required}"
 
 echo:Release "Uploading Release Assets"
-echo:Release "Tag: $TAG"
+ci:param release "TAG" "$TAG"
 
 # Example: Upload assets using gh CLI
 # if command -v gh &> /dev/null; then

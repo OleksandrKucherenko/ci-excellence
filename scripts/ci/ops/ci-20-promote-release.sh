@@ -3,6 +3,7 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 echo:Ops "Promote Release"
+ci:param ops "VERSION" "${1}"
 
 echo:Ops "Promoting version ${1}..."
 echo:Ops ""

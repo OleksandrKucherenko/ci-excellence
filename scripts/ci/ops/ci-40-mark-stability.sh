@@ -3,6 +3,8 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 echo:Ops "Mark Stability"
+ci:param ops "ACTION" "${1:?Action required: stable|deprecated}"
+ci:param ops "VERSION" "${2:?Version is required}"
 
 ACTION="${1:?Action required: stable|deprecated}"
 VERSION="${2:?Version is required}"

@@ -9,6 +9,8 @@ RELEASE_TYPE="${1:-patch}"
 PRE_RELEASE_INPUT="${2:-false}"
 
 echo:Release "Setting Version Outputs"
+ci:param release "RELEASE_TYPE" "$RELEASE_TYPE"
+ci:param release "PRE_RELEASE_INPUT" "$PRE_RELEASE_INPUT"
 
 VERSION=$(./scripts/ci/release/ci-10-determine-version.sh "$RELEASE_TYPE")
 
@@ -17,7 +19,7 @@ if [[ "$VERSION" == *"-"* ]]; then
   IS_PRERELEASE="true"
 fi
 
-echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-echo "is-prerelease=$IS_PRERELEASE" >> "$GITHUB_OUTPUT"
+ci:output release "version" "$VERSION"
+ci:output release "is-prerelease" "$IS_PRERELEASE"
 
 echo:Release "Version Outputs Set"

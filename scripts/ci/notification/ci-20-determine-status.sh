@@ -9,45 +9,39 @@ echo:Notify "Determining Pipeline Status"
 
 SUMMARY_RESULT="${1:-unknown}"
 
+ci:param notify "SUMMARY_RESULT" "$SUMMARY_RESULT"
+ci:param notify "GITHUB_RUN_NUMBER" "${GITHUB_RUN_NUMBER:-}"
+ci:param notify "GITHUB_SHA" "${GITHUB_SHA:-}"
+ci:param notify "GITHUB_REF_NAME" "${GITHUB_REF_NAME:-}"
+
 # Get context information
 RUN_NUMBER="${GITHUB_RUN_NUMBER:-???}"
 COMMIT_SHA="${GITHUB_SHA:-unknown}"
 COMMIT_SHORT="${COMMIT_SHA:0:7}"
 REF_NAME="${GITHUB_REF_NAME:-unknown}"
 
+CONTEXT="Build: #${RUN_NUMBER}
+Branch: ${REF_NAME}
+Commit: ${COMMIT_SHORT}"
+
 if [ "$SUMMARY_RESULT" == "failure" ]; then
-  echo "status=failure" >> $GITHUB_OUTPUT
-  {
-    echo "message<<EOF_MESSAGE"
-    echo "Pre-Release Pipeline Failed"
-    echo ""
-    echo "Build: #${RUN_NUMBER}"
-    echo "Branch: ${REF_NAME}"
-    echo "Commit: ${COMMIT_SHORT}"
-    echo "EOF_MESSAGE"
-  } >> $GITHUB_OUTPUT
+  ci:output notify "status" "failure"
+  MESSAGE="Pre-Release Pipeline Failed
+
+${CONTEXT}"
+  ci:output:multiline notify "message" "$MESSAGE"
 elif [ "$SUMMARY_RESULT" == "success" ]; then
-  echo "status=success" >> $GITHUB_OUTPUT
-  {
-    echo "message<<EOF_MESSAGE"
-    echo "Pre-Release Pipeline Passed"
-    echo ""
-    echo "Build: #${RUN_NUMBER}"
-    echo "Branch: ${REF_NAME}"
-    echo "Commit: ${COMMIT_SHORT}"
-    echo "EOF_MESSAGE"
-  } >> $GITHUB_OUTPUT
+  ci:output notify "status" "success"
+  MESSAGE="Pre-Release Pipeline Passed
+
+${CONTEXT}"
+  ci:output:multiline notify "message" "$MESSAGE"
 else
-  echo "status=warning" >> $GITHUB_OUTPUT
-  {
-    echo "message<<EOF_MESSAGE"
-    echo "Pre-Release Pipeline Completed with Issues"
-    echo ""
-    echo "Build: #${RUN_NUMBER}"
-    echo "Branch: ${REF_NAME}"
-    echo "Commit: ${COMMIT_SHORT}"
-    echo "EOF_MESSAGE"
-  } >> $GITHUB_OUTPUT
+  ci:output notify "status" "warning"
+  MESSAGE="Pre-Release Pipeline Completed with Issues
+
+${CONTEXT}"
+  ci:output:multiline notify "message" "$MESSAGE"
 fi
 
 echo:Notify "Pipeline Status Determined"

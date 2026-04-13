@@ -10,8 +10,8 @@ VERSION="${1:?Version is required}"
 IS_PRERELEASE="${2:-false}"
 
 echo:Release "Publishing Docker Image"
-echo:Release "Version: $VERSION"
-echo:Release "Pre-release: $IS_PRERELEASE"
+ci:param release "VERSION" "$VERSION"
+ci:param release "IS_PRERELEASE" "$IS_PRERELEASE"
 
 # Example: Build and push to Docker Hub
 # IMAGE_NAME="myorg/myapp"

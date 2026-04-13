@@ -9,6 +9,8 @@ TARGET_BRANCH="${1:-main}"
 VERSION="${2:-}"
 
 echo:Release "Committing Version Changes"
+ci:param release "TARGET_BRANCH" "$TARGET_BRANCH"
+ci:param release "VERSION" "$VERSION"
 
 if [ -z "$VERSION" ]; then
   echo:Release "Version is required"

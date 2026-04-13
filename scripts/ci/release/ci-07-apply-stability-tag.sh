@@ -10,6 +10,8 @@ TAG_NAME="${1:-}"
 VERSION="${2:-}"
 
 echo:Release "Applying Stability Tag"
+ci:param release "TAG_NAME" "$TAG_NAME"
+ci:param release "VERSION" "$VERSION"
 
 if [ -z "$TAG_NAME" ] || [ -z "$VERSION" ]; then
   echo:Release "Usage: $0 <stable|unstable> <version>"

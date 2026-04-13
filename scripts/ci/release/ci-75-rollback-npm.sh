@@ -9,7 +9,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 VERSION="${1:?Version is required}"
 
 echo:Release "Rolling Back NPM Release"
-echo:Release "Version: $VERSION"
+ci:param release "VERSION" "$VERSION"
+ci:secret release "NODE_AUTH_TOKEN" "${NODE_AUTH_TOKEN:-}"
 
 # Check if NODE_AUTH_TOKEN is set
 if [ -z "${NODE_AUTH_TOKEN:-}" ]; then

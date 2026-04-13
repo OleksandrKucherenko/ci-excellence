@@ -10,6 +10,10 @@ MESSAGE="${2:-Pipeline completed}"
 TYPE="${3:-info}"  # info, success, warning, failure
 
 echo:Notify "Sending Notification"
+ci:param notify "TITLE" "$TITLE"
+ci:param notify "MESSAGE" "$MESSAGE"
+ci:param notify "TYPE" "$TYPE"
+ci:secret notify "APPRISE_URLS" "${APPRISE_URLS:-}"
 
 # Check if Apprise is installed
 if ! command -v apprise &> /dev/null; then

@@ -9,7 +9,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 VERSION="${1:?Version is required}"
 
 echo:Release "Generating Changelog"
-echo:Release "Version: $VERSION"
+ci:param release "VERSION" "$VERSION"
 
 # Example: Using conventional-changelog
 # if command -v conventional-changelog &> /dev/null; then

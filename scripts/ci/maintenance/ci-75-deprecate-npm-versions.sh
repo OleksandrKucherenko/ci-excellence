@@ -7,6 +7,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Customize this script based on your deprecation policy
 
 echo:Maint "Deprecating NPM Versions"
+ci:secret maint "NODE_AUTH_TOKEN" "${NODE_AUTH_TOKEN:-}"
 
 # Check if NODE_AUTH_TOKEN is set
 if [ -z "${NODE_AUTH_TOKEN:-}" ]; then

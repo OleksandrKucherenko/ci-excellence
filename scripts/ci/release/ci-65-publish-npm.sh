@@ -9,7 +9,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 TAG="${1:---tag latest}"
 
 echo:Release "Publishing to NPM"
-echo:Release "Tag: $TAG"
+ci:param release "TAG" "${TAG}"
+ci:secret release "NODE_AUTH_TOKEN" "${NODE_AUTH_TOKEN:-}"
 
 # Check if NODE_AUTH_TOKEN is set
 if [ -z "${NODE_AUTH_TOKEN:-}" ]; then

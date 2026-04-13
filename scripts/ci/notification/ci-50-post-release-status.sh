@@ -12,21 +12,26 @@ TAG_STABLE_RESULT="${2:-unknown}"
 TAG_UNSTABLE_RESULT="${3:-unknown}"
 ROLLBACK_RESULT="${4:-unknown}"
 
+ci:param notify "VERIFY_RESULT" "$VERIFY_RESULT"
+ci:param notify "TAG_STABLE_RESULT" "$TAG_STABLE_RESULT"
+ci:param notify "TAG_UNSTABLE_RESULT" "$TAG_UNSTABLE_RESULT"
+ci:param notify "ROLLBACK_RESULT" "$ROLLBACK_RESULT"
+
 if [ "$ROLLBACK_RESULT" == "success" ]; then
-  echo "status=warning" >> "$GITHUB_OUTPUT"
-  echo "message=Rollback Completed ⚠️" >> "$GITHUB_OUTPUT"
+  ci:output notify "status" "warning"
+  ci:output notify "message" "Rollback Completed ⚠️"
 elif [ "$TAG_STABLE_RESULT" == "success" ]; then
-  echo "status=success" >> "$GITHUB_OUTPUT"
-  echo "message=Version Tagged as Stable ✅" >> "$GITHUB_OUTPUT"
+  ci:output notify "status" "success"
+  ci:output notify "message" "Version Tagged as Stable ✅"
 elif [ "$VERIFY_RESULT" == "success" ]; then
-  echo "status=success" >> "$GITHUB_OUTPUT"
-  echo "message=Deployment Verified ✅" >> "$GITHUB_OUTPUT"
+  ci:output notify "status" "success"
+  ci:output notify "message" "Deployment Verified ✅"
 elif [ "$ROLLBACK_RESULT" == "failure" ]; then
-  echo "status=failure" >> "$GITHUB_OUTPUT"
-  echo "message=Rollback Failed ❌" >> "$GITHUB_OUTPUT"
+  ci:output notify "status" "failure"
+  ci:output notify "message" "Rollback Failed ❌"
 else
-  echo "status=info" >> "$GITHUB_OUTPUT"
-  echo "message=Post-Release Actions Completed ℹ️" >> "$GITHUB_OUTPUT"
+  ci:output notify "status" "info"
+  ci:output notify "message" "Post-Release Actions Completed ℹ️"
 fi
 
 echo:Notify "Post-Release Status Determined"

@@ -13,18 +13,24 @@ DEPRECATION_RESULT="${3:-unknown}"
 SECURITY_RESULT="${4:-unknown}"
 DEPENDENCY_RESULT="${5:-unknown}"
 
+ci:param notify "CLEANUP_RESULT" "$CLEANUP_RESULT"
+ci:param notify "SYNC_RESULT" "$SYNC_RESULT"
+ci:param notify "DEPRECATION_RESULT" "$DEPRECATION_RESULT"
+ci:param notify "SECURITY_RESULT" "$SECURITY_RESULT"
+ci:param notify "DEPENDENCY_RESULT" "$DEPENDENCY_RESULT"
+
 if [ "$SECURITY_RESULT" == "failure" ]; then
-  echo "status=failure" >> "$GITHUB_OUTPUT"
-  echo "message=Maintenance: Security Audit Failed ❌" >> "$GITHUB_OUTPUT"
+  ci:output notify "status" "failure"
+  ci:output notify "message" "Maintenance: Security Audit Failed ❌"
 elif [ "$DEPENDENCY_RESULT" == "success" ]; then
-  echo "status=success" >> "$GITHUB_OUTPUT"
-  echo "message=Maintenance: Dependencies Updated ✅" >> "$GITHUB_OUTPUT"
+  ci:output notify "status" "success"
+  ci:output notify "message" "Maintenance: Dependencies Updated ✅"
 elif [ "$SYNC_RESULT" == "success" ]; then
-  echo "status=success" >> "$GITHUB_OUTPUT"
-  echo "message=Maintenance: Files Synced ✅" >> "$GITHUB_OUTPUT"
+  ci:output notify "status" "success"
+  ci:output notify "message" "Maintenance: Files Synced ✅"
 else
-  echo "status=success" >> "$GITHUB_OUTPUT"
-  echo "message=Maintenance Completed ✅" >> "$GITHUB_OUTPUT"
+  ci:output notify "status" "success"
+  ci:output notify "message" "Maintenance Completed ✅"
 fi
 
 echo:Notify "Maintenance Status Determined"

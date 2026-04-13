@@ -36,18 +36,15 @@ TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-}"
 ENABLE_NOTIFICATIONS="${ENABLE_NOTIFICATIONS:-}"
 
 echo:Notify "Checking Notification Configuration"
-
-# Debug output (will appear in GitHub Actions logs)
-echo:Notify "Checking notification requirements..."
-echo:Notify "APPRISE_URLS: $([ -n "$APPRISE_URLS" ] && echo 'SET' || echo 'NOT SET')"
-echo:Notify "TELEGRAM_BOT_TOKEN: $([ -n "$TELEGRAM_BOT_TOKEN" ] && echo 'SET' || echo 'NOT SET')"
-echo:Notify "TELEGRAM_CHAT_ID: $([ -n "$TELEGRAM_CHAT_ID" ] && echo 'SET' || echo 'NOT SET')"
-echo:Notify "ENABLE_NOTIFICATIONS: ${ENABLE_NOTIFICATIONS:-'not set'}"
+ci:secret notify "APPRISE_URLS" "$APPRISE_URLS"
+ci:secret notify "TELEGRAM_BOT_TOKEN" "$TELEGRAM_BOT_TOKEN"
+ci:param notify "TELEGRAM_CHAT_ID" "$TELEGRAM_CHAT_ID"
+ci:param notify "ENABLE_NOTIFICATIONS" "$ENABLE_NOTIFICATIONS"
 
 # Check if explicitly disabled
 if [ -n "$ENABLE_NOTIFICATIONS" ] && is_false "$ENABLE_NOTIFICATIONS"; then
     echo:Notify "Notifications explicitly disabled via ENABLE_NOTIFICATIONS=$ENABLE_NOTIFICATIONS"
-    echo "enabled=false" >> $GITHUB_OUTPUT
+    ci:output notify "enabled" "false"
     echo:Notify "Notification Check Complete"
     exit 0
 fi
@@ -68,8 +65,9 @@ fi
 # Check if we have any notification URLs
 if [ -n "$FINAL_URLS" ]; then
     echo:Notify "✓ Notifications enabled"
-    echo "enabled=true" >> $GITHUB_OUTPUT
-    echo "apprise_urls=$FINAL_URLS" >> $GITHUB_OUTPUT
+    ci:output notify "enabled" "true"
+    echo "apprise_urls=$FINAL_URLS" >> "$GITHUB_OUTPUT"
+    ci:secret notify "apprise_urls (output)" "$FINAL_URLS"
     echo:Notify "Notification Check Complete"
     exit 0
 else
@@ -77,7 +75,7 @@ else
     echo:Notify "  Set either:"
     echo:Notify "    - APPRISE_URLS (supports 90+ services)"
     echo:Notify "    - TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID (Telegram only)"
-    echo "enabled=false" >> $GITHUB_OUTPUT
+    ci:output notify "enabled" "false"
     echo:Notify "Notification Check Complete"
     exit 0
 fi

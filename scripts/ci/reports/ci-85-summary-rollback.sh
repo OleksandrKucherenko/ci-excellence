@@ -9,6 +9,8 @@ echo:Report "Generating Rollback Summary"
 
 VERSION="${1:-unknown}"
 
+ci:param report "VERSION" "$VERSION"
+
 {
   echo "## Rollback Summary"
   echo ""

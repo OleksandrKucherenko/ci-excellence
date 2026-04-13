@@ -12,6 +12,11 @@ TAG_STABLE_RESULT="${2:-unknown}"
 TAG_UNSTABLE_RESULT="${3:-unknown}"
 ROLLBACK_RESULT="${4:-unknown}"
 
+ci:param report "VERIFY_RESULT" "$VERIFY_RESULT"
+ci:param report "TAG_STABLE_RESULT" "$TAG_STABLE_RESULT"
+ci:param report "TAG_UNSTABLE_RESULT" "$TAG_UNSTABLE_RESULT"
+ci:param report "ROLLBACK_RESULT" "$ROLLBACK_RESULT"
+
 {
   echo "## Post-Release Actions Summary"
   echo ""

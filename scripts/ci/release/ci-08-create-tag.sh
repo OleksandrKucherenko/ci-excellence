@@ -3,6 +3,7 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 echo:Release "Create Tag"
+ci:param release "VERSION" "${1}"
 
 ./scripts/ci/setup/ci-30-github-actions-bot.sh
 

@@ -10,7 +10,7 @@ VERSION="${1:?Version is required}"
 TAG="v$VERSION"
 
 echo:Release "Rolling Back GitHub Release"
-echo:Release "Version: $VERSION"
+ci:param release "VERSION" "$VERSION"
 
 # Example: Mark release as draft using gh CLI
 # if command -v gh &> /dev/null; then
