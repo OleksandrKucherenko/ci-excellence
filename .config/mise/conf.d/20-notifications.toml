@@ -1,5 +1,0 @@
-[tools]
-# Notification tool
-"pipx:apprise" = "latest"
-# TypeScript runtime
-bun = "latest"
