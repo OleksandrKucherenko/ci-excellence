@@ -3,11 +3,11 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Script: Apply Stability Tag
-# Purpose: Tag a version as stable/unstable per STATES.md convention
+# Purpose: Tag a version as stable/unstable per convention
 # Hooks: begin, apply, end (automatic)
-#   ci-cd/ci-07-apply-stability-tag/begin_*.sh - pre-apply setup
-#   ci-cd/ci-07-apply-stability-tag/apply_*.sh - tagging commands
-#   ci-cd/ci-07-apply-stability-tag/end_*.sh   - post-apply verification
+#   ci-cd/ci-07-apply-stability-tag/apply_*.sh - override tagging strategy
+#
+# Default strategy: creates v{VERSION}-{stable|unstable} tag pointing at v{VERSION}.
 
 echo:Release "Applying Stability Tag"
 ci:param release "CI_STABILITY_TAG" "${CI_STABILITY_TAG:-}"
@@ -15,11 +15,39 @@ ci:param release "CI_VERSION" "${CI_VERSION:-}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
-ci:skip_if_no_hooks apply
+if ci:has_hooks apply; then
+  set +eu
+  hooks:declare apply
+  hooks:do apply
+  set -eu
+else
+  # Default: v{VERSION}-{stable|unstable} tag convention
+  TAG_NAME="${CI_STABILITY_TAG:-}"
+  VERSION="${CI_VERSION:-}"
 
-set +eu
-hooks:declare apply
-hooks:do apply
-set -eu
+  if [ -z "$TAG_NAME" ] || [ -z "$VERSION" ]; then
+    echo:Error "CI_STABILITY_TAG and CI_VERSION are required"
+    exit 1
+  fi
+
+  VERSION="${VERSION#v}"
+
+  # Configure git identity for tagging
+  ./scripts/ci/setup/ci-30-github-actions-bot.sh
+
+  # Resolve version tag to commit
+  TARGET_COMMIT=$(git rev-list -n 1 "v${VERSION}" 2>/dev/null || echo "")
+  if [ -z "$TARGET_COMMIT" ]; then
+    echo:Error "Tag v${VERSION} not found"
+    exit 1
+  fi
+
+  STABILITY_TAG="v${VERSION}-${TAG_NAME}"
+  echo:Release "Tagging ${TARGET_COMMIT:0:7} as ${STABILITY_TAG}"
+  git tag -f "$STABILITY_TAG" "$TARGET_COMMIT"
+  git push -f origin "$STABILITY_TAG"
+
+  echo:Release "Tagged: ${STABILITY_TAG}"
+fi
 
 echo:Success "Stability Tag Applied"
