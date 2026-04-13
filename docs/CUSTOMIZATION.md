@@ -5,6 +5,7 @@ How to customize the CI/CD pipeline for your specific project needs.
 ## Table of Contents
 
 - [Overview](#overview)
+- [Script Implementation Status](#script-implementation-status)
 - [Choosing Your Stack](#choosing-your-stack)
 - [Version Management](#version-management)
 - [Publishing Customization](#publishing-customization)
@@ -14,7 +15,122 @@ How to customize the CI/CD pipeline for your specific project needs.
 
 ## Overview
 
-All scripts in this project are **stubs** with commented examples. You need to customize them for your specific technology stack and requirements.
+All scripts in this project are **stubs** with commented examples. You need to customize them for your specific technology stack and requirements. See the [Script Implementation Status](#script-implementation-status) table below to identify which scripts need customization and which work out of the box.
+
+## Script Implementation Status
+
+Of the 69 CI step scripts, **19 are real implementations** that work without modification, **39 are stubs** with commented examples for common tech stacks, and **11 are validation/reporting** scripts that require no customization.
+
+**Legend:** Real = works out of the box | Stub = needs your implementation | Validation = checks/reports only
+
+### Setup (`scripts/ci/setup/`)
+
+| Script | Status | Customization Required |
+|--------|--------|----------------------|
+| `ci-10-install-tools.sh` | Real | No -- installs mise and verifies tools |
+| `ci-20-install-dependencies.sh` | Stub | Yes -- uncomment your package manager (npm, pip, go mod, cargo) |
+| `ci-30-github-actions-bot.sh` | Real | No -- configures git bot identity |
+
+### Build (`scripts/ci/build/`)
+
+| Script | Status | Customization Required |
+|--------|--------|----------------------|
+| `ci-10-compile.sh` | Stub | Yes -- uncomment your build command (tsc, go build, cargo build) |
+| `ci-20-lint.sh` | Stub | Yes -- uncomment your linter (eslint, flake8, golangci-lint, clippy) |
+| `ci-30-security-scan.sh` | Real | No -- runs gitleaks and trufflehog |
+| `ci-40-bundle.sh` | Stub | Yes -- uncomment your packaging (npm pack, docker build, tarball) |
+| `ci-60-check-failures.sh` | Validation | No -- checks RESULT_* env vars for failures |
+
+### Test (`scripts/ci/test/`)
+
+| Script | Status | Customization Required |
+|--------|--------|----------------------|
+| `ci-10-unit-tests.sh` | Stub | Yes -- uncomment your test runner (jest, pytest, go test, cargo test) |
+| `ci-20-integration-tests.sh` | Stub | Yes -- uncomment your integration test setup |
+| `ci-30-e2e-tests.sh` | Stub | Yes -- uncomment your E2E framework (playwright, cypress) |
+| `ci-40-smoke-tests.sh` | Stub | Yes -- uncomment your health check commands |
+| `verify-semver.sh` | Real | No -- tests the semver library |
+
+### Release (`scripts/ci/release/`)
+
+| Script | Status | Customization Required |
+|--------|--------|----------------------|
+| `ci-05-select-version.sh` | Validation | No -- selects version from inputs |
+| `ci-07-apply-stability-tag.sh` | Real | No -- creates git stability tags |
+| `ci-08-create-tag.sh` | Real | No -- creates and pushes git tags |
+| `ci-09-parse-tag.sh` | Real | No -- parses git tag refs |
+| `ci-10-determine-version.sh` | Real | No -- calculates next semver |
+| `ci-12-set-version-outputs.sh` | Real | No -- orchestrates version outputs |
+| `ci-15-update-version.sh` | Stub | Yes -- uncomment your version file update (package.json, setup.py, Cargo.toml) |
+| `ci-18-commit-version-changes.sh` | Real | No -- git commit/push version changes |
+| `ci-20-generate-changelog.sh` | Stub | Yes -- uncomment your changelog tool (git-cliff, conventional-changelog) |
+| `ci-25-generate-release-notes.sh` | Stub | Optional -- generates template; customize for richer notes |
+| `ci-27-write-release-notes-output.sh` | Real | No -- writes notes to GITHUB_OUTPUT |
+| `ci-30-upload-assets.sh` | Stub | Yes -- uncomment gh release upload commands |
+| `ci-35-verify-github-release.sh` | Stub | Yes -- uncomment gh release verification |
+| `ci-40-rollback-github.sh` | Stub | Yes -- uncomment GitHub rollback commands |
+| `ci-50-build-docs.sh` | Stub | Yes -- uncomment your doc builder (sphinx, typedoc, mkdocs) |
+| `ci-55-publish-docs.sh` | Stub | Yes -- uncomment your doc publisher (gh-pages, netlify) |
+| `ci-65-publish-npm.sh` | Real | No -- validates token and conditions |
+| `ci-66-publish-npm-release.sh` | Real | No -- orchestrates NPM publishing |
+| `ci-70-verify-npm-deployment.sh` | Stub | Yes -- uncomment npm verification commands |
+| `ci-75-rollback-npm.sh` | Real | No -- validates token and conditions |
+| `ci-77-confirm-rollback.sh` | Validation | No -- prints rollback warning |
+| `ci-80-publish-docker.sh` | Stub | Yes -- uncomment Docker build/push |
+| `ci-85-verify-docker-deployment.sh` | Stub | Yes -- uncomment Docker verification |
+| `ci-90-rollback-docker.sh` | Stub | Yes -- uncomment Docker rollback |
+
+### Maintenance (`scripts/ci/maintenance/`)
+
+| Script | Status | Customization Required |
+|--------|--------|----------------------|
+| `ci-10-sync-files.sh` | Stub | Yes -- uncomment file sync logic |
+| `ci-20-check-changes.sh` | Real | No -- runs git diff to detect changes |
+| `ci-30-cleanup-workflow-runs.sh` | Stub | Yes -- uncomment gh run delete commands |
+| `ci-40-cleanup-artifacts.sh` | Stub | Yes -- uncomment artifact deletion |
+| `ci-50-cleanup-caches.sh` | Stub | Yes -- uncomment cache deletion |
+| `ci-60-security-audit.sh` | Stub | Yes -- uncomment your audit tool (npm audit, pip-audit, cargo audit) |
+| `ci-70-identify-deprecated-versions.sh` | Stub | Yes -- uncomment version identification |
+| `ci-75-deprecate-npm-versions.sh` | Real | No -- validates NPM token |
+| `ci-80-deprecate-github-releases.sh` | Stub | Yes -- uncomment GitHub deprecation |
+| `ci-90-update-dependencies.sh` | Stub | Yes -- uncomment dependency update commands |
+| `ci-91-test-after-update.sh` | Real | No -- runs unit tests after updates |
+
+### Notification (`scripts/ci/notification/`)
+
+| Script | Status | Customization Required |
+|--------|--------|----------------------|
+| `ci-10-check-notifications-enabled.sh` | Real | No -- validates Apprise/Telegram config |
+| `ci-20-determine-status.sh` | Real | No -- determines pipeline status |
+| `ci-30-send-notification.sh` | Real | No -- sends via Apprise |
+| `ci-40-maintenance-status.sh` | Real | No -- maintenance status logic |
+| `ci-50-post-release-status.sh` | Real | No -- post-release status logic |
+| `ci-60-release-status.sh` | Real | No -- release status logic |
+
+### Ops (`scripts/ci/ops/`)
+
+| Script | Status | Customization Required |
+|--------|--------|----------------------|
+| `ci-10-validate-inputs.sh` | Validation | No -- checks VERSION is set |
+| `ci-20-promote-release.sh` | Stub | Yes -- implement promotion logic |
+| `ci-30-deploy.sh` | Stub | Yes -- implement deployment commands |
+| `ci-40-mark-stability.sh` | Real | No -- calls stability tag script |
+
+### Reports (`scripts/ci/reports/`)
+
+| Script | Status | Customization Required |
+|--------|--------|----------------------|
+| `ci-10-summary-pre-release.sh` | Real | No -- generates pre-release summary |
+| `ci-20-summary-sync.sh` | Real | No -- generates sync summary |
+| `ci-30-summary-cleanup.sh` | Validation | No -- static cleanup summary |
+| `ci-40-summary-deprecations.sh` | Validation | No -- static deprecation summary |
+| `ci-50-summary-security-audit.sh` | Validation | No -- static audit summary |
+| `ci-60-summary-dependency-update.sh` | Real | No -- conditional update summary |
+| `ci-70-summary-maintenance.sh` | Real | No -- maintenance summary table |
+| `ci-80-summary-post-release-verify.sh` | Real | No -- verification summary |
+| `ci-85-summary-rollback.sh` | Real | No -- rollback summary |
+| `ci-90-summary-post-release.sh` | Real | No -- post-release actions table |
+| `ci-95-summary-release.sh` | Real | No -- release summary with ops links |
 
 ## Choosing Your Stack
 

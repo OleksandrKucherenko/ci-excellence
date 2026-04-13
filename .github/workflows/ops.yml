@@ -25,6 +25,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: ops-${{ github.event.inputs.action }}
+  cancel-in-progress: false
+
 jobs:
   ops-handler:
     name: Handle Ops Action

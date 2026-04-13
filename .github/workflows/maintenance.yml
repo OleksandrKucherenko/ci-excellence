@@ -19,6 +19,10 @@ on:
           - dependency-update
           - all
 
+concurrency:
+  group: maintenance
+  cancel-in-progress: false
+
 env:
   ENABLE_CLEANUP: ${{ vars.ENABLE_CLEANUP || 'false' }}
   ENABLE_FILE_SYNC: ${{ vars.ENABLE_FILE_SYNC || 'false' }}

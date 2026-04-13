@@ -25,6 +25,9 @@ on:
           - alpha
           - beta
           - rc
+          - hotfix
+          - canary
+          - nightly
       dry-run:
         description: 'Dry run (calculate version only)'
         required: false
@@ -34,6 +37,10 @@ on:
   push:
     tags:
       - '**/v*' # Matches v1.0.0, packages/app/v1.0.0
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 env:
   # CI Feature Flags

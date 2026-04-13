@@ -20,6 +20,10 @@ on:
   release:
     types: [published]
 
+concurrency:
+  group: post-release
+  cancel-in-progress: false
+
 env:
   ENABLE_ROLLBACK: ${{ vars.ENABLE_ROLLBACK || 'false' }}
   ENABLE_DEPLOYMENT_VERIFICATION: ${{ vars.ENABLE_DEPLOYMENT_VERIFICATION || 'false' }}

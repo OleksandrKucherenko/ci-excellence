@@ -7,6 +7,16 @@ on:
       - 'feature/**'
       - 'fix/**'
       - 'claude/**'
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'LICENSE'
+      - '.gitignore'
+      - 'environments/**'
+
+concurrency:
+  group: auto-fix-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   GIT_AUTHOR_NAME: github-actions[bot]

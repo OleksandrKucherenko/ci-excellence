@@ -484,6 +484,7 @@ if: |
 
 ## See Also
 
+- [Architecture Decision Records](adr/README.md) - Why behind architectural choices
 - [Workflows](WORKFLOWS.md) - Detailed workflow documentation
 - [Customization](CUSTOMIZATION.md) - How to customize
 - [Installation](INSTALLATION.md) - Setup guide

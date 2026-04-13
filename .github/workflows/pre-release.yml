@@ -5,12 +5,28 @@ on:
     branches:
       - main
       - develop
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'LICENSE'
+      - '.gitignore'
+      - 'environments/**'
   push:
     branches:
       - develop
       - 'feature/**'
       - 'fix/**'
       - 'claude/**'
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'LICENSE'
+      - '.gitignore'
+      - 'environments/**'
+
+concurrency:
+  group: pre-release-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   # CI Feature Flags - Set these in GitHub Variables to activate jobs
@@ -32,6 +48,7 @@ jobs:
   setup:
     name: Setup and Install Dependencies
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
