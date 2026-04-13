@@ -5,7 +5,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: File Sync Summary
 # Purpose: Generate file sync summary for GitHub
 
-echo:Report "--- Generating Sync Summary ---"
+echo:Report "Generating Sync Summary"
 
 HAS_CHANGES="${1:-false}"
 
@@ -17,4 +17,4 @@ else
   echo "All files are in sync." >> $GITHUB_STEP_SUMMARY
 fi
 
-echo:Report "--- Sync Summary Generated ---"
+echo:Report "Sync Summary Generated"

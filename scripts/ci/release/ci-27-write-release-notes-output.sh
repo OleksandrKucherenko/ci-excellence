@@ -7,7 +7,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 VERSION="${1:?Version is required}"
 
-echo:Release "--- Writing Release Notes Output ---"
+echo:Release "Writing Release Notes Output"
 
 NOTES=$(./scripts/ci/release/ci-25-generate-release-notes.sh "$VERSION")
 
@@ -17,4 +17,4 @@ NOTES=$(./scripts/ci/release/ci-25-generate-release-notes.sh "$VERSION")
   echo "EOF"
 } >> "$GITHUB_OUTPUT"
 
-echo:Release "--- Release Notes Output Written ---"
+echo:Release "Release Notes Output Written"

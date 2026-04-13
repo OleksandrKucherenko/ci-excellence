@@ -8,10 +8,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 TAG="${1:---tag latest}"
 
-echo:Release "========================================="
 echo:Release "Publishing to NPM"
 echo:Release "Tag: $TAG"
-echo:Release "========================================="
 
 # Check if NODE_AUTH_TOKEN is set
 if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
@@ -36,6 +34,4 @@ fi
 echo:Release "✓ NPM publish stub executed"
 echo:Release "  Customize this script in scripts/ci/release/ci-65-publish-npm.sh"
 
-echo:Release "========================================="
 echo:Release "NPM Publishing Complete"
-echo:Release "========================================="

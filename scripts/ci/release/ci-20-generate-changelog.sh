@@ -8,10 +8,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 VERSION="${1:?Version is required}"
 
-echo:Release "========================================="
 echo:Release "Generating Changelog"
 echo:Release "Version: $VERSION"
-echo:Release "========================================="
 
 # Example: Using conventional-changelog
 # if command -v conventional-changelog &> /dev/null; then
@@ -68,6 +66,4 @@ echo:Release "========================================="
 echo:Release "✓ Changelog generation stub executed"
 echo:Release "  Customize this script in scripts/ci/release/ci-20-generate-changelog.sh"
 
-echo:Release "========================================="
 echo:Release "Changelog Generated"
-echo:Release "========================================="

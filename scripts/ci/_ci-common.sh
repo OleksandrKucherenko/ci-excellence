@@ -27,15 +27,16 @@ set -u
 # In local dev, user can control via DEBUG=build,test,-setup
 export DEBUG="${DEBUG:-ci,build,test,release,setup,notify,maint,report,security,ops}"
 
-# Register domain loggers with prefixes, redirect to stderr
-# Each logger creates echo:Tag and printf:Tag functions
-logger:init "ci"       "[ci] "       ">&2"
-logger:init "build"    "[build] "    ">&2"
-logger:init "test"     "[test] "     ">&2"
-logger:init "release"  "[release] "  ">&2"
-logger:init "setup"    "[setup] "    ">&2"
-logger:init "notify"   "[notify] "   ">&2"
-logger:init "maint"    "[maint] "    ">&2"
-logger:init "report"   "[report] "   ">&2"
-logger:init "security" "[security] " ">&2"
-logger:init "ops"      "[ops] "      ">&2"
+# Register domain loggers with colored prefixes, redirect to stderr.
+# Each tag has a distinct color for easy recognition in CI logs.
+# Each logger creates echo:Tag and printf:Tag functions.
+logger:init "ci"       "${cl_white}${st_bold}[ci]${cl_reset} "       ">&2"
+logger:init "build"    "${cl_cyan}${st_bold}[build]${cl_reset} "     ">&2"
+logger:init "test"     "${cl_green}${st_bold}[test]${cl_reset} "     ">&2"
+logger:init "release"  "${cl_purple}${st_bold}[release]${cl_reset} " ">&2"
+logger:init "setup"    "${cl_blue}${st_bold}[setup]${cl_reset} "     ">&2"
+logger:init "notify"   "${cl_yellow}[notify]${cl_reset} "            ">&2"
+logger:init "maint"    "${cl_grey}${st_italic}[maint]${cl_reset} "   ">&2"
+logger:init "report"   "${cl_grey}[report]${cl_reset} "              ">&2"
+logger:init "security" "${cl_red}${st_bold}[security]${cl_reset} "   ">&2"
+logger:init "ops"      "${cl_lpurple}${st_bold}[ops]${cl_reset} "    ">&2"

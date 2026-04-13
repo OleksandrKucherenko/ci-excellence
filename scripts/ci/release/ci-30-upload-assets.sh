@@ -8,10 +8,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 TAG="${1:?Tag is required}"
 
-echo:Release "========================================="
 echo:Release "Uploading Release Assets"
 echo:Release "Tag: $TAG"
-echo:Release "========================================="
 
 # Example: Upload assets using gh CLI
 # if command -v gh &> /dev/null; then
@@ -30,6 +28,4 @@ echo:Release "========================================="
 echo:Release "✓ Asset upload stub executed"
 echo:Release "  Customize this script in scripts/ci/release/ci-30-upload-assets.sh"
 
-echo:Release "========================================="
 echo:Release "Release Assets Uploaded"
-echo:Release "========================================="

@@ -5,9 +5,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: Install Dependencies
 # Purpose: Install project dependencies (technology-agnostic stub)
 
-echo:Setup "========================================="
 echo:Setup "Installing Project Dependencies"
-echo:Setup "========================================="
 
 # Detect package manager and install dependencies
 if [ -f "package.json" ]; then
@@ -61,6 +59,4 @@ else
     echo:Setup "  Customize this script in scripts/ci/setup/ci-20-install-dependencies.sh"
 fi
 
-echo:Setup "========================================="
 echo:Setup "Dependency Installation Complete"
-echo:Setup "========================================="

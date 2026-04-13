@@ -6,9 +6,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Delete old GitHub Actions caches
 # Customize this script based on your cache policy
 
-echo:Maint "========================================="
 echo:Maint "Cleaning Up Old Caches"
-echo:Maint "========================================="
 
 # Example: Delete unused caches using gh CLI
 # if command -v gh &> /dev/null; then
@@ -27,6 +25,4 @@ echo:Maint "========================================="
 echo:Maint "✓ Caches cleanup stub executed"
 echo:Maint "  Customize this script in ${BASH_SOURCE[0]}"
 
-echo:Maint "========================================="
 echo:Maint "Caches Cleanup Complete"
-echo:Maint "========================================="

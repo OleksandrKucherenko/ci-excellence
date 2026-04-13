@@ -8,10 +8,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 VERSION="${1:?Version is required}"
 
-echo:Release "========================================="
 echo:Release "Building Documentation"
 echo:Release "Version: $VERSION"
-echo:Release "========================================="
 
 # Example: Sphinx for Python
 # if [ -f "docs/conf.py" ]; then
@@ -55,6 +53,4 @@ echo:Release "========================================="
 echo:Release "✓ Documentation build stub executed"
 echo:Release "  Customize this script in scripts/ci/release/ci-50-build-docs.sh"
 
-echo:Release "========================================="
 echo:Release "Documentation Build Complete"
-echo:Release "========================================="

@@ -6,9 +6,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Run security audits on dependencies
 # Customize this script based on your security tools
 
-echo:Maint "========================================="
 echo:Maint "Running Security Audit"
-echo:Maint "========================================="
 
 EXIT_CODE=0
 
@@ -41,13 +39,9 @@ echo:Maint "✓ Security audit stub executed"
 echo:Maint "  Customize this script in scripts/maintenance/security-audit.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
-    echo:Maint "========================================="
     echo:Maint "⚠ Security vulnerabilities found"
-    echo:Maint "========================================="
     # Don't exit with error for now, just warn
     # exit $EXIT_CODE
 fi
 
-echo:Maint "========================================="
 echo:Maint "Security Audit Complete"
-echo:Maint "========================================="

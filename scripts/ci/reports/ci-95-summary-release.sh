@@ -5,7 +5,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: Release Summary
 # Purpose: Generate release summary table
 
-echo:Report "--- Generating Release Summary ---"
+echo:Report "Generating Release Summary"
 
 VERSION="${1:-unknown}"
 IS_PRERELEASE="${2:-false}"
@@ -77,4 +77,4 @@ ENABLE_DOCUMENTATION="${ENABLE_DOCUMENTATION:-false}"
 #   gh pr comment "$PR_NUMBER" --body "Release $VERSION summary..."
 # fi
 
-echo:Report "--- Release Summary Generated ---"
+echo:Report "Release Summary Generated"

@@ -9,11 +9,9 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 VERSION="${1:?Version is required}"
 IS_PRERELEASE="${2:-false}"
 
-echo:Release "========================================="
 echo:Release "Publishing Docker Image"
 echo:Release "Version: $VERSION"
 echo:Release "Pre-release: $IS_PRERELEASE"
-echo:Release "========================================="
 
 # Example: Build and push to Docker Hub
 # IMAGE_NAME="myorg/myapp"
@@ -53,6 +51,4 @@ echo:Release "========================================="
 echo:Release "✓ Docker publish stub executed"
 echo:Release "  Customize this script in scripts/ci/release/ci-80-publish-docker.sh"
 
-echo:Release "========================================="
 echo:Release "Docker Publishing Complete"
-echo:Release "========================================="

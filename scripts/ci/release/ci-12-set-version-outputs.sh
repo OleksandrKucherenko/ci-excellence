@@ -8,7 +8,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 RELEASE_TYPE="${1:-patch}"
 PRE_RELEASE_INPUT="${2:-false}"
 
-echo:Release "--- Setting Version Outputs ---"
+echo:Release "Setting Version Outputs"
 
 VERSION=$(./scripts/ci/release/ci-10-determine-version.sh "$RELEASE_TYPE")
 
@@ -20,4 +20,4 @@ fi
 echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 echo "is-prerelease=$IS_PRERELEASE" >> "$GITHUB_OUTPUT"
 
-echo:Release "--- Version Outputs Set ---"
+echo:Release "Version Outputs Set"

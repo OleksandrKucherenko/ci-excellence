@@ -7,9 +7,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 VERSION="${1:-unknown}"
 
-echo:Release "========================================="
 echo:Release "Confirming Rollback"
-echo:Release "========================================="
 
 cat <<EOF
 WARNING: Rolling back version ${VERSION}
@@ -19,6 +17,4 @@ This action will:
   - Tag Docker images as deprecated (if enabled)
 EOF
 
-echo:Release "========================================="
 echo:Release "Rollback Confirmed"
-echo:Release "========================================="

@@ -5,9 +5,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: Sync Files
 # Purpose: Synchronize version files (tech-agnostic stub)
 
-echo:Maint "========================================="
 echo:Maint "Synchronizing Version Files"
-echo:Maint "========================================="
 
 # Example: Get latest version from NPM and update package.json
 # if [ -f "package.json" ] && command -v npm &> /dev/null; then
@@ -41,6 +39,4 @@ echo:Maint "========================================="
 echo:Maint "✓ Version files sync stub executed"
 echo:Maint "  Customize this script in ${BASH_SOURCE[0]} to fit your project's needs."
 
-echo:Maint "========================================="
 echo:Maint "Version Files Synchronization Complete"
-echo:Maint "========================================="

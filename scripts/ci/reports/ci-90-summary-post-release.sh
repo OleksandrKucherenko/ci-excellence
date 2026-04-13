@@ -5,7 +5,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: Post-Release Actions Summary
 # Purpose: Generate post-release actions summary table
 
-echo:Report "--- Generating Post-Release Summary ---"
+echo:Report "Generating Post-Release Summary"
 
 VERIFY_RESULT="${1:-unknown}"
 TAG_STABLE_RESULT="${2:-unknown}"
@@ -23,4 +23,4 @@ ROLLBACK_RESULT="${4:-unknown}"
   echo "| Rollback | $ROLLBACK_RESULT |"
 } >> "${GITHUB_STEP_SUMMARY}"
 
-echo:Report "--- Post-Release Summary Generated ---"
+echo:Report "Post-Release Summary Generated"

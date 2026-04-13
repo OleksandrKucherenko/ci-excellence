@@ -20,17 +20,17 @@ set +eu
 # shellcheck disable=SC1090,SC1091
 source "$E_BASH/_logger.sh" 2>/dev/null
 
-# Initialize all domain loggers that _ci-common.sh creates
-logger:init "ci"       "[ci] "       ">&2" 2>/dev/null
-logger:init "build"    "[build] "    ">&2" 2>/dev/null
-logger:init "test"     "[test] "     ">&2" 2>/dev/null
-logger:init "release"  "[release] "  ">&2" 2>/dev/null
-logger:init "setup"    "[setup] "    ">&2" 2>/dev/null
-logger:init "notify"   "[notify] "   ">&2" 2>/dev/null
-logger:init "maint"    "[maint] "    ">&2" 2>/dev/null
-logger:init "report"   "[report] "   ">&2" 2>/dev/null
-logger:init "security" "[security] " ">&2" 2>/dev/null
-logger:init "ops"      "[ops] "      ">&2" 2>/dev/null
+# Initialize all domain loggers that _ci-common.sh creates (colors match _ci-common.sh)
+logger:init "ci"       "${cl_white:-}${st_bold:-}[ci]${cl_reset:-} "       ">&2" 2>/dev/null
+logger:init "build"    "${cl_cyan:-}${st_bold:-}[build]${cl_reset:-} "     ">&2" 2>/dev/null
+logger:init "test"     "${cl_green:-}${st_bold:-}[test]${cl_reset:-} "     ">&2" 2>/dev/null
+logger:init "release"  "${cl_purple:-}${st_bold:-}[release]${cl_reset:-} " ">&2" 2>/dev/null
+logger:init "setup"    "${cl_blue:-}${st_bold:-}[setup]${cl_reset:-} "     ">&2" 2>/dev/null
+logger:init "notify"   "${cl_yellow:-}[notify]${cl_reset:-} "              ">&2" 2>/dev/null
+logger:init "maint"    "${cl_grey:-}${st_italic:-}[maint]${cl_reset:-} "   ">&2" 2>/dev/null
+logger:init "report"   "${cl_grey:-}[report]${cl_reset:-} "                ">&2" 2>/dev/null
+logger:init "security" "${cl_red:-}${st_bold:-}[security]${cl_reset:-} "   ">&2" 2>/dev/null
+logger:init "ops"      "${cl_lpurple:-}${st_bold:-}[ops]${cl_reset:-} "    ">&2" 2>/dev/null
 
 # Pre-source semver library (used by release scripts)
 # shellcheck disable=SC1090,SC1091

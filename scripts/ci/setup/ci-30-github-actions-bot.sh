@@ -5,9 +5,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: Configure GitHub Actions Bot Identity
 # Purpose: Set git user name and email for automated commits
 
-echo:Setup "========================================="
 echo:Setup "Set GitHub Username and Email for Bot"
-echo:Setup "========================================="
 
 git config user.name "github-actions[bot]"
 git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -21,6 +19,4 @@ echo:Setup "  Email: $(git config user.email)"
 echo:Setup "✓ git bot setup stub executed"
 echo:Setup "  Customize this script in ${BASH_SOURCE[0]} as needed"
 
-echo:Setup "========================================="
 echo:Setup "GitHub Actions Bot Setup Completed"
-echo:Setup "========================================="

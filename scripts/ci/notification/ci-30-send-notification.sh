@@ -9,9 +9,7 @@ TITLE="${1:-CI/CD Pipeline}"
 MESSAGE="${2:-Pipeline completed}"
 TYPE="${3:-info}"  # info, success, warning, failure
 
-echo:Notify "========================================="
 echo:Notify "Sending Notification"
-echo:Notify "========================================="
 
 # Check if Apprise is installed
 if ! command -v apprise &> /dev/null; then
@@ -112,6 +110,4 @@ else
     exit 0
 fi
 
-echo:Notify "========================================="
 echo:Notify "Notification Complete"
-echo:Notify "========================================="

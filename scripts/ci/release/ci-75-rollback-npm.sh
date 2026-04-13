@@ -8,10 +8,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 VERSION="${1:?Version is required}"
 
-echo:Release "========================================="
 echo:Release "Rolling Back NPM Release"
 echo:Release "Version: $VERSION"
-echo:Release "========================================="
 
 # Check if NODE_AUTH_TOKEN is set
 if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
@@ -35,6 +33,4 @@ fi
 echo:Release "✓ NPM rollback stub executed"
 echo:Release "  Customize this script in scripts/ci/release/ci-75-rollback-npm.sh"
 
-echo:Release "========================================="
 echo:Release "NPM Rollback Complete"
-echo:Release "========================================="

@@ -5,9 +5,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: Install Tools
 # Purpose: Install required tools for the project using mise
 
-echo:Setup "========================================="
 echo:Setup "Installing Required Tools"
-echo:Setup "========================================="
 
 # Install mise if not already installed
 if ! command -v mise &> /dev/null; then
@@ -77,6 +75,4 @@ echo:Setup "All installed tools:"
 mise list
 
 echo:Setup ""
-echo:Setup "========================================="
 echo:Setup "Tool Installation Complete"
-echo:Setup "========================================="

@@ -6,9 +6,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Delete old GitHub Actions artifacts
 # Customize this script based on your retention policy
 
-echo:Maint "========================================="
 echo:Maint "Cleaning Up Old Artifacts"
-echo:Maint "========================================="
 
 # Example: Delete artifacts older than 7 days using gh CLI
 # if command -v gh &> /dev/null; then
@@ -29,6 +27,4 @@ echo:Maint "========================================="
 echo:Maint "✓ Artifacts cleanup stub executed"
 echo:Maint "  Customize this script in ${BASH_SOURCE[0]}"
 
-echo:Maint "========================================="
 echo:Maint "Artifacts Cleanup Complete"
-echo:Maint "========================================="

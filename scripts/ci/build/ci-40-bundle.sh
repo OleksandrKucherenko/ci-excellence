@@ -5,9 +5,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: Bundle/Package
 # Purpose: Create distribution packages (technology-agnostic stub)
 
-echo:Build "========================================="
 echo:Build "Creating Bundle/Package"
-echo:Build "========================================="
 
 # Example: NPM package
 # if [ -f "package.json" ]; then
@@ -43,6 +41,4 @@ echo:Build "========================================="
 echo:Build "✓ Bundle stub executed"
 echo:Build "  Customize this script in scripts/ci/build/ci-40-bundle.sh"
 
-echo:Build "========================================="
 echo:Build "Bundling Complete"
-echo:Build "========================================="

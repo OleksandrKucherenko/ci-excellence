@@ -7,10 +7,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 VERSION="${1:?Version is required}"
 
-echo:Release "========================================="
 echo:Release "Updating Version Files"
 echo:Release "Version: $VERSION"
-echo:Release "========================================="
 
 # Example: Update package.json
 # if [ -f "package.json" ]; then
@@ -44,6 +42,4 @@ echo:Release "========================================="
 echo:Release "✓ Version update stub executed"
 echo:Release "  Customize this script in scripts/ci/release/ci-15-update-version.sh"
 
-echo:Release "========================================="
 echo:Release "Version Files Updated"
-echo:Release "========================================="

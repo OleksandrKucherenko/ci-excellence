@@ -6,9 +6,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Publish documentation to hosting platform
 # Customize this script based on your documentation hosting
 
-echo:Release "========================================="
 echo:Release "Publishing Documentation"
-echo:Release "========================================="
 
 # Example: GitHub Pages
 # if [ -d "docs/_build/html" ] || [ -d "build/docs" ]; then
@@ -44,6 +42,4 @@ echo:Release "========================================="
 echo:Release "✓ Documentation publish stub executed"
 echo:Release "  Customize this script in scripts/ci/release/ci-55-publish-docs.sh"
 
-echo:Release "========================================="
 echo:Release "Documentation Publishing Complete"
-echo:Release "========================================="

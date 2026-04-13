@@ -5,9 +5,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: Compile/Build
 # Purpose: Compile or build the project (technology-agnostic stub)
 
-echo:Build "========================================="
 echo:Build "Compiling/Building Project"
-echo:Build "========================================="
 
 # Example: TypeScript compilation
 # if [ -f "tsconfig.json" ]; then
@@ -49,6 +47,4 @@ echo:Build "========================================="
 echo:Build "✓ Build stub executed"
 echo:Build "  Customize this script in scripts/ci/build/ci-10-compile.sh"
 
-echo:Build "========================================="
 echo:Build "Build Complete"
-echo:Build "========================================="

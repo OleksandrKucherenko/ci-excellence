@@ -5,9 +5,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: Unit Tests
 # Purpose: Run unit tests (technology-agnostic stub)
 
-echo:Test "========================================="
 echo:Test "Running Unit Tests"
-echo:Test "========================================="
 
 EXIT_CODE=0
 
@@ -64,12 +62,8 @@ echo:Test "✓ Unit test stub executed"
 echo:Test "  Customize this script in scripts/ci/test/ci-10-unit-tests.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
-    echo:Test "========================================="
     echo:Test "⚠ Unit Tests Failed"
-    echo:Test "========================================="
     exit $EXIT_CODE
 fi
 
-echo:Test "========================================="
 echo:Test "Unit Tests Complete"
-echo:Test "========================================="

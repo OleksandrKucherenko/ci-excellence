@@ -9,10 +9,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 VERSION="${1:?Version is required}"
 TAG="v$VERSION"
 
-echo:Release "========================================="
 echo:Release "Verifying GitHub Release"
 echo:Release "Version: $VERSION"
-echo:Release "========================================="
 
 # Example: Verify GitHub release using gh CLI
 # if command -v gh &> /dev/null; then
@@ -38,6 +36,4 @@ echo:Release "========================================="
 echo:Release "✓ GitHub release verification stub executed"
 echo:Release "  Customize this script in scripts/ci/release/ci-35-verify-github-release.sh"
 
-echo:Release "========================================="
 echo:Release "GitHub Release Verification Complete"
-echo:Release "========================================="

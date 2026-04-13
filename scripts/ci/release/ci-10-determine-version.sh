@@ -27,9 +27,7 @@ set +u
 source "$LIB_DIR/_semver.sh"
 set -u
 
-echo:Release "========================================="
 echo:Release "Determining Next Version"
-echo:Release "========================================="
 
 # Get current version details
 # Find the latest tag that looks like a semver version v*.*.*
@@ -127,8 +125,6 @@ esac
 
 echo:Release "Calculated Version: $NEW_VERSION"
 
-echo:Release "========================================="
 echo:Release "Version Determination Complete"
-echo:Release "========================================="
 
 echo "$NEW_VERSION"

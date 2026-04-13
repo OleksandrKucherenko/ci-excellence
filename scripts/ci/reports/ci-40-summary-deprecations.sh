@@ -5,7 +5,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: Deprecation Summary
 # Purpose: Generate deprecation summary for GitHub step summary
 
-echo:Report "--- Generating Deprecation Summary ---"
+echo:Report "Generating Deprecation Summary"
 
 {
   echo "## Deprecation Summary"
@@ -13,4 +13,4 @@ echo:Report "--- Generating Deprecation Summary ---"
   echo "Deprecated versions checked and updated"
 } >> "${GITHUB_STEP_SUMMARY}"
 
-echo:Report "--- Deprecation Summary Generated ---"
+echo:Report "Deprecation Summary Generated"

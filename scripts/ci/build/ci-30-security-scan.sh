@@ -5,9 +5,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: Security Scan
 # Purpose: Run security vulnerability scans (technology-agnostic stub)
 
-echo:Security "========================================="
 echo:Security "Running Security Scans"
-echo:Security "========================================="
 
 EXIT_CODE=0
 
@@ -95,9 +93,7 @@ cat > security-results.sarif <<EOF
 EOF
 
 if [ $EXIT_CODE -ne 0 ]; then
-    echo:Security "========================================="
     echo:Security "⚠ Security issues found"
-    echo:Security "========================================="
 
     # Show summary of findings
     if [ -f "gitleaks-report.json" ]; then
@@ -116,6 +112,4 @@ if [ $EXIT_CODE -ne 0 ]; then
     exit $EXIT_CODE
 fi
 
-echo:Security "========================================="
 echo:Security "Security Scan Complete"
-echo:Security "========================================="

@@ -8,10 +8,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 VERSION="${1:-latest}"
 
-echo:Test "========================================="
 echo:Test "Running Smoke Tests"
 echo:Test "Version: $VERSION"
-echo:Test "========================================="
 
 EXIT_CODE=0
 
@@ -48,12 +46,8 @@ echo:Test "✓ Smoke test stub executed"
 echo:Test "  Customize this script in scripts/ci/test/ci-40-smoke-tests.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
-    echo:Test "========================================="
     echo:Test "⚠ Smoke Tests Failed"
-    echo:Test "========================================="
     exit $EXIT_CODE
 fi
 
-echo:Test "========================================="
 echo:Test "Smoke Tests Complete"
-echo:Test "========================================="

@@ -9,9 +9,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 TAG_NAME="${1:-}"
 VERSION="${2:-}"
 
-echo:Release "========================================="
 echo:Release "Applying Stability Tag"
-echo:Release "========================================="
 
 if [ -z "$TAG_NAME" ] || [ -z "$VERSION" ]; then
   echo:Release "Usage: $0 <stable|unstable> <version>"
@@ -44,6 +42,4 @@ git push -f origin "$STABILITY_TAG"
   echo "**Tag:** \`${STABILITY_TAG}\`"
 } >> "${GITHUB_STEP_SUMMARY}"
 
-echo:Release "========================================="
 echo:Release "Stability Tag Applied"
-echo:Release "========================================="

@@ -5,7 +5,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: Maintenance Pipeline Summary
 # Purpose: Generate maintenance pipeline summary table
 
-echo:Report "--- Generating Maintenance Summary ---"
+echo:Report "Generating Maintenance Summary"
 
 CLEANUP_RESULT="${1:-unknown}"
 SYNC_RESULT="${2:-unknown}"
@@ -31,4 +31,4 @@ ENABLE_DEPENDENCY_UPDATE="${ENABLE_DEPENDENCY_UPDATE:-false}"
   echo "| Dependency Update | $DEPENDENCY_RESULT | $ENABLE_DEPENDENCY_UPDATE |"
 } >> "${GITHUB_STEP_SUMMARY}"
 
-echo:Report "--- Maintenance Summary Generated ---"
+echo:Report "Maintenance Summary Generated"

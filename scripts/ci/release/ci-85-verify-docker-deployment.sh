@@ -8,10 +8,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 VERSION="${1:?Version is required}"
 
-echo:Release "========================================="
 echo:Release "Verifying Docker Deployment"
 echo:Release "Version: $VERSION"
-echo:Release "========================================="
 
 # Example: Verify Docker image availability
 # IMAGE_NAME="myorg/myapp"
@@ -36,6 +34,4 @@ echo:Release "========================================="
 echo:Release "✓ Docker deployment verification stub executed"
 echo:Release "  Customize this script in scripts/ci/release/ci-85-verify-docker-deployment.sh"
 
-echo:Release "========================================="
 echo:Release "Docker Deployment Verification Complete"
-echo:Release "========================================="

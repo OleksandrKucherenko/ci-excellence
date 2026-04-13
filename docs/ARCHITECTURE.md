@@ -369,29 +369,27 @@ rollback to plain bash by string-replacing `echo:Tag` back to `echo`.
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
-# Main
-main() {
-    echo:Build "========================================="
-    echo:Build "Starting [task name]..."
-    echo:Build "========================================="
+echo:Build "Starting [task name]..."
 
-    # Logic here
+# Logic here
 
-    echo:Build "✓ [task] complete"
-    echo:Build "========================================="
-}
-
-main "$@"
+echo:Build "✓ [task] complete"
+echo:Build "[task name] Complete"
 ```
 
+Each tag has a distinct **color and style** configured in `_ci-common.sh`, so separator lines
+(`=====`) are unnecessary — the colored `[tag]` prefix is enough to visually distinguish scripts.
+
 **Logger tags by domain:**
-- `echo:Build` / `echo:Security` — build pipeline scripts
-- `echo:Test` — test pipeline scripts
-- `echo:Release` — release pipeline scripts
-- `echo:Setup` — environment setup scripts
-- `echo:Maint` — maintenance scripts
-- `echo:Notify` — notification scripts
-- `echo:Report` — report/summary scripts
+- `echo:Build` — build pipeline scripts (**cyan**, bold)
+- `echo:Security` — security scanning (**red**, bold)
+- `echo:Test` — test pipeline scripts (**green**, bold)
+- `echo:Release` — release pipeline scripts (**purple**, bold)
+- `echo:Setup` — environment setup scripts (**blue**, bold)
+- `echo:Maint` — maintenance scripts (grey, italic)
+- `echo:Notify` — notification scripts (yellow)
+- `echo:Report` — report/summary scripts (grey)
+- `echo:Ops` — operations scripts (light purple, bold)
 - `echo:Ops` — operations scripts
 
 **Controlling output:** `DEBUG=build,test ./script.sh` (see [e-bash logger docs](https://github.com/OleksandrKucherenko/e-bash))

@@ -5,9 +5,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: E2E Tests
 # Purpose: Run end-to-end tests (technology-agnostic stub)
 
-echo:Test "========================================="
 echo:Test "Running End-to-End Tests"
-echo:Test "========================================="
 
 EXIT_CODE=0
 
@@ -46,12 +44,8 @@ echo:Test "✓ E2E test stub executed"
 echo:Test "  Customize this script in scripts/ci/test/ci-30-e2e-tests.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
-    echo:Test "========================================="
     echo:Test "⚠ E2E Tests Failed"
-    echo:Test "========================================="
     exit $EXIT_CODE
 fi
 
-echo:Test "========================================="
 echo:Test "E2E Tests Complete"
-echo:Test "========================================="

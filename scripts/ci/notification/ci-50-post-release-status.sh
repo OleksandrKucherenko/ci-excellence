@@ -5,7 +5,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: Post-Release Status
 # Purpose: Determine post-release notification status and message
 
-echo:Notify "--- Determining Post-Release Status ---"
+echo:Notify "Determining Post-Release Status"
 
 VERIFY_RESULT="${1:-unknown}"
 TAG_STABLE_RESULT="${2:-unknown}"
@@ -29,4 +29,4 @@ else
   echo "message=Post-Release Actions Completed ℹ️" >> "$GITHUB_OUTPUT"
 fi
 
-echo:Notify "--- Post-Release Status Determined ---"
+echo:Notify "Post-Release Status Determined"

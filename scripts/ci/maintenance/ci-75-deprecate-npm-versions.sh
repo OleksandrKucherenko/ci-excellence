@@ -6,9 +6,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Deprecate old NPM package versions
 # Customize this script based on your deprecation policy
 
-echo:Maint "========================================="
 echo:Maint "Deprecating NPM Versions"
-echo:Maint "========================================="
 
 # Check if NODE_AUTH_TOKEN is set
 if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
@@ -36,6 +34,4 @@ fi
 echo:Maint "✓ NPM deprecation stub executed"
 echo:Maint "  Customize this script in scripts/maintenance/deprecate-npm-versions.sh"
 
-echo:Maint "========================================="
 echo:Maint "NPM Deprecation Complete"
-echo:Maint "========================================="

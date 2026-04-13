@@ -5,7 +5,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: Maintenance Status
 # Purpose: Determine maintenance pipeline status for notifications
 
-echo:Notify "--- Determining Maintenance Status ---"
+echo:Notify "Determining Maintenance Status"
 
 CLEANUP_RESULT="${1:-unknown}"
 SYNC_RESULT="${2:-unknown}"
@@ -27,4 +27,4 @@ else
   echo "message=Maintenance Completed ✅" >> "$GITHUB_OUTPUT"
 fi
 
-echo:Notify "--- Maintenance Status Determined ---"
+echo:Notify "Maintenance Status Determined"

@@ -5,9 +5,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: Integration Tests
 # Purpose: Run integration tests (technology-agnostic stub)
 
-echo:Test "========================================="
 echo:Test "Running Integration Tests"
-echo:Test "========================================="
 
 EXIT_CODE=0
 
@@ -49,12 +47,8 @@ echo:Test "✓ Integration test stub executed"
 echo:Test "  Customize this script in scripts/ci/test/ci-20-integration-tests.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
-    echo:Test "========================================="
     echo:Test "⚠ Integration Tests Failed"
-    echo:Test "========================================="
     exit $EXIT_CODE
 fi
 
-echo:Test "========================================="
 echo:Test "Integration Tests Complete"
-echo:Test "========================================="

@@ -8,10 +8,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 VERSION="${1:?Version is required}"
 
-echo:Release "========================================="
 echo:Release "Verifying NPM Deployment"
 echo:Release "Version: $VERSION"
-echo:Release "========================================="
 
 # Example: Verify NPM package availability
 # if [ -f "package.json" ]; then
@@ -39,6 +37,4 @@ echo:Release "========================================="
 echo:Release "✓ NPM deployment verification stub executed"
 echo:Release "  Customize this script in scripts/ci/release/ci-70-verify-npm-deployment.sh"
 
-echo:Release "========================================="
 echo:Release "NPM Deployment Verification Complete"
-echo:Release "========================================="

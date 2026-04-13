@@ -6,9 +6,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Delete old GitHub Actions workflow runs
 # Customize this script based on your retention policy
 
-echo:Maint "========================================="
 echo:Maint "Cleaning Up Old Workflow Runs"
-echo:Maint "========================================="
 
 # Example: Delete workflow runs older than 30 days using gh CLI
 # if command -v gh &> /dev/null; then
@@ -29,6 +27,4 @@ echo:Maint "========================================="
 echo:Maint "✓ Workflow runs cleanup stub executed"
 echo:Maint "  Customize this script in ${BASH_SOURCE[0]}"
 
-echo:Maint "========================================="
 echo:Maint "Workflow Runs Cleanup Complete"
-echo:Maint "========================================="

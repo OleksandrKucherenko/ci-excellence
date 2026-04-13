@@ -6,9 +6,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Identify versions that should be deprecated
 # Customize this script based on your deprecation policy
 
-echo:Maint "========================================="
 echo:Maint "Identifying Deprecated Versions"
-echo:Maint "========================================="
 
 # Example: List versions older than 1 year
 # if [ -f "package.json" ] && command -v npm &> /dev/null; then
@@ -29,6 +27,4 @@ echo:Maint "========================================="
 echo:Maint "✓ Deprecated versions identification stub executed"
 echo:Maint "  Customize this script in scripts/maintenance/identify-deprecated-versions.sh"
 
-echo:Maint "========================================="
 echo:Maint "Deprecated Versions Identification Complete"
-echo:Maint "========================================="

@@ -6,9 +6,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Update project dependencies to latest versions
 # Customize this script based on your package manager
 
-echo:Maint "========================================="
 echo:Maint "Updating Dependencies"
-echo:Maint "========================================="
 
 # Example: Update NPM dependencies
 # if [ -f "package.json" ]; then
@@ -54,6 +52,4 @@ echo:Maint "========================================="
 echo:Maint "✓ Dependency update stub executed"
 echo:Maint "  Customize this script in scripts/maintenance/update-dependencies.sh"
 
-echo:Maint "========================================="
 echo:Maint "Dependency Update Complete"
-echo:Maint "========================================="

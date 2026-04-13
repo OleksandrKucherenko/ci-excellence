@@ -5,7 +5,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # CI Script: Release Status
 # Purpose: Determine release notification status and message
 
-echo:Notify "--- Determining Release Status ---"
+echo:Notify "Determining Release Status"
 
 VERSION="${1:-unknown}"
 PREPARE_RESULT="${2:-unknown}"
@@ -24,4 +24,4 @@ else
   echo "message=Release $VERSION Published ✅" >> "$GITHUB_OUTPUT"
 fi
 
-echo:Notify "--- Release Status Determined ---"
+echo:Notify "Release Status Determined"

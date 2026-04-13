@@ -9,7 +9,7 @@ EVENT_NAME="${1:-}"
 RELEASE_TAG="${2:-}"
 INPUT_VERSION="${3:-}"
 
-echo:Release "--- Selecting Version ---"
+echo:Release "Selecting Version"
 
 if [ "$EVENT_NAME" == "release" ] && [ -n "$RELEASE_TAG" ]; then
   VERSION="$RELEASE_TAG"
@@ -22,4 +22,4 @@ fi
 
 echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-echo:Release "--- Version Selected ---"
+echo:Release "Version Selected"

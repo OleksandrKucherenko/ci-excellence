@@ -6,9 +6,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Mark old GitHub releases as pre-release or update their descriptions
 # Customize this script based on your deprecation policy
 
-echo:Maint "========================================="
 echo:Maint "Deprecating GitHub Releases"
-echo:Maint "========================================="
 
 # Example: Mark old pre-releases as deprecated
 # if command -v gh &> /dev/null; then
@@ -33,6 +31,4 @@ echo:Maint "========================================="
 echo:Maint "✓ GitHub deprecation stub executed"
 echo:Maint "  Customize this script in scripts/maintenance/deprecate-github-releases.sh"
 
-echo:Maint "========================================="
 echo:Maint "GitHub Deprecation Complete"
-echo:Maint "========================================="
