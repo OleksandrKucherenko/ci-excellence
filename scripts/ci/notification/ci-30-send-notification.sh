@@ -21,7 +21,7 @@ hooks:flow:apply
 if ! command -v apprise &> /dev/null; then
     echo:Notify "Installing Apprise..."
     pip3 install apprise || pip install apprise || {
-        echo:Error "⚠ Failed to install Apprise"
+        echo:Error "Failed to install Apprise"
         echo:Notify "  Notifications will be skipped"
         exit 0
     }
@@ -31,88 +31,63 @@ fi
 NOTIFICATION_URLS="${APPRISE_URLS:-}"
 
 if [ -z "$NOTIFICATION_URLS" ]; then
-    echo:Error "⚠ No notification URLs configured"
-    echo:Notify "  Set APPRISE_URLS environment variable or GitHub secret"
-    echo:Notify "  Example formats:"
-    echo:Notify "    Slack:    slack://token_a/token_b/token_c"
-    echo:Notify "    Teams:    msteams://webhook_url"
-    echo:Notify "    Discord:  discord://webhook_id/webhook_token"
-    echo:Notify "    Telegram: tgram://bot_token/chat_id"
-    echo:Notify "    Email:    mailto://user:pass@domain.com"
-    echo:Notify ""
-    echo:Notify "  Multiple services: separate with spaces"
-    echo:Notify "  See: https://github.com/caronc/apprise/wiki"
+    echo:Error "No notification URLs configured"
+    echo:Notify "  Set APPRISE_URLS secret. See: https://github.com/caronc/apprise/wiki"
     exit 0
 fi
 
-# Determine notification tag based on type
-TAG="info"
+# Status emoji
 case "$TYPE" in
-    success)
-        TAG="✅"
-        ;;
-    failure|error)
-        TAG="❌"
-        ;;
-    warning)
-        TAG="⚠️"
-        ;;
-    info)
-        TAG="ℹ️"
-        ;;
+    success)        TAG="✅" ;;
+    failure|error)  TAG="❌" ;;
+    warning)        TAG="⚠️" ;;
+    *)              TAG="ℹ️" ;;
 esac
 
-# Build the full notification message with HTML formatting for Telegram
-# Note: Each HTML tag must open and close on the same line
-FULL_MESSAGE="$TAG <b>${TITLE}</b>
+# Build compact message: emoji + title + status details + run link + actor
+REPO="${GITHUB_REPOSITORY:-}"
+FULL_MESSAGE="${TAG} <b>${TITLE}</b>"
+
+# Add repo as short name (no owner prefix if readable)
+if [ -n "$REPO" ]; then
+    FULL_MESSAGE="${FULL_MESSAGE} — ${REPO##*/}"
+fi
+
+# Status details from the calling script (branch, commit, etc.)
+FULL_MESSAGE="${FULL_MESSAGE}
 
 ${MESSAGE}"
 
-# Add repository and workflow information if available
-if [ -n "${GITHUB_REPOSITORY:-}" ]; then
-    FULL_MESSAGE="${FULL_MESSAGE}
-
-<b>Repository:</b> ${GITHUB_REPOSITORY}"
+# Run link + actor on one footer line
+FOOTER_PARTS=()
+if [ -n "${GITHUB_RUN_ID:-}" ] && [ -n "${GITHUB_SERVER_URL:-}" ] && [ -n "$REPO" ]; then
+    RUN_URL="${GITHUB_SERVER_URL}/${REPO}/actions/runs/${GITHUB_RUN_ID}"
+    FOOTER_PARTS+=("<a href=\"${RUN_URL}\">Logs</a>")
 fi
-
-if [ -n "${GITHUB_WORKFLOW:-}" ]; then
-    FULL_MESSAGE="${FULL_MESSAGE}
-<b>Workflow:</b> ${GITHUB_WORKFLOW}"
-fi
-
-if [ -n "${GITHUB_RUN_ID:-}" ] && [ -n "${GITHUB_SERVER_URL:-}" ] && [ -n "${GITHUB_REPOSITORY:-}" ]; then
-    RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-    FULL_MESSAGE="${FULL_MESSAGE}
-<b>Run:</b> <a href=\"${RUN_URL}\">View Logs</a>"
-fi
-
 if [ -n "${GITHUB_ACTOR:-}" ]; then
-    FULL_MESSAGE="${FULL_MESSAGE}
-<b>Triggered by:</b> ${GITHUB_ACTOR}"
+    FOOTER_PARTS+=("by ${GITHUB_ACTOR}")
 fi
 
-# Send notification using Apprise
-echo:Notify "Sending notification to configured services..."
+if [ ${#FOOTER_PARTS[@]} -gt 0 ]; then
+    FOOTER=$(IFS=' · '; echo "${FOOTER_PARTS[*]}")
+    FULL_MESSAGE="${FULL_MESSAGE}
 
-# Convert space-separated URLs to individual arguments
-IFS=' ' read -ra URL_ARRAY <<< "$NOTIFICATION_URLS"
-
-# Build apprise command
-APPRISE_ARGS=()
-for url in "${URL_ARRAY[@]}"; do
-    APPRISE_ARGS+=("$url")
-done
+${FOOTER}"
+fi
 
 # Send the notification
+echo:Notify "Sending notification to configured services..."
+
+IFS=' ' read -ra URL_ARRAY <<< "$NOTIFICATION_URLS"
+
 if apprise \
     --title="$TITLE" \
     --body="$FULL_MESSAGE" \
     --input-format=html \
-    --tag="$TYPE" \
-    "${APPRISE_ARGS[@]}" 2>&1; then
-    echo:Success "✓ Notification sent successfully"
+    "${URL_ARRAY[@]}" 2>&1; then
+    echo:Success "Notification sent successfully"
 else
-    echo:Error "⚠ Failed to send notification (non-fatal)"
+    echo:Error "Failed to send notification (non-fatal)"
     exit 0
 fi
 
