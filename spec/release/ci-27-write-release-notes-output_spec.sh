@@ -21,19 +21,22 @@ Describe 'ci-27-write-release-notes-output.sh'
   After 'cleanup_stubs'
 
   It 'exits successfully'
-    When run bash -c "cd '$_tmp_dir' && bash '$RUN_SCRIPT' '$SCRIPT' 1.0.0"
+    export CI_VERSION=1.0.0
+    When run bash -c "cd '$_tmp_dir' && bash '$RUN_SCRIPT' '$SCRIPT'"
     The status should equal 0
     The stderr should be present
   End
 
   It 'writes notes to GITHUB_OUTPUT'
-    When run bash -c "cd '$_tmp_dir' && bash '$RUN_SCRIPT' '$SCRIPT' 1.0.0"
+    export CI_VERSION=1.0.0
+    When run bash -c "cd '$_tmp_dir' && bash '$RUN_SCRIPT' '$SCRIPT'"
     The contents of file "$GITHUB_OUTPUT" should include 'notes'
     The stderr should be present
   End
 
   It 'announces its title'
-    When run bash -c "cd '$_tmp_dir' && bash '$RUN_SCRIPT' '$SCRIPT' 1.0.0"
+    export CI_VERSION=1.0.0
+    When run bash -c "cd '$_tmp_dir' && bash '$RUN_SCRIPT' '$SCRIPT'"
     The stderr should include 'Writing Release Notes Output'
   End
 End

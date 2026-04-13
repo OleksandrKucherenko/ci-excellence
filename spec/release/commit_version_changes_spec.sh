@@ -28,20 +28,23 @@ Describe 'ci-18-commit-version-changes.sh'
   After 'cleanup_git_repo'
 
   It 'exits successfully'
-    When run bash -c "cd '$_tmp_repo' && bash '$RUN_SCRIPT' '$SCRIPT' main 1.0.0"
+    export CI_TARGET_BRANCH=main CI_VERSION=1.0.0
+    When run bash -c "cd '$_tmp_repo' && bash '$RUN_SCRIPT' '$SCRIPT'"
     The status should equal 0
     The stderr should include 'Committing Version Changes'
     The stdout should be present
   End
 
   It 'announces its title'
-    When run bash -c "cd '$_tmp_repo' && bash '$RUN_SCRIPT' '$SCRIPT' main 1.0.0"
+    export CI_TARGET_BRANCH=main CI_VERSION=1.0.0
+    When run bash -c "cd '$_tmp_repo' && bash '$RUN_SCRIPT' '$SCRIPT'"
     The stderr should include 'Committing Version Changes'
     The stdout should be present
   End
 
   It 'exits 1 when version is missing'
-    When run bash -c "cd '$_tmp_repo' && bash '$RUN_SCRIPT' '$SCRIPT' main"
+    export CI_TARGET_BRANCH=main CI_VERSION=""
+    When run bash -c "cd '$_tmp_repo' && bash '$RUN_SCRIPT' '$SCRIPT'"
     The status should equal 1
     The stderr should include 'Version is required'
   End

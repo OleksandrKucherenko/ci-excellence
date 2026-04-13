@@ -34,10 +34,11 @@ Describe 'ci-10-determine-version.sh'
 
   # Helper: tag the fixture repo, then run the script inside it.
   run_determine_version() {
-    local tag="$1"; shift
+    local tag="$1" scope="$2" pretype="${3:-}"
     git -C "$_tmp_repo" tag "$tag"
     # Run inside the temp repo so `git describe` finds our tag
-    (cd "$_tmp_repo" && bash "$RUN_SCRIPT" "$SCRIPT" "$@")
+    export CI_RELEASE_SCOPE="$scope" CI_PRE_RELEASE_TYPE="$pretype"
+    (cd "$_tmp_repo" && bash "$RUN_SCRIPT" "$SCRIPT")
   }
 
   Describe 'patch increment'

@@ -9,18 +9,21 @@ Describe 'ci-95-summary-release.sh'
   Before 'setup'
 
   It 'exits successfully'
-    When run bash "$RUN_SCRIPT" "$SCRIPT" 1.0.0 false success success success success
+    export CI_VERSION=1.0.0 CI_IS_PRERELEASE=false RESULT_PUBLISH_NPM=success RESULT_PUBLISH_GITHUB=success RESULT_PUBLISH_DOCKER=success RESULT_PUBLISH_DOCS=success
+    When run bash "$RUN_SCRIPT" "$SCRIPT"
     The status should equal 0
     The stderr should be present
   End
 
   It 'announces itself'
-    When run bash "$RUN_SCRIPT" "$SCRIPT" 1.0.0 false success success success success
+    export CI_VERSION=1.0.0 CI_IS_PRERELEASE=false RESULT_PUBLISH_NPM=success RESULT_PUBLISH_GITHUB=success RESULT_PUBLISH_DOCKER=success RESULT_PUBLISH_DOCS=success
+    When run bash "$RUN_SCRIPT" "$SCRIPT"
     The stderr should include 'Generating Release Summary'
   End
 
   It 'writes to GITHUB_STEP_SUMMARY'
-    When run bash "$RUN_SCRIPT" "$SCRIPT" 1.0.0 false success success success success
+    export CI_VERSION=1.0.0 CI_IS_PRERELEASE=false RESULT_PUBLISH_NPM=success RESULT_PUBLISH_GITHUB=success RESULT_PUBLISH_DOCKER=success RESULT_PUBLISH_DOCS=success
+    When run bash "$RUN_SCRIPT" "$SCRIPT"
     The contents of file "$GITHUB_STEP_SUMMARY" should include 'Release Summary'
     The status should equal 0
     The stderr should be present

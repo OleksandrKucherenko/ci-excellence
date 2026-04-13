@@ -32,21 +32,24 @@ Describe 'ci-12-set-version-outputs.sh'
   After 'cleanup_git_repo'
 
   It 'writes version to GITHUB_OUTPUT'
-    When run bash -c "cd '$_tmp_repo' && bash '$RUN_SCRIPT' '$SCRIPT' patch false"
+    export CI_RELEASE_SCOPE=patch CI_PRE_RELEASE_TYPE=false
+    When run bash -c "cd '$_tmp_repo' && bash '$RUN_SCRIPT' '$SCRIPT'"
     The status should equal 0
     The contents of file "$GITHUB_OUTPUT" should include 'version='
     The stderr should be present
   End
 
   It 'writes is-prerelease to GITHUB_OUTPUT'
-    When run bash -c "cd '$_tmp_repo' && bash '$RUN_SCRIPT' '$SCRIPT' patch false"
+    export CI_RELEASE_SCOPE=patch CI_PRE_RELEASE_TYPE=false
+    When run bash -c "cd '$_tmp_repo' && bash '$RUN_SCRIPT' '$SCRIPT'"
     The status should equal 0
     The contents of file "$GITHUB_OUTPUT" should include 'is-prerelease='
     The stderr should be present
   End
 
   It 'announces its title'
-    When run bash -c "cd '$_tmp_repo' && bash '$RUN_SCRIPT' '$SCRIPT' patch false"
+    export CI_RELEASE_SCOPE=patch CI_PRE_RELEASE_TYPE=false
+    When run bash -c "cd '$_tmp_repo' && bash '$RUN_SCRIPT' '$SCRIPT'"
     The status should equal 0
     The stderr should include 'Setting Version Outputs'
   End

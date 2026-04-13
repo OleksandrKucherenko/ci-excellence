@@ -6,18 +6,21 @@ Describe 'ci-70-summary-maintenance.sh'
   Before 'setup'
 
   It 'exits successfully'
-    When run bash "$RUN_SCRIPT" "$SCRIPT" success success success success success
+    export RESULT_CLEANUP=success RESULT_SYNC=success RESULT_DEPRECATION=success RESULT_SECURITY=success RESULT_DEPENDENCY=success
+    When run bash "$RUN_SCRIPT" "$SCRIPT"
     The status should equal 0
     The stderr should be present
   End
 
   It 'announces itself'
-    When run bash "$RUN_SCRIPT" "$SCRIPT" success success success success success
+    export RESULT_CLEANUP=success RESULT_SYNC=success RESULT_DEPRECATION=success RESULT_SECURITY=success RESULT_DEPENDENCY=success
+    When run bash "$RUN_SCRIPT" "$SCRIPT"
     The stderr should include 'Generating Maintenance Summary'
   End
 
   It 'writes to GITHUB_STEP_SUMMARY'
-    When run bash "$RUN_SCRIPT" "$SCRIPT" success success success success success
+    export RESULT_CLEANUP=success RESULT_SYNC=success RESULT_DEPRECATION=success RESULT_SECURITY=success RESULT_DEPENDENCY=success
+    When run bash "$RUN_SCRIPT" "$SCRIPT"
     The contents of file "$GITHUB_STEP_SUMMARY" should include 'Maintenance Pipeline Summary'
     The status should equal 0
     The stderr should be present

@@ -19,12 +19,14 @@ Describe 'ci-66-publish-npm-release.sh'
   After 'cleanup_stub'
 
   It 'exits 0 when called with default (non-prerelease)'
-    When run bash "$RUN_SCRIPT" "$SCRIPT" false
+    export CI_IS_PRERELEASE=false
+    When run bash "$RUN_SCRIPT" "$SCRIPT"
     The status should equal 0
   End
 
   It 'announces its title'
-    When run bash "$RUN_SCRIPT" "$SCRIPT" false
+    export CI_IS_PRERELEASE=false
+    When run bash "$RUN_SCRIPT" "$SCRIPT"
     The stderr should include 'Publish NPM Release'
   End
 End

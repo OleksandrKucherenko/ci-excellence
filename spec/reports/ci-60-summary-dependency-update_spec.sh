@@ -6,18 +6,21 @@ Describe 'ci-60-summary-dependency-update.sh'
   Before 'setup'
 
   It 'exits successfully'
-    When run bash "$RUN_SCRIPT" "$SCRIPT" false
+    export MAINT_HAS_CHANGES=false
+    When run bash "$RUN_SCRIPT" "$SCRIPT"
     The status should equal 0
     The stderr should be present
   End
 
   It 'announces itself'
-    When run bash "$RUN_SCRIPT" "$SCRIPT" false
+    export MAINT_HAS_CHANGES=false
+    When run bash "$RUN_SCRIPT" "$SCRIPT"
     The stderr should include 'Generating Dependency Update Summary'
   End
 
   It 'writes to GITHUB_STEP_SUMMARY'
-    When run bash "$RUN_SCRIPT" "$SCRIPT" false
+    export MAINT_HAS_CHANGES=false
+    When run bash "$RUN_SCRIPT" "$SCRIPT"
     The contents of file "$GITHUB_STEP_SUMMARY" should include 'Dependency Update Summary'
     The status should equal 0
     The stderr should be present

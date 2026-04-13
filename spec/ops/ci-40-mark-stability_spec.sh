@@ -4,6 +4,7 @@ Describe 'ci-40-mark-stability.sh'
 
   Describe 'missing arguments'
     It 'exits 1 when no arguments are provided'
+      export CI_STABILITY_TAG="" OPS_VERSION=""
       When run bash "$RUN_SCRIPT" "$SCRIPT"
       The status should equal 1
       The stderr should include 'Mark Stability'
@@ -12,7 +13,8 @@ Describe 'ci-40-mark-stability.sh'
 
   Describe 'unknown action'
     It 'exits 1 for an unknown action'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" bogus 1.0.0
+      export CI_STABILITY_TAG=bogus OPS_VERSION=1.0.0
+      When run bash "$RUN_SCRIPT" "$SCRIPT"
       The status should equal 1
       The stderr should include "Unknown action"
     End

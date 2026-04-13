@@ -6,32 +6,37 @@ Describe 'ci-20-summary-sync.sh'
   Before 'setup'
 
   It 'exits successfully'
-    When run bash "$RUN_SCRIPT" "$SCRIPT" false
+    export MAINT_HAS_CHANGES=false
+    When run bash "$RUN_SCRIPT" "$SCRIPT"
     The status should equal 0
     The stderr should be present
   End
 
   It 'announces itself'
-    When run bash "$RUN_SCRIPT" "$SCRIPT" false
+    export MAINT_HAS_CHANGES=false
+    When run bash "$RUN_SCRIPT" "$SCRIPT"
     The stderr should include 'Generating Sync Summary'
   End
 
   It 'writes to GITHUB_STEP_SUMMARY'
-    When run bash "$RUN_SCRIPT" "$SCRIPT" false
+    export MAINT_HAS_CHANGES=false
+    When run bash "$RUN_SCRIPT" "$SCRIPT"
     The contents of file "$GITHUB_STEP_SUMMARY" should include 'File Sync Summary'
     The status should equal 0
     The stderr should be present
   End
 
   It 'reports files in sync when no changes'
-    When run bash "$RUN_SCRIPT" "$SCRIPT" false
+    export MAINT_HAS_CHANGES=false
+    When run bash "$RUN_SCRIPT" "$SCRIPT"
     The contents of file "$GITHUB_STEP_SUMMARY" should include 'All files are in sync'
     The status should equal 0
     The stderr should be present
   End
 
   It 'reports PR created when changes exist'
-    When run bash "$RUN_SCRIPT" "$SCRIPT" true
+    export MAINT_HAS_CHANGES=true
+    When run bash "$RUN_SCRIPT" "$SCRIPT"
     The contents of file "$GITHUB_STEP_SUMMARY" should include 'PR created for review'
     The status should equal 0
     The stderr should be present
