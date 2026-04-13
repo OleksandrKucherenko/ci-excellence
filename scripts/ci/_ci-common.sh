@@ -23,17 +23,17 @@ _CI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 _REPO_ROOT="$(cd "$_CI_DIR/../.." && pwd)"
 export E_BASH="${E_BASH:-$_REPO_ROOT/scripts/lib}"
 
-# Source e-bash core.
-# Disable both errexit and nounset: the logger's eval-based dynamic function
-# creation triggers a bash-internal "pop_var_context" error that is fatal
-# under errexit. Restoring strict mode after sourcing is safe because the
-# "already loaded" guards in each library make re-sourcing a no-op.
+# Source e-bash core and initialize all loggers and hooks.
+# The entire block runs with errexit and nounset disabled because the logger's
+# eval-based dynamic function creation triggers a bash-internal
+# "pop_var_context" error that is fatal under errexit. The logger:init and
+# hooks:bootstrap calls also use eval internally, so they must be inside this
+# guard. Strict mode is restored at the end.
 set +eu
 # shellcheck disable=SC1090,SC1091
 source "$E_BASH/_logger.sh"
 # shellcheck disable=SC1090,SC1091
 source "$E_BASH/_hooks.sh"
-set -eu
 
 # Default: enable all CI loggers (CI environment is always verbose)
 # In local dev, user can control via DEBUG=build,test,-setup
@@ -73,6 +73,9 @@ hooks:bootstrap
 # Register middleware for contract-based hook communication (exec mode).
 # Hook scripts emit contract:env:NAME=VALUE on stdout to safely set env vars.
 hooks:middleware begin _hooks:middleware:modes
+
+# Restore strict mode for the calling script
+set -eu
 
 # ---------------------------------------------------------------------------
 # Parameter logging helpers
