@@ -23,6 +23,12 @@ _CI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 _REPO_ROOT="$(cd "$_CI_DIR/../.." && pwd)"
 export E_BASH="${E_BASH:-$_REPO_ROOT/scripts/lib}"
 
+# Hooks directory: per-script extension point.
+# MUST be set BEFORE sourcing _hooks.sh (which defaults HOOKS_DIR to "ci-cd").
+# BASH_SOURCE[1] is the caller of _ci-common.sh (the step script itself).
+_CI_SCRIPT_NAME="$(basename "${BASH_SOURCE[1]:-unknown}" .sh)"
+export HOOKS_DIR="${_REPO_ROOT}/ci-cd/${_CI_SCRIPT_NAME}"
+
 # Default: enable all CI loggers (CI environment is always verbose).
 # MUST be set before sourcing _hooks.sh, which sets DEBUG="error" if unset.
 # In local dev, user can control via DEBUG=build,test,-setup
@@ -60,11 +66,7 @@ logger:init "error"    "${cl_red}${st_bold}[ERROR]${cl_reset} "      ">&2"
 # ---------------------------------------------------------------------------
 # Hooks system: per-script extension points
 # ---------------------------------------------------------------------------
-# Each script gets its own HOOKS_DIR based on its filename.
-# Consuming projects drop scripts in ci-cd/{step_name}/ to extend behavior.
-# BASH_SOURCE[1] is the caller of _ci-common.sh (the step script itself).
-_CI_SCRIPT_NAME="$(basename "${BASH_SOURCE[1]:-unknown}" .sh)"
-export HOOKS_DIR="${HOOKS_DIR:-${_REPO_ROOT}/ci-cd/${_CI_SCRIPT_NAME}}"
+# HOOKS_DIR was set above (before _hooks.sh) to ${_REPO_ROOT}/ci-cd/${_CI_SCRIPT_NAME}
 
 # Bootstrap: declare begin + end hooks, install EXIT trap for end hooks
 hooks:bootstrap
