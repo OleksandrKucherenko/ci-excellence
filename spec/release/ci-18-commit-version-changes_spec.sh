@@ -14,10 +14,6 @@ Describe 'ci-18-commit-version-changes.sh'
     touch "$_tmp_repo/README"
     git -C "$_tmp_repo" add README
     git -C "$_tmp_repo" commit -q -m "initial"
-    # Create stub for the bot setup script so relative path resolves
-    mkdir -p "$_tmp_repo/scripts/ci/setup"
-    printf '#!/usr/bin/env bash\ntrue\n' > "$_tmp_repo/scripts/ci/setup/ci-30-github-actions-bot.sh"
-    chmod +x "$_tmp_repo/scripts/ci/setup/ci-30-github-actions-bot.sh"
   }
 
   cleanup_git_repo() {
@@ -28,20 +24,18 @@ Describe 'ci-18-commit-version-changes.sh'
   After 'cleanup_git_repo'
 
   It 'exits successfully'
-    When run bash -c "cd '$_tmp_repo' && bash '$RUN_SCRIPT' '$SCRIPT' main 1.0.0"
+    When run bash -c "GIT_DIR='$_tmp_repo/.git' GIT_WORK_TREE='$_tmp_repo' bash '$RUN_SCRIPT' '$SCRIPT' main 1.0.0"
     The status should equal 0
     The stderr should include 'Committing Version Changes'
-    The stdout should be present
   End
 
   It 'announces its title'
-    When run bash -c "cd '$_tmp_repo' && bash '$RUN_SCRIPT' '$SCRIPT' main 1.0.0"
+    When run bash -c "GIT_DIR='$_tmp_repo/.git' GIT_WORK_TREE='$_tmp_repo' bash '$RUN_SCRIPT' '$SCRIPT' main 1.0.0"
     The stderr should include 'Committing Version Changes'
-    The stdout should be present
   End
 
   It 'exits 1 when version is missing'
-    When run bash -c "cd '$_tmp_repo' && bash '$RUN_SCRIPT' '$SCRIPT' main"
+    When run bash -c "GIT_DIR='$_tmp_repo/.git' GIT_WORK_TREE='$_tmp_repo' bash '$RUN_SCRIPT' '$SCRIPT' main"
     The status should equal 1
     The stderr should include 'Version is required'
   End

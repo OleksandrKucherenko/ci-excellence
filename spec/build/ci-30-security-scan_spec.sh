@@ -3,6 +3,21 @@ Describe 'ci-30-security-scan.sh'
   SCRIPT="$SHELLSPEC_PROJECT_ROOT/scripts/ci/build/ci-30-security-scan.sh"
 
   Describe 'when mise is not available'
+    hide_mise() {
+      # Save original PATH and remove directories containing mise
+      ORIG_PATH="$PATH"
+      MISE_DIR="$(command -v mise 2>/dev/null | xargs dirname 2>/dev/null || true)"
+      if [ -n "$MISE_DIR" ]; then
+        export PATH="${PATH//$MISE_DIR:/}"
+        export PATH="${PATH//:$MISE_DIR/}"
+      fi
+    }
+    restore_mise() {
+      export PATH="$ORIG_PATH"
+    }
+    BeforeEach 'hide_mise'
+    AfterEach 'restore_mise'
+
     It 'exits 1 with mise not found message'
       When run bash "$RUN_SCRIPT" "$SCRIPT"
       The status should equal 1
