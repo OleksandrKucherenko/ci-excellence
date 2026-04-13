@@ -15,7 +15,9 @@ ci:param release "CI_PRE_RELEASE_TYPE" "${CI_PRE_RELEASE_TYPE:-false}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+set +eu
 hooks:declare resolve
 hooks:do resolve
+set -eu
 
 echo:Success "Version Outputs Set"

@@ -21,7 +21,9 @@ ci:param build "RESULT_BUNDLE" "${RESULT_BUNDLE:-success}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+set +eu
 hooks:declare check
 hooks:do check
+set -eu
 
 echo:Success "Pipeline Check Complete"

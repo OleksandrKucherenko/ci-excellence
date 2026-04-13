@@ -13,7 +13,9 @@ echo:Build "Creating Bundle/Package"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+set +eu
 hooks:declare bundle
 hooks:do bundle
+set -eu
 
 echo:Success "Bundling Complete"

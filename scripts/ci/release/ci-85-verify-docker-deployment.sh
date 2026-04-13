@@ -14,7 +14,9 @@ ci:param release "CI_VERSION" "${CI_VERSION:?CI_VERSION is required}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+set +eu
 hooks:declare verify
 hooks:do verify
+set -eu
 
 echo:Success "Docker Deployment Verification Complete"

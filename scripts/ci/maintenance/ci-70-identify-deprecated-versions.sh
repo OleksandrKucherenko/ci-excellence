@@ -13,7 +13,9 @@ echo:Maint "Identifying Deprecated Versions"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+set +eu
 hooks:declare identify
 hooks:do identify
+set -eu
 
 echo:Success "Deprecated Versions Identification Complete"

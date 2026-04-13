@@ -14,7 +14,9 @@ ci:param release "CI_GIT_REF" "${CI_GIT_REF:?CI_GIT_REF is required}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+set +eu
 hooks:declare parse
 hooks:do parse
+set -eu
 
 echo:Success "Parse Tag Done"

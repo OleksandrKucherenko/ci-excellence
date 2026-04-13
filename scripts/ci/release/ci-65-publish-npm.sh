@@ -15,7 +15,9 @@ ci:secret release "NODE_AUTH_TOKEN" "${NODE_AUTH_TOKEN:-}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+set +eu
 hooks:declare publish
 hooks:do publish
+set -eu
 
 echo:Success "NPM Publishing Complete"

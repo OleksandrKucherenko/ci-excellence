@@ -13,7 +13,9 @@ echo:Setup "Set GitHub Username and Email for Bot"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+set +eu
 hooks:declare configure
 hooks:do configure
+set -eu
 
 echo:Success "GitHub Actions Bot Setup Completed"
