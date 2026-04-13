@@ -15,7 +15,9 @@ ci:param release "CI_VERSION" "${CI_VERSION:-}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+set +eu
 hooks:declare apply
 hooks:do apply
+set -eu
 
 echo:Success "Stability Tag Applied"

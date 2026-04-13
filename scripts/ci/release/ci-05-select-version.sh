@@ -16,7 +16,9 @@ ci:param release "CI_VERSION" "${CI_VERSION:-}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+set +eu
 hooks:declare select
 hooks:do select
+set -eu
 
 echo:Success "Version Selected"

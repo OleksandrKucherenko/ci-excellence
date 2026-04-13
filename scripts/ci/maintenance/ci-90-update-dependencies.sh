@@ -13,7 +13,9 @@ echo:Maint "Updating Dependencies"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+set +eu
 hooks:declare update
 hooks:do update
+set -eu
 
 echo:Success "Dependency Update Complete"

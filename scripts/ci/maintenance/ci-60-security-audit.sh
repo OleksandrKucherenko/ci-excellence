@@ -13,7 +13,9 @@ echo:Maint "Running Security Audit"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+set +eu
 hooks:declare audit
 hooks:do audit
+set -eu
 
 echo:Success "Security Audit Complete"

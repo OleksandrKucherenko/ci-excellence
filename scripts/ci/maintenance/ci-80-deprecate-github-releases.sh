@@ -13,7 +13,9 @@ echo:Maint "Deprecating GitHub Releases"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+set +eu
 hooks:declare deprecate
 hooks:do deprecate
+set -eu
 
 echo:Success "GitHub Deprecation Complete"

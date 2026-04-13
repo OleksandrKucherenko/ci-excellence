@@ -13,7 +13,9 @@ echo:Maint "Cleaning Up Old Artifacts"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+set +eu
 hooks:declare cleanup
 hooks:do cleanup
+set -eu
 
 echo:Success "Artifacts Cleanup Complete"

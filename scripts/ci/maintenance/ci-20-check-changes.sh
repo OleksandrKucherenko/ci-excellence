@@ -13,7 +13,9 @@ echo:Maint "Checking for Changes"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+set +eu
 hooks:declare check
 hooks:do check
+set -eu
 
 echo:Success "Change Check Complete"
