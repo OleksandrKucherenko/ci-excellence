@@ -3,66 +3,45 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Script: Unit Tests
-# Purpose: Run unit tests (technology-agnostic stub)
+# Purpose: Run unit tests
+# Hooks: begin, test, end (automatic)
+#   ci-cd/ci-10-unit-tests/begin_*.sh - pre-test setup (fixtures, mocks)
+#   ci-cd/ci-10-unit-tests/test_*.sh  - test commands (override default)
+#   ci-cd/ci-10-unit-tests/end_*.sh   - post-test cleanup (coverage upload)
+
+# Default test implementation: detects test framework and logs it.
+# Override by adding ci-cd/ci-10-unit-tests/test_40_your-tests.sh
+hook:test() {
+  if [ -f "jest.config.js" ] || [ -f "jest.config.ts" ]; then
+    echo:Test "Jest config detected"
+    # npm test -- --coverage
+  elif [ -f "vitest.config.js" ] || [ -f "vitest.config.ts" ]; then
+    echo:Test "Vitest config detected"
+    # npm run test:unit
+  elif [ -f "pytest.ini" ] || [ -f "pyproject.toml" ]; then
+    echo:Test "Python project detected"
+    # pytest --cov --cov-report=xml
+  elif [ -f "go.mod" ]; then
+    echo:Test "Go project detected"
+    # go test -v -race -coverprofile=coverage.out ./...
+  elif [ -f "Cargo.toml" ]; then
+    echo:Test "Rust project detected"
+    # cargo test
+  elif [ -f "package.json" ]; then
+    echo:Test "Node.js project detected"
+    # npm test
+  else
+    echo:Test "No test framework detected"
+  fi
+}
 
 echo:Test "Running Unit Tests"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
-EXIT_CODE=0
-
-# Example: Jest for JavaScript/TypeScript
-# if [ -f "jest.config.js" ] || [ -f "jest.config.ts" ]; then
-#     echo "Running Jest tests..."
-#     npm test -- --coverage || EXIT_CODE=$?
-# fi
-
-# Example: Vitest for JavaScript/TypeScript
-# if [ -f "vitest.config.js" ] || [ -f "vitest.config.ts" ]; then
-#     echo "Running Vitest tests..."
-#     npm run test:unit || EXIT_CODE=$?
-# fi
-
-# Example: Mocha for JavaScript
-# if [ -f "test/mocha.opts" ]; then
-#     echo "Running Mocha tests..."
-#     npm test || EXIT_CODE=$?
-# fi
-
-# Example: pytest for Python
-# if [ -f "pytest.ini" ] || [ -f "pyproject.toml" ]; then
-#     echo "Running pytest..."
-#     pytest --cov --cov-report=xml --cov-report=html || EXIT_CODE=$?
-# fi
-
-# Example: Go tests
-# if [ -f "go.mod" ]; then
-#     echo "Running Go tests..."
-#     go test -v -race -coverprofile=coverage.out ./... || EXIT_CODE=$?
-# fi
-
-# Example: Rust tests
-# if [ -f "Cargo.toml" ]; then
-#     echo "Running Rust tests..."
-#     cargo test || EXIT_CODE=$?
-# fi
-
-# Example: RSpec for Ruby
-# if [ -f "Gemfile" ]; then
-#     echo "Running RSpec tests..."
-#     bundle exec rspec || EXIT_CODE=$?
-# fi
-
-# Example: PHPUnit for PHP
-# if [ -f "phpunit.xml" ]; then
-#     echo "Running PHPUnit tests..."
-#     ./vendor/bin/phpunit || EXIT_CODE=$?
-# fi
-
-
-if [ $EXIT_CODE -ne 0 ]; then
-    echo:Error "⚠ Unit Tests Failed"
-    exit $EXIT_CODE
-fi
+set +eu
+hooks:declare test
+hooks:do test
+set -eu
 
 echo:Success "Unit Tests Complete"

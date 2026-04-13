@@ -64,7 +64,7 @@ logger:init "error"    "${cl_red}${st_bold}[ERROR]${cl_reset} "      ">&2"
 # Consuming projects drop scripts in ci-cd/{step_name}/ to extend behavior.
 # BASH_SOURCE[1] is the caller of _ci-common.sh (the step script itself).
 _CI_SCRIPT_NAME="$(basename "${BASH_SOURCE[1]:-unknown}" .sh)"
-export HOOKS_DIR="${HOOKS_DIR:-ci-cd/${_CI_SCRIPT_NAME}}"
+export HOOKS_DIR="${HOOKS_DIR:-${_REPO_ROOT}/ci-cd/${_CI_SCRIPT_NAME}}"
 
 # Bootstrap: declare begin + end hooks, install EXIT trap for end hooks
 hooks:bootstrap
