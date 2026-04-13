@@ -7,12 +7,13 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Hooks: begin, resolve, end (automatic)
 #   ci-cd/ci-12-set-version-outputs/resolve_*.sh - override version resolution
 #
-# Default strategy: find latest v* tag, increment based on CI_RELEASE_SCOPE.
-# Requires git tags to exist. Falls back to 0.1.0 if no tags found.
+# Default strategy: find latest tag, increment based on CI_RELEASE_SCOPE.
+# Monorepo: when CI_PACKAGE_PATH is set, matches package-scoped tags.
 
 echo:Release "Setting Version Outputs"
 ci:param release "CI_RELEASE_SCOPE" "${CI_RELEASE_SCOPE:-patch}"
 ci:param release "CI_PRE_RELEASE_TYPE" "${CI_PRE_RELEASE_TYPE:-false}"
+ci:param release "CI_PACKAGE_PATH" "${CI_PACKAGE_PATH:-}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
@@ -22,16 +23,26 @@ if ci:has_hooks resolve; then
   hooks:do resolve
   set -eu
 else
-  # Default: simple semver increment from latest tag
   SCOPE="${CI_RELEASE_SCOPE:-patch}"
   PRE_TYPE="${CI_PRE_RELEASE_TYPE:-false}"
+  PKG_PATH="${CI_PACKAGE_PATH:-}"
 
-  if ! CURRENT_TAG=$(git describe --tags --match "v*" --abbrev=0 2>/dev/null); then
-    CURRENT_TAG="v0.0.0"
-    echo:Release "No existing tags found, starting from 0.0.0"
+  # Tag pattern: package-scoped or repo-wide
+  if [ -n "$PKG_PATH" ]; then
+    TAG_MATCH="${PKG_PATH}/v*"
+    TAG_PREFIX="${PKG_PATH}/v"
+  else
+    TAG_MATCH="v*"
+    TAG_PREFIX="v"
   fi
 
-  CURRENT="${CURRENT_TAG#v}"
+  if ! CURRENT_TAG=$(git describe --tags --match "$TAG_MATCH" --abbrev=0 2>/dev/null); then
+    CURRENT_TAG="${TAG_PREFIX}0.0.0"
+    echo:Release "No existing tags matching ${TAG_MATCH}, starting from 0.0.0"
+  fi
+
+  # Strip tag prefix to get bare version
+  CURRENT="${CURRENT_TAG#"$TAG_PREFIX"}"
   IFS='.-' read -r MAJOR MINOR PATCH _ <<< "$CURRENT"
   MAJOR=${MAJOR:-0}; MINOR=${MINOR:-0}; PATCH=${PATCH:-0}
 
@@ -53,6 +64,7 @@ else
 
   ci:output release "version" "$VERSION"
   ci:output release "is-prerelease" "$IS_PRERELEASE"
+  [ -n "$PKG_PATH" ] && ci:output release "package-path" "$PKG_PATH"
 
   echo:Release "Calculated: ${CURRENT} -> ${VERSION} (scope: ${SCOPE})"
 fi
