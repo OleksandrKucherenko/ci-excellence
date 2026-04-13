@@ -25,7 +25,7 @@ set -u
 
 # Default: enable all CI loggers (CI environment is always verbose)
 # In local dev, user can control via DEBUG=build,test,-setup
-export DEBUG="${DEBUG:-ci,build,test,release,setup,notify,maint,report,security,ops}"
+export DEBUG="${DEBUG:-ci,build,test,release,setup,notify,maint,report,security,ops,success,error}"
 
 # Register domain loggers with colored prefixes, redirect to stderr.
 # Each tag has a distinct color for easy recognition in CI logs.
@@ -40,6 +40,11 @@ logger:init "maint"    "${cl_grey}${st_italic}[maint]${cl_reset} "   ">&2"
 logger:init "report"   "${cl_grey}[report]${cl_reset} "              ">&2"
 logger:init "security" "${cl_red}${st_bold}[security]${cl_reset} "   ">&2"
 logger:init "ops"      "${cl_lpurple}${st_bold}[ops]${cl_reset} "    ">&2"
+
+# Cross-cutting status loggers: filterable across all domains.
+# Grep for [SUCCESS] or [ERROR] to get a quick pass/fail summary of any pipeline.
+logger:init "success"  "${cl_green}${st_bold}[SUCCESS]${cl_reset} "  ">&2"
+logger:init "error"    "${cl_red}${st_bold}[ERROR]${cl_reset} "      ">&2"
 
 # ---------------------------------------------------------------------------
 # Parameter logging helpers

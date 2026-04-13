@@ -13,4 +13,4 @@ echo:Report "Generating Deprecation Summary"
   echo "Deprecated versions checked and updated"
 } >> "${GITHUB_STEP_SUMMARY}"
 
-echo:Report "Deprecation Summary Generated"
+echo:Success "Deprecation Summary Generated"

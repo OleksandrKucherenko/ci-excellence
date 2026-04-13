@@ -23,4 +23,4 @@ git add .
 git commit -m "chore(release): bump version to ${VERSION}" || echo "No changes to commit"
 git push origin "HEAD:${TARGET_BRANCH}" || echo "Nothing to push"
 
-echo:Release "Version Changes Committed"
+echo:Success "Version Changes Committed"

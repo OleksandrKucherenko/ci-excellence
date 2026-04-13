@@ -46,4 +46,4 @@ ENABLE_DEPENDENCY_UPDATE="${ENABLE_DEPENDENCY_UPDATE:-false}"
   echo "| Dependency Update | $DEPENDENCY_RESULT | $ENABLE_DEPENDENCY_UPDATE |"
 } >> "${GITHUB_STEP_SUMMARY}"
 
-echo:Report "Maintenance Summary Generated"
+echo:Success "Maintenance Summary Generated"

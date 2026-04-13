@@ -13,4 +13,4 @@ echo:Report "Generating Security Audit Summary"
   echo "Security audit completed at $(date)"
 } >> "${GITHUB_STEP_SUMMARY}"
 
-echo:Report "Security Audit Summary Generated"
+echo:Success "Security Audit Summary Generated"

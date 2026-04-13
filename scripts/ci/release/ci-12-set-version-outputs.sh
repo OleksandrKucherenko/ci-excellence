@@ -22,4 +22,4 @@ fi
 ci:output release "version" "$VERSION"
 ci:output release "is-prerelease" "$IS_PRERELEASE"
 
-echo:Release "Version Outputs Set"
+echo:Success "Version Outputs Set"

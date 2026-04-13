@@ -44,7 +44,7 @@ echo:Build "Compiling/Building Project"
 # fi
 
 # Add your build commands here
-echo:Build "✓ Build stub executed"
+echo:Success "✓ Build stub executed"
 echo:Build "  Customize this script in scripts/ci/build/ci-10-compile.sh"
 
-echo:Build "Build Complete"
+echo:Success "Build Complete"

@@ -12,11 +12,11 @@ ci:param ops "OPS_VERSION" "$VERSION"
 ci:param ops "OPS_CONFIRM" "$CONFIRM"
 
 if [ "$ENVIRONMENT" == "production" ] && [ "$CONFIRM" != "yes" ]; then
-  echo:Ops "Error: Production deployment requires confirmation 'yes'"
+  echo:Error "Error: Production deployment requires confirmation 'yes'"
   exit 1
 fi
 
 echo:Ops "Deploying ${VERSION} to ${ENVIRONMENT}..."
 echo:Ops "Stub: deploy-${ENVIRONMENT} is awaiting project-specific implementation."
 
-echo:Ops "Deploy Done"
+echo:Success "Deploy Done"

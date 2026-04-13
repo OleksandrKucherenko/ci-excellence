@@ -25,4 +25,4 @@ fi
 
 ci:output release "version" "$VERSION"
 
-echo:Release "Version Selected"
+echo:Success "Version Selected"

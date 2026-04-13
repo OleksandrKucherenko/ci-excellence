@@ -61,4 +61,4 @@ ENABLE_BUNDLE="${ENABLE_BUNDLE:-false}"
     echo "| Bundle | $BUNDLE_RESULT | $ENABLE_BUNDLE |" 
 } >> "${GITHUB_STEP_SUMMARY}"
 
-echo:Report "Pre-Release Summary Generated"
+echo:Success "Pre-Release Summary Generated"

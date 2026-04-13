@@ -11,16 +11,16 @@ EXIT_CODE=0
 
 # Ensure mise is available
 if ! command -v mise &> /dev/null; then
-    echo:Security "❌ mise not found. Please run setup script first."
+    echo:Error "❌ mise not found. Please run setup script first."
     exit 1
 fi
 
 # Run gitleaks via mise
 echo:Security "Running gitleaks secret detection..."
 if mise x -- gitleaks detect --redact --verbose --report-path gitleaks-report.json --report-format json; then
-    echo:Security "✓ No secrets detected by gitleaks"
+    echo:Success "✓ No secrets detected by gitleaks"
 else
-    echo:Security "⚠ Gitleaks found potential secrets!"
+    echo:Error "⚠ Gitleaks found potential secrets!"
     EXIT_CODE=1
 fi
 
@@ -29,9 +29,9 @@ echo:Security ""
 # Run trufflehog via mise
 echo:Security "Running trufflehog credential scan..."
 if mise x -- trufflehog git file://. --only-verified --fail --exclude-paths .trufflehogignore --json > trufflehog-report.json 2>&1; then
-    echo:Security "✓ No leaked credentials detected by trufflehog"
+    echo:Success "✓ No leaked credentials detected by trufflehog"
 else
-    echo:Security "⚠ Trufflehog found leaked credentials!"
+    echo:Error "⚠ Trufflehog found leaked credentials!"
     EXIT_CODE=1
 fi
 
@@ -68,7 +68,7 @@ echo:Security ""
 # fi
 
 # Add your security scanning commands here
-echo:Security "✓ Security scan stub executed"
+echo:Success "✓ Security scan stub executed"
 echo:Security "  Customize this script in scripts/ci/build/ci-30-security-scan.sh"
 
 # Create SARIF output for GitHub Security
@@ -93,7 +93,7 @@ cat > security-results.sarif <<EOF
 EOF
 
 if [ $EXIT_CODE -ne 0 ]; then
-    echo:Security "⚠ Security issues found"
+    echo:Error "⚠ Security issues found"
 
     # Show summary of findings
     if [ -f "gitleaks-report.json" ]; then
@@ -112,4 +112,4 @@ if [ $EXIT_CODE -ne 0 ]; then
     exit $EXIT_CODE
 fi
 
-echo:Security "Security Scan Complete"
+echo:Success "Security Scan Complete"

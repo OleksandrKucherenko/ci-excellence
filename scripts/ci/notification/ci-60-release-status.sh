@@ -30,4 +30,4 @@ else
   ci:output notify "message" "Release $VERSION Published ✅"
 fi
 
-echo:Notify "Release Status Determined"
+echo:Success "Release Status Determined"

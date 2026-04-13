@@ -32,8 +32,9 @@ if [ "$SETUP_RESULT" == "failure" ] || \
    [ "$E2E_RESULT" == "failure" ] || \
    [ "$SECURITY_RESULT" == "failure" ] || \
    [ "$BUNDLE_RESULT" == "failure" ]; then
+  echo:Error "One or more pipeline jobs failed"
   echo "::error::One or more pipeline jobs failed"
   exit 1
 fi
 
-echo:Build "Pipeline Check Complete"
+echo:Success "Pipeline Check Complete"

@@ -19,4 +19,4 @@ ci:param report "CI_VERSION" "$VERSION"
   echo "Rollback completed successfully"
 } >> "${GITHUB_STEP_SUMMARY}"
 
-echo:Report "Rollback Summary Generated"
+echo:Success "Rollback Summary Generated"

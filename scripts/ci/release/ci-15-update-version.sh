@@ -39,7 +39,7 @@ ci:param release "CI_VERSION" "$VERSION"
 # echo "$VERSION" > VERSION
 
 # Add your version update commands here
-echo:Release "✓ Version update stub executed"
+echo:Success "✓ Version update stub executed"
 echo:Release "  Customize this script in scripts/ci/release/ci-15-update-version.sh"
 
-echo:Release "Version Files Updated"
+echo:Success "Version Files Updated"

@@ -15,4 +15,4 @@ fi
 
 ./scripts/ci/release/ci-65-publish-npm.sh
 
-echo:Release "Publish NPM Release Done"
+echo:Success "Publish NPM Release Done"

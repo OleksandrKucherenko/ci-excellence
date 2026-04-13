@@ -28,4 +28,4 @@ ci:param report "RESULT_ROLLBACK" "$ROLLBACK_RESULT"
   echo "| Rollback | $ROLLBACK_RESULT |"
 } >> "${GITHUB_STEP_SUMMARY}"
 
-echo:Report "Post-Release Summary Generated"
+echo:Success "Post-Release Summary Generated"

@@ -44,4 +44,4 @@ ${CONTEXT}"
   ci:output:multiline notify "message" "$MESSAGE"
 fi
 
-echo:Notify "Pipeline Status Determined"
+echo:Success "Pipeline Status Determined"

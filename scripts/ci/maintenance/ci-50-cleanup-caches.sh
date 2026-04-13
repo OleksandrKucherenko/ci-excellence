@@ -22,7 +22,7 @@ echo:Maint "Cleaning Up Old Caches"
 # fi
 
 # Add your cleanup commands here
-echo:Maint "✓ Caches cleanup stub executed"
+echo:Success "✓ Caches cleanup stub executed"
 echo:Maint "  Customize this script in ${BASH_SOURCE[0]}"
 
-echo:Maint "Caches Cleanup Complete"
+echo:Success "Caches Cleanup Complete"

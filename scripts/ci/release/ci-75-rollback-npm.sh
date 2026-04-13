@@ -14,7 +14,7 @@ ci:secret release "NODE_AUTH_TOKEN" "${NODE_AUTH_TOKEN:-}"
 
 # Check if NODE_AUTH_TOKEN is set
 if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
-    echo:Release "⚠ NODE_AUTH_TOKEN is not set"
+    echo:Error "⚠ NODE_AUTH_TOKEN is not set"
     echo:Release "  Set this secret in GitHub to enable NPM operations"
     exit 1
 fi
@@ -31,7 +31,7 @@ fi
 # npm unpublish "$PACKAGE_NAME@$VERSION"
 
 # Add your NPM rollback commands here
-echo:Release "✓ NPM rollback stub executed"
+echo:Success "✓ NPM rollback stub executed"
 echo:Release "  Customize this script in scripts/ci/release/ci-75-rollback-npm.sh"
 
-echo:Release "NPM Rollback Complete"
+echo:Success "NPM Rollback Complete"

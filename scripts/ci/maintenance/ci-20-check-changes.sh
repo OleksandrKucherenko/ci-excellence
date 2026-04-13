@@ -15,4 +15,4 @@ else
   echo:Maint "Changes detected"
 fi
 
-echo:Maint "Change Check Complete"
+echo:Success "Change Check Complete"

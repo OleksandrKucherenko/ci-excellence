@@ -19,7 +19,7 @@ ci:secret notify "APPRISE_URLS" "${APPRISE_URLS:-}"
 if ! command -v apprise &> /dev/null; then
     echo:Notify "Installing Apprise..."
     pip3 install apprise || pip install apprise || {
-        echo:Notify "⚠ Failed to install Apprise"
+        echo:Error "⚠ Failed to install Apprise"
         echo:Notify "  Notifications will be skipped"
         exit 0
     }
@@ -29,7 +29,7 @@ fi
 NOTIFICATION_URLS="${APPRISE_URLS:-}"
 
 if [ -z "$NOTIFICATION_URLS" ]; then
-    echo:Notify "⚠ No notification URLs configured"
+    echo:Error "⚠ No notification URLs configured"
     echo:Notify "  Set APPRISE_URLS environment variable or GitHub secret"
     echo:Notify "  Example formats:"
     echo:Notify "    Slack:    slack://token_a/token_b/token_c"
@@ -108,10 +108,10 @@ if apprise \
     --input-format=html \
     --tag="$TYPE" \
     "${APPRISE_ARGS[@]}" 2>&1; then
-    echo:Notify "✓ Notification sent successfully"
+    echo:Success "✓ Notification sent successfully"
 else
-    echo:Notify "⚠ Failed to send notification (non-fatal)"
+    echo:Error "⚠ Failed to send notification (non-fatal)"
     exit 0
 fi
 
-echo:Notify "Notification Complete"
+echo:Success "Notification Complete"

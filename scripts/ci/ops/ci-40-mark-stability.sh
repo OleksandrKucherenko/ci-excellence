@@ -21,9 +21,9 @@ case "$ACTION" in
     ./scripts/ci/maintenance/ci-80-deprecate-github-releases.sh
     ;;
   *)
-    echo:Ops "Error: Unknown action '${ACTION}'. Use 'stable' or 'deprecated'."
+    echo:Error "Error: Unknown action '${ACTION}'. Use 'stable' or 'deprecated'."
     exit 1
     ;;
 esac
 
-echo:Ops "Mark Stability Done"
+echo:Success "Mark Stability Done"

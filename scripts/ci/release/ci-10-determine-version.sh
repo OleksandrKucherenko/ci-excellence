@@ -108,7 +108,7 @@ case "$RELEASE_TYPE" in
                        new_number=$((number + 1))
                        NEW_VERSION="$(get_base_version)-${PRE_RELEASE_TYPE}.${new_number}"
                    else
-                       echo:Release "Error: Cannot auto-increment complex pre-release identifier: $clean_pre"
+                       echo:Error "Error: Cannot auto-increment complex pre-release identifier: $clean_pre"
                        exit 1
                    fi
                 fi
@@ -120,13 +120,13 @@ case "$RELEASE_TYPE" in
         fi
         ;;
     *)
-        echo:Release "Error: Unknown release type '$RELEASE_TYPE'"
+        echo:Error "Error: Unknown release type '$RELEASE_TYPE'"
         exit 1
         ;;
 esac
 
 echo:Release "Calculated Version: $NEW_VERSION"
 
-echo:Release "Version Determination Complete"
+echo:Success "Version Determination Complete"
 
 echo "$NEW_VERSION"

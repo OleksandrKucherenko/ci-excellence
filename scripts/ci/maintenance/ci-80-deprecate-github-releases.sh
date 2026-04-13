@@ -28,7 +28,7 @@ echo:Maint "Deprecating GitHub Releases"
 # fi
 
 # Add your GitHub deprecation commands here
-echo:Maint "✓ GitHub deprecation stub executed"
+echo:Success "✓ GitHub deprecation stub executed"
 echo:Maint "  Customize this script in scripts/maintenance/deprecate-github-releases.sh"
 
-echo:Maint "GitHub Deprecation Complete"
+echo:Success "GitHub Deprecation Complete"

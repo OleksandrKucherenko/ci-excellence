@@ -34,4 +34,4 @@ else
   ci:output notify "message" "Post-Release Actions Completed ℹ️"
 fi
 
-echo:Notify "Post-Release Status Determined"
+echo:Success "Post-Release Status Determined"

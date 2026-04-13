@@ -19,4 +19,4 @@ ci:param report "CI_VERSION" "$VERSION"
   echo "All deployment targets verified successfully!"
 } >> "${GITHUB_STEP_SUMMARY}"
 
-echo:Report "Post-Release Verification Summary Generated"
+echo:Success "Post-Release Verification Summary Generated"

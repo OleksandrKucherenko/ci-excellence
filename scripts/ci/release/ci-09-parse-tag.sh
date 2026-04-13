@@ -21,4 +21,4 @@ ci:output release "is-prerelease" "$IS_PRERELEASE"
 echo:Release "Detected Version: $VERSION"
 echo:Release "Is Pre-release: $IS_PRERELEASE"
 
-echo:Release "Parse Tag Done"
+echo:Success "Parse Tag Done"

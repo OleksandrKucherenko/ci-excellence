@@ -63,7 +63,7 @@ ci:param release "CI_VERSION" "$VERSION"
 # fi
 
 # Add your changelog generation commands here
-echo:Release "✓ Changelog generation stub executed"
+echo:Success "✓ Changelog generation stub executed"
 echo:Release "  Customize this script in scripts/ci/release/ci-20-generate-changelog.sh"
 
-echo:Release "Changelog Generated"
+echo:Success "Changelog Generated"

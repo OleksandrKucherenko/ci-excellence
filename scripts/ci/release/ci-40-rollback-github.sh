@@ -30,7 +30,7 @@ ci:param release "CI_VERSION" "$VERSION"
 # fi
 
 # Add your GitHub rollback commands here
-echo:Release "✓ GitHub rollback stub executed"
+echo:Success "✓ GitHub rollback stub executed"
 echo:Release "  Customize this script in scripts/ci/release/ci-40-rollback-github.sh"
 
-echo:Release "GitHub Rollback Complete"
+echo:Success "GitHub Rollback Complete"

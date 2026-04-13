@@ -18,4 +18,4 @@ This action will:
   - Tag Docker images as deprecated (if enabled)
 EOF
 
-echo:Release "Rollback Confirmed"
+echo:Success "Rollback Confirmed"

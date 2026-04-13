@@ -26,7 +26,7 @@ VERSION="${VERSION#v}"
 # Resolve the version tag to a commit
 TARGET_COMMIT=$(git rev-list -n 1 "v${VERSION}" 2>/dev/null || echo "")
 if [ -z "$TARGET_COMMIT" ]; then
-  echo:Release "Error: Tag v${VERSION} not found"
+  echo:Error "Error: Tag v${VERSION} not found"
   exit 1
 fi
 
@@ -44,4 +44,4 @@ git push -f origin "$STABILITY_TAG"
   echo "**Tag:** \`${STABILITY_TAG}\`"
 } >> "${GITHUB_STEP_SUMMARY}"
 
-echo:Release "Stability Tag Applied"
+echo:Success "Stability Tag Applied"

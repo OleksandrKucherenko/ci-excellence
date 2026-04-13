@@ -26,7 +26,7 @@ ci:param release "CI_VERSION" "$VERSION"
 #     --clobber
 
 # Add your asset upload commands here
-echo:Release "✓ Asset upload stub executed"
+echo:Success "✓ Asset upload stub executed"
 echo:Release "  Customize this script in scripts/ci/release/ci-30-upload-assets.sh"
 
-echo:Release "Release Assets Uploaded"
+echo:Success "Release Assets Uploaded"

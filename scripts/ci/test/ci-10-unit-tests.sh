@@ -58,12 +58,12 @@ EXIT_CODE=0
 # fi
 
 # Add your unit testing commands here
-echo:Test "✓ Unit test stub executed"
+echo:Success "✓ Unit test stub executed"
 echo:Test "  Customize this script in scripts/ci/test/ci-10-unit-tests.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
-    echo:Test "⚠ Unit Tests Failed"
+    echo:Error "⚠ Unit Tests Failed"
     exit $EXIT_CODE
 fi
 
-echo:Test "Unit Tests Complete"
+echo:Success "Unit Tests Complete"

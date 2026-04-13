@@ -26,9 +26,9 @@ ci:param release "CI_VERSION" "$VERSION"
 # This typically requires using Docker Hub API or web interface
 
 # Add your Docker rollback commands here
-echo:Release "✓ Docker rollback stub executed"
+echo:Success "✓ Docker rollback stub executed"
 echo:Release "  Customize this script in scripts/ci/release/ci-90-rollback-docker.sh"
 echo:Release "  Note: Docker tags cannot be deleted from registries"
 echo:Release "  Consider updating image description or documentation"
 
-echo:Release "Docker Rollback Complete"
+echo:Success "Docker Rollback Complete"

@@ -33,4 +33,4 @@ else
   ci:output notify "message" "Maintenance Completed ✅"
 fi
 
-echo:Notify "Maintenance Status Determined"
+echo:Success "Maintenance Status Determined"

@@ -34,7 +34,7 @@ ci:param release "CI_VERSION" "$VERSION"
 # fi
 
 # Add your NPM verification commands here
-echo:Release "✓ NPM deployment verification stub executed"
+echo:Success "✓ NPM deployment verification stub executed"
 echo:Release "  Customize this script in scripts/ci/release/ci-70-verify-npm-deployment.sh"
 
-echo:Release "NPM Deployment Verification Complete"
+echo:Success "NPM Deployment Verification Complete"

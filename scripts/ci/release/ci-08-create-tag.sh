@@ -14,4 +14,4 @@ echo:Release "Creating tag: $TAG"
 git tag -a "$TAG" -m "Release $TAG"
 git push origin "$TAG"
 
-echo:Release "Create Tag Done"
+echo:Success "Create Tag Done"

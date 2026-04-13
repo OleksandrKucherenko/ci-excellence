@@ -14,7 +14,7 @@ ci:secret release "NODE_AUTH_TOKEN" "${NODE_AUTH_TOKEN:-}"
 
 # Check if NODE_AUTH_TOKEN is set
 if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
-    echo:Release "⚠ NODE_AUTH_TOKEN is not set"
+    echo:Error "⚠ NODE_AUTH_TOKEN is not set"
     echo:Release "  Set this secret in GitHub to enable NPM publishing"
     exit 1
 fi
@@ -32,7 +32,7 @@ fi
 # fi
 
 # Add your NPM publishing commands here
-echo:Release "✓ NPM publish stub executed"
+echo:Success "✓ NPM publish stub executed"
 echo:Release "  Customize this script in scripts/ci/release/ci-65-publish-npm.sh"
 
-echo:Release "NPM Publishing Complete"
+echo:Success "NPM Publishing Complete"

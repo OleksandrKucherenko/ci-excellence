@@ -18,13 +18,13 @@ if ! command -v mise &> /dev/null; then
 
     # Verify installation
     if command -v mise &> /dev/null; then
-        echo:Setup "✓ mise installed: $(mise --version)"
+        echo:Success "✓ mise installed: $(mise --version)"
     else
-        echo:Setup "❌ mise installation failed"
+        echo:Error "❌ mise installation failed"
         exit 1
     fi
 else
-    echo:Setup "✓ mise already installed: $(mise --version)"
+    echo:Success "✓ mise already installed: $(mise --version)"
 fi
 
 # Ensure mise is in PATH
@@ -46,9 +46,9 @@ if [[ -n "${GITHUB_TOKEN:-}" ]]; then
 fi
 
 if mise install; then
-    echo:Setup "✓ All tools installed successfully"
+    echo:Success "✓ All tools installed successfully"
 else
-    echo:Setup "❌ Failed to install some tools"
+    echo:Error "❌ Failed to install some tools"
     exit 1
 fi
 
@@ -57,16 +57,16 @@ echo:Setup ""
 echo:Setup "Verifying security tools installation..."
 
 if mise x -- gitleaks version &> /dev/null; then
-    echo:Setup "✓ gitleaks: $(mise x -- gitleaks version)"
+    echo:Success "✓ gitleaks: $(mise x -- gitleaks version)"
 else
-    echo:Setup "❌ gitleaks not found in mise"
+    echo:Error "❌ gitleaks not found in mise"
     exit 1
 fi
 
 if mise x -- trufflehog --version &> /dev/null; then
-    echo:Setup "✓ trufflehog: $(mise x -- trufflehog --version 2>&1 | head -1)"
+    echo:Success "✓ trufflehog: $(mise x -- trufflehog --version 2>&1 | head -1)"
 else
-    echo:Setup "❌ trufflehog not found in mise"
+    echo:Error "❌ trufflehog not found in mise"
     exit 1
 fi
 
@@ -76,4 +76,4 @@ echo:Setup "All installed tools:"
 mise list
 
 echo:Setup ""
-echo:Setup "Tool Installation Complete"
+echo:Success "Tool Installation Complete"

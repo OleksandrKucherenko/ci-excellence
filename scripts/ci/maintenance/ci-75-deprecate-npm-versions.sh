@@ -11,7 +11,7 @@ ci:secret maint "NODE_AUTH_TOKEN" "${NODE_AUTH_TOKEN:-}"
 
 # Check if NODE_AUTH_TOKEN is set
 if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
-    echo:Maint "⚠ NODE_AUTH_TOKEN is not set"
+    echo:Error "⚠ NODE_AUTH_TOKEN is not set"
     echo:Maint "  Set this secret in GitHub to enable NPM operations"
     exit 1
 fi
@@ -32,7 +32,7 @@ fi
 # fi
 
 # Add your NPM deprecation commands here
-echo:Maint "✓ NPM deprecation stub executed"
+echo:Success "✓ NPM deprecation stub executed"
 echo:Maint "  Customize this script in scripts/maintenance/deprecate-npm-versions.sh"
 
-echo:Maint "NPM Deprecation Complete"
+echo:Success "NPM Deprecation Complete"

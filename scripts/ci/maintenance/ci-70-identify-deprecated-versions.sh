@@ -24,7 +24,7 @@ echo:Maint "Identifying Deprecated Versions"
 #     jq -r '.[] | select(test("-alpha|-beta|-rc"))'
 
 # Add your version identification commands here
-echo:Maint "✓ Deprecated versions identification stub executed"
+echo:Success "✓ Deprecated versions identification stub executed"
 echo:Maint "  Customize this script in scripts/maintenance/identify-deprecated-versions.sh"
 
-echo:Maint "Deprecated Versions Identification Complete"
+echo:Success "Deprecated Versions Identification Complete"

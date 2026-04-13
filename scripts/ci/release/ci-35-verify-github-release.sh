@@ -33,7 +33,7 @@ ci:param release "CI_VERSION" "$VERSION"
 # fi
 
 # Add your GitHub verification commands here
-echo:Release "✓ GitHub release verification stub executed"
+echo:Success "✓ GitHub release verification stub executed"
 echo:Release "  Customize this script in scripts/ci/release/ci-35-verify-github-release.sh"
 
-echo:Release "GitHub Release Verification Complete"
+echo:Success "GitHub Release Verification Complete"

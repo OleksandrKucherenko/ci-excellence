@@ -42,12 +42,12 @@ EXIT_CODE=0
 # fi
 
 # Add your smoke testing commands here
-echo:Test "✓ Smoke test stub executed"
+echo:Success "✓ Smoke test stub executed"
 echo:Test "  Customize this script in scripts/ci/test/ci-40-smoke-tests.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
-    echo:Test "⚠ Smoke Tests Failed"
+    echo:Error "⚠ Smoke Tests Failed"
     exit $EXIT_CODE
 fi
 
-echo:Test "Smoke Tests Complete"
+echo:Success "Smoke Tests Complete"

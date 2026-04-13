@@ -39,7 +39,7 @@ echo:Release "Publishing Documentation"
 # echo "Documentation will be automatically built by Read the Docs"
 
 # Add your documentation publishing commands here
-echo:Release "✓ Documentation publish stub executed"
+echo:Success "✓ Documentation publish stub executed"
 echo:Release "  Customize this script in scripts/ci/release/ci-55-publish-docs.sh"
 
-echo:Release "Documentation Publishing Complete"
+echo:Success "Documentation Publishing Complete"

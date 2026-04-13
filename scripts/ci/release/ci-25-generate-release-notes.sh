@@ -49,4 +49,4 @@ npm install mypackage@$VERSION
 See [CHANGELOG.md](CHANGELOG.md) for detailed changes.
 EOF
 
-echo:Release "Release Notes Generated"
+echo:Success "Release Notes Generated"

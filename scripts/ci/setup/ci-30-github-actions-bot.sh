@@ -10,13 +10,13 @@ echo:Setup "Set GitHub Username and Email for Bot"
 git config user.name "github-actions[bot]"
 git config user.email "github-actions[bot]@users.noreply.github.com"
 
-echo:Setup "✓ GitHub username and email configured:"
+echo:Success "✓ GitHub username and email configured:"
 echo:Setup "  Name: $(git config user.name)"
 echo:Setup "  Email: $(git config user.email)"
 
 
 # Add your bot setup commands here
-echo:Setup "✓ git bot setup stub executed"
+echo:Success "✓ git bot setup stub executed"
 echo:Setup "  Customize this script in ${BASH_SOURCE[0]} as needed"
 
-echo:Setup "GitHub Actions Bot Setup Completed"
+echo:Success "GitHub Actions Bot Setup Completed"

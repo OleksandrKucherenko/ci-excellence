@@ -45,7 +45,7 @@ ci:param notify "ENABLE_NOTIFICATIONS" "$ENABLE_NOTIFICATIONS"
 if [ -n "$ENABLE_NOTIFICATIONS" ] && is_false "$ENABLE_NOTIFICATIONS"; then
     echo:Notify "Notifications explicitly disabled via ENABLE_NOTIFICATIONS=$ENABLE_NOTIFICATIONS"
     ci:output notify "enabled" "false"
-    echo:Notify "Notification Check Complete"
+    echo:Success "Notification Check Complete"
     exit 0
 fi
 
@@ -55,27 +55,27 @@ FINAL_URLS=""
 if [ -n "$APPRISE_URLS" ]; then
     # Use Apprise URLs directly
     FINAL_URLS="$APPRISE_URLS"
-    echo:Notify "✓ Using APPRISE_URLS for notifications"
+    echo:Success "✓ Using APPRISE_URLS for notifications"
 elif [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
     # Convert Telegram credentials to Apprise format with HTML formatting
     FINAL_URLS="tgram://${TELEGRAM_BOT_TOKEN}/${TELEGRAM_CHAT_ID}?format=html"
-    echo:Notify "✓ Converting Telegram credentials to Apprise format (HTML mode)"
+    echo:Success "✓ Converting Telegram credentials to Apprise format (HTML mode)"
 fi
 
 # Check if we have any notification URLs
 if [ -n "$FINAL_URLS" ]; then
-    echo:Notify "✓ Notifications enabled"
+    echo:Success "✓ Notifications enabled"
     ci:output notify "enabled" "true"
     echo "apprise_urls=$FINAL_URLS" >> "$GITHUB_OUTPUT"
     ci:secret notify "apprise_urls (output)" "$FINAL_URLS"
-    echo:Notify "Notification Check Complete"
+    echo:Success "Notification Check Complete"
     exit 0
 else
-    echo:Notify "✗ No notification credentials available"
+    echo:Error "✗ No notification credentials available"
     echo:Notify "  Set either:"
     echo:Notify "    - APPRISE_URLS (supports 90+ services)"
     echo:Notify "    - TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID (Telegram only)"
     ci:output notify "enabled" "false"
-    echo:Notify "Notification Check Complete"
+    echo:Success "Notification Check Complete"
     exit 0
 fi

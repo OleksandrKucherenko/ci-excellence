@@ -50,7 +50,7 @@ ci:param release "CI_VERSION" "$VERSION"
 # fi
 
 # Add your documentation build commands here
-echo:Release "✓ Documentation build stub executed"
+echo:Success "✓ Documentation build stub executed"
 echo:Release "  Customize this script in scripts/ci/release/ci-50-build-docs.sh"
 
-echo:Release "Documentation Build Complete"
+echo:Success "Documentation Build Complete"

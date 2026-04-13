@@ -92,4 +92,4 @@ ENABLE_DOCUMENTATION="${ENABLE_DOCUMENTATION:-false}"
 #   gh pr comment "$PR_NUMBER" --body "Release $VERSION summary..."
 # fi
 
-echo:Report "Release Summary Generated"
+echo:Success "Release Summary Generated"

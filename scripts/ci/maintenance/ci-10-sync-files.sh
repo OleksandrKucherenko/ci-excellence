@@ -36,7 +36,7 @@ echo:Maint "Synchronizing Version Files"
 # fi
 
 # Add your sync commands here
-echo:Maint "✓ Version files sync stub executed"
+echo:Success "✓ Version files sync stub executed"
 echo:Maint "  Customize this script in ${BASH_SOURCE[0]} to fit your project's needs."
 
-echo:Maint "Version Files Synchronization Complete"
+echo:Success "Version Files Synchronization Complete"

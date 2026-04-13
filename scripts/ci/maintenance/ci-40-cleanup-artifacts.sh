@@ -24,7 +24,7 @@ echo:Maint "Cleaning Up Old Artifacts"
 # fi
 
 # Add your cleanup commands here
-echo:Maint "✓ Artifacts cleanup stub executed"
+echo:Success "✓ Artifacts cleanup stub executed"
 echo:Maint "  Customize this script in ${BASH_SOURCE[0]}"
 
-echo:Maint "Artifacts Cleanup Complete"
+echo:Success "Artifacts Cleanup Complete"

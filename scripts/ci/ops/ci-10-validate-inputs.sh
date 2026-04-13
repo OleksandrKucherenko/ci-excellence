@@ -10,8 +10,8 @@ ci:param ops "OPS_ACTION" "$ACTION"
 ci:param ops "OPS_VERSION" "$VERSION"
 
 if [[ -z "$VERSION" ]]; then
-  echo:Ops "Error: Version is required"
+  echo:Error "Error: Version is required"
   exit 1
 fi
 
-echo:Ops "Validate Inputs Done"
+echo:Success "Validate Inputs Done"

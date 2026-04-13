@@ -14,4 +14,4 @@ NOTES=$(./scripts/ci/release/ci-25-generate-release-notes.sh)
 
 ci:output:multiline release "notes" "$NOTES"
 
-echo:Release "Release Notes Output Written"
+echo:Success "Release Notes Output Written"

@@ -38,7 +38,7 @@ echo:Build "Creating Bundle/Package"
 # tar -czf dist.tar.gz dist/
 
 # Add your bundling commands here
-echo:Build "✓ Bundle stub executed"
+echo:Success "✓ Bundle stub executed"
 echo:Build "  Customize this script in scripts/ci/build/ci-40-bundle.sh"
 
-echo:Build "Bundling Complete"
+echo:Success "Bundling Complete"

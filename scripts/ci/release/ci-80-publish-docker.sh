@@ -48,7 +48,7 @@ ci:param release "CI_IS_PRERELEASE" "$IS_PRERELEASE"
 # docker push "$IMAGE_NAME:latest"
 
 # Add your Docker publishing commands here
-echo:Release "✓ Docker publish stub executed"
+echo:Success "✓ Docker publish stub executed"
 echo:Release "  Customize this script in scripts/ci/release/ci-80-publish-docker.sh"
 
-echo:Release "Docker Publishing Complete"
+echo:Success "Docker Publishing Complete"

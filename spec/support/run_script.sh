@@ -32,6 +32,8 @@ logger:init "maint"    "${cl_grey:-}${st_italic:-}[maint]${cl_reset:-} "   ">&2"
 logger:init "report"   "${cl_grey:-}[report]${cl_reset:-} "                ">&2" 2>/dev/null
 logger:init "security" "${cl_red:-}${st_bold:-}[security]${cl_reset:-} "   ">&2" 2>/dev/null
 logger:init "ops"      "${cl_lpurple:-}${st_bold:-}[ops]${cl_reset:-} "    ">&2" 2>/dev/null
+logger:init "success"  "${cl_green:-}${st_bold:-}[SUCCESS]${cl_reset:-} "  ">&2" 2>/dev/null
+logger:init "error"    "${cl_red:-}${st_bold:-}[ERROR]${cl_reset:-} "      ">&2" 2>/dev/null
 
 # Pre-source semver library (used by release scripts)
 # shellcheck disable=SC1090,SC1091

@@ -35,13 +35,13 @@ EXIT_CODE=0
 # fi
 
 # Add your security audit commands here
-echo:Maint "✓ Security audit stub executed"
+echo:Success "✓ Security audit stub executed"
 echo:Maint "  Customize this script in scripts/maintenance/security-audit.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
-    echo:Maint "⚠ Security vulnerabilities found"
+    echo:Error "⚠ Security vulnerabilities found"
     # Don't exit with error for now, just warn
     # exit $EXIT_CODE
 fi
 
-echo:Maint "Security Audit Complete"
+echo:Success "Security Audit Complete"

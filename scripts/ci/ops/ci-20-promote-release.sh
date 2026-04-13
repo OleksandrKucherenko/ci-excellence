@@ -15,4 +15,4 @@ echo:Ops "  gh workflow run release.yml -f release-scope=... -f pre-release-type
 echo:Ops ""
 echo:Ops "See: Actions > Release Pipeline > Run workflow"
 
-echo:Ops "Promote Release Done"
+echo:Success "Promote Release Done"

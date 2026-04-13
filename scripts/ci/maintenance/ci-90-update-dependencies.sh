@@ -49,7 +49,7 @@ echo:Maint "Updating Dependencies"
 # fi
 
 # Add your dependency update commands here
-echo:Maint "✓ Dependency update stub executed"
+echo:Success "✓ Dependency update stub executed"
 echo:Maint "  Customize this script in scripts/maintenance/update-dependencies.sh"
 
-echo:Maint "Dependency Update Complete"
+echo:Success "Dependency Update Complete"

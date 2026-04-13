@@ -52,12 +52,12 @@ EXIT_CODE=0
 # fi
 
 # Add your linting commands here
-echo:Build "✓ Lint stub executed"
+echo:Success "✓ Lint stub executed"
 echo:Build "  Customize this script in scripts/ci/build/ci-20-lint.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
-    echo:Build "⚠ Linting Failed"
+    echo:Error "⚠ Linting Failed"
     exit $EXIT_CODE
 fi
 
-echo:Build "Linting Complete"
+echo:Success "Linting Complete"

@@ -19,4 +19,4 @@ else
   echo "All files are in sync." >> $GITHUB_STEP_SUMMARY
 fi
 
-echo:Report "Sync Summary Generated"
+echo:Success "Sync Summary Generated"

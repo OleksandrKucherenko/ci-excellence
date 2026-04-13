@@ -31,7 +31,7 @@ ci:param release "CI_VERSION" "$VERSION"
 # docker run --rm "$IMAGE_NAME:$VERSION" --version
 
 # Add your Docker verification commands here
-echo:Release "✓ Docker deployment verification stub executed"
+echo:Success "✓ Docker deployment verification stub executed"
 echo:Release "  Customize this script in scripts/ci/release/ci-85-verify-docker-deployment.sh"
 
-echo:Release "Docker Deployment Verification Complete"
+echo:Success "Docker Deployment Verification Complete"

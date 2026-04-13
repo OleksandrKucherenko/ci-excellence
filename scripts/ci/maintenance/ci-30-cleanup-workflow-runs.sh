@@ -24,7 +24,7 @@ echo:Maint "Cleaning Up Old Workflow Runs"
 # fi
 
 # Add your cleanup commands here
-echo:Maint "✓ Workflow runs cleanup stub executed"
+echo:Success "✓ Workflow runs cleanup stub executed"
 echo:Maint "  Customize this script in ${BASH_SOURCE[0]}"
 
-echo:Maint "Workflow Runs Cleanup Complete"
+echo:Success "Workflow Runs Cleanup Complete"

@@ -21,4 +21,4 @@ ci:param report "MAINT_HAS_CHANGES" "$HAS_CHANGES"
   fi
 } >> "${GITHUB_STEP_SUMMARY}"
 
-echo:Report "Dependency Update Summary Generated"
+echo:Success "Dependency Update Summary Generated"
