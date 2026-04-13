@@ -13,6 +13,8 @@ echo:Maint "Cleaning Up Old Caches"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+ci:skip_if_no_hooks cleanup
+
 set +eu
 hooks:declare cleanup
 hooks:do cleanup

@@ -14,6 +14,8 @@ ci:param release "CI_GIT_REF" "${CI_GIT_REF:?CI_GIT_REF is required}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+ci:skip_if_no_hooks parse
+
 set +eu
 hooks:declare parse
 hooks:do parse

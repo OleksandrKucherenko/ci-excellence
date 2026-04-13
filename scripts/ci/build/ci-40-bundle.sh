@@ -13,6 +13,8 @@ echo:Build "Creating Bundle/Package"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+ci:skip_if_no_hooks bundle
+
 set +eu
 hooks:declare bundle
 hooks:do bundle

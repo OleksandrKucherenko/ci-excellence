@@ -14,6 +14,8 @@ ci:param release "CI_VERSION" "${CI_VERSION:-unknown}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+ci:skip_if_no_hooks confirm
+
 set +eu
 hooks:declare confirm
 hooks:do confirm

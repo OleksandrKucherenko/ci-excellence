@@ -14,6 +14,8 @@ ci:secret setup "GITHUB_TOKEN" "${GITHUB_TOKEN:-}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+ci:skip_if_no_hooks install
+
 set +eu
 hooks:declare install
 hooks:do install

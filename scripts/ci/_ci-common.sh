@@ -135,6 +135,41 @@ ci:output:multiline() {
 }
 
 # ---------------------------------------------------------------------------
+# Hook detection helpers
+# ---------------------------------------------------------------------------
+# Check if any hook implementations exist for a given hook name.
+# Returns 0 if at least one implementation is found, 1 otherwise.
+# Checks: hook:<name> function, registered functions, and scripts in HOOKS_DIR.
+#   ci:has_hooks <hook_name>
+ci:has_hooks() {
+  local hook_name="${1}"
+  # Check for hook:<name> function
+  if declare -f "${HOOKS_PREFIX:-hook:}${hook_name}" &>/dev/null; then
+    return 0
+  fi
+  # Check for scripts in HOOKS_DIR
+  if [ -d "${HOOKS_DIR:-}" ]; then
+    local count
+    count=$(find "${HOOKS_DIR}" -maxdepth 1 \( -name "${hook_name}-*.sh" -o -name "${hook_name}_*.sh" \) -type f 2>/dev/null | wc -l)
+    if [ "$count" -gt 0 ]; then
+      return 0
+    fi
+  fi
+  return 1
+}
+
+# Skip the current script if no hook implementations exist for the given hook.
+# Logs a skip message and exits 0 — the step succeeds without doing work.
+#   ci:skip_if_no_hooks <hook_name>
+ci:skip_if_no_hooks() {
+  local hook_name="${1}"
+  if ! ci:has_hooks "$hook_name"; then
+    echo:CI "No hooks for '${hook_name}' in ${HOOKS_DIR:-<unset>}, skipping"
+    exit 0
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # Environment variable helpers
 # ---------------------------------------------------------------------------
 # Verify a required env var is set, log it, and exit 1 if missing.
