@@ -4,13 +4,15 @@ Describe 'ci-07-apply-stability-tag.sh'
 
   Describe 'missing arguments'
     It 'exits 1 when no arguments are provided'
+      export CI_STABILITY_TAG="" CI_VERSION=""
       When run bash "$RUN_SCRIPT" "$SCRIPT"
       The status should equal 1
       The stderr should include 'Applying Stability Tag'
     End
 
     It 'exits 1 when only tag name is provided'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" stable
+      export CI_STABILITY_TAG=stable CI_VERSION=""
+      When run bash "$RUN_SCRIPT" "$SCRIPT"
       The status should equal 1
       The stderr should include 'Usage:'
     End
@@ -44,7 +46,8 @@ Describe 'ci-07-apply-stability-tag.sh'
     After 'cleanup_git_repo'
 
     It 'exits 1 when version tag does not exist'
-      When run bash -c "cd '$_tmp_repo' && bash '$RUN_SCRIPT' '$SCRIPT' stable 9.9.9"
+      export CI_STABILITY_TAG=stable CI_VERSION=9.9.9
+      When run bash -c "cd '$_tmp_repo' && bash '$RUN_SCRIPT' '$SCRIPT'"
       The status should equal 1
       The stderr should include 'not found'
     End

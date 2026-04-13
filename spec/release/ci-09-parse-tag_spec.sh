@@ -8,7 +8,8 @@ Describe 'ci-09-parse-tag.sh'
 
   Describe 'standard release tag'
     It 'parses refs/tags/v1.2.3 and writes version=1.2.3 to GITHUB_OUTPUT'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" "refs/tags/v1.2.3"
+      export CI_GIT_REF="refs/tags/v1.2.3"
+      When run bash "$RUN_SCRIPT" "$SCRIPT"
       The contents of file "$GITHUB_OUTPUT" should include 'version=1.2.3'
       The status should equal 0
     End
@@ -16,7 +17,8 @@ Describe 'ci-09-parse-tag.sh'
 
   Describe 'pre-release tag'
     It 'sets is-prerelease=true for refs/tags/v1.0.0-alpha'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" "refs/tags/v1.0.0-alpha"
+      export CI_GIT_REF="refs/tags/v1.0.0-alpha"
+      When run bash "$RUN_SCRIPT" "$SCRIPT"
       The contents of file "$GITHUB_OUTPUT" should include 'is-prerelease=true'
       The status should equal 0
     End
@@ -24,7 +26,8 @@ Describe 'ci-09-parse-tag.sh'
 
   Describe 'stable release tag'
     It 'sets is-prerelease=false for refs/tags/v2.0.0'
-      When run bash "$RUN_SCRIPT" "$SCRIPT" "refs/tags/v2.0.0"
+      export CI_GIT_REF="refs/tags/v2.0.0"
+      When run bash "$RUN_SCRIPT" "$SCRIPT"
       The contents of file "$GITHUB_OUTPUT" should include 'is-prerelease=false'
       The status should equal 0
     End
