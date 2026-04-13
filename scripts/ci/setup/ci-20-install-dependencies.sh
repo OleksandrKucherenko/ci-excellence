@@ -6,6 +6,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Install project dependencies (technology-agnostic stub)
 
 echo:Setup "Installing Project Dependencies"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 # Detect package manager and install dependencies
 if [ -f "package.json" ]; then

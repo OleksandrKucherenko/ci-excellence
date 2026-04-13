@@ -7,6 +7,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Customize this script based on your documentation hosting
 
 echo:Release "Publishing Documentation"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 
 # Example: GitHub Pages

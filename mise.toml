@@ -5,7 +5,7 @@ verbose = false                             # enable if SOPS is failing or you n
 
 [[env]]
 _.file = [".ebashrc"] # read custom e-bash installation directory
-E_BASH = "{{config_root}}/{{env.E_BASH_INSTALL_DIR}}"
+E_BASH = "{{config_root}}/scripts/lib"
 
 # Load local overrides and then defaults from .env file
 [[env]]

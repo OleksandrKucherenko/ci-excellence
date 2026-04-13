@@ -6,6 +6,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Check if git working tree has changes
 
 echo:Maint "Checking for Changes"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 if git diff --quiet; then
   ci:output maint "has-changes" "false"

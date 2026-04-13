@@ -6,6 +6,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Purpose: Run linters and code style checks (technology-agnostic stub)
 
 echo:Build "Running Linters"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 EXIT_CODE=0
 

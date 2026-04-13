@@ -13,6 +13,8 @@ echo:Release "Selecting Version"
 ci:param release "CI_EVENT_NAME" "$EVENT_NAME"
 ci:param release "CI_RELEASE_TAG" "$RELEASE_TAG"
 ci:param release "CI_VERSION" "$INPUT_VERSION"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 
 if [ "$EVENT_NAME" == "release" ] && [ -n "$RELEASE_TAG" ]; then

@@ -7,6 +7,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Customize this script based on your retention policy
 
 echo:Maint "Cleaning Up Old Artifacts"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 # Example: Delete artifacts older than 7 days using gh CLI
 # if command -v gh &> /dev/null; then

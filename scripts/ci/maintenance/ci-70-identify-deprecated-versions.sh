@@ -7,6 +7,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 # Customize this script based on your deprecation policy
 
 echo:Maint "Identifying Deprecated Versions"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 # Example: List versions older than 1 year
 # if [ -f "package.json" ] && command -v npm &> /dev/null; then

@@ -10,6 +10,8 @@ VERSION="${CI_VERSION:?CI_VERSION is required}"
 
 echo:Release "Rolling Back Docker Release"
 ci:param release "CI_VERSION" "$VERSION"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 
 # Example: Tag image as deprecated

@@ -11,6 +11,8 @@ TAG="${CI_NPM_TAG:---tag latest}"
 echo:Release "Publishing to NPM"
 ci:param release "CI_NPM_TAG" "${TAG}"
 ci:secret release "NODE_AUTH_TOKEN" "${NODE_AUTH_TOKEN:-}"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 
 # Check if NODE_AUTH_TOKEN is set

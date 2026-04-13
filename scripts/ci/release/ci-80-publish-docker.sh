@@ -12,6 +12,8 @@ IS_PRERELEASE="${CI_IS_PRERELEASE:-false}"
 echo:Release "Publishing Docker Image"
 ci:param release "CI_VERSION" "$VERSION"
 ci:param release "CI_IS_PRERELEASE" "$IS_PRERELEASE"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 
 # Example: Build and push to Docker Hub

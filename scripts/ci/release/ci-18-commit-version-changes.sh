@@ -11,6 +11,8 @@ VERSION="${CI_VERSION:-}"
 echo:Release "Committing Version Changes"
 ci:param release "CI_TARGET_BRANCH" "$TARGET_BRANCH"
 ci:param release "CI_VERSION" "$VERSION"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 
 if [ -z "$VERSION" ]; then

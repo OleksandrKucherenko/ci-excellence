@@ -18,6 +18,8 @@ ci:param notify "RESULT_SYNC" "$SYNC_RESULT"
 ci:param notify "RESULT_DEPRECATION" "$DEPRECATION_RESULT"
 ci:param notify "RESULT_SECURITY" "$SECURITY_RESULT"
 ci:param notify "RESULT_DEPENDENCY" "$DEPENDENCY_RESULT"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 if [ "$SECURITY_RESULT" == "failure" ]; then
   ci:output notify "status" "failure"

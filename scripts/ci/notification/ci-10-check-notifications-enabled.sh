@@ -68,6 +68,8 @@ if [ -n "$FINAL_URLS" ]; then
     ci:output notify "enabled" "true"
     echo "apprise_urls=$FINAL_URLS" >> "$GITHUB_OUTPUT"
     ci:secret notify "apprise_urls (output)" "$FINAL_URLS"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
     echo:Success "Notification Check Complete"
     exit 0
 else

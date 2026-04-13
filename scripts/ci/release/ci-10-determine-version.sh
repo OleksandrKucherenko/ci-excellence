@@ -30,6 +30,8 @@ set -u
 echo:Release "Determining Next Version"
 ci:param release "CI_RELEASE_SCOPE" "$RELEASE_TYPE"
 ci:param release "CI_PRE_RELEASE_TYPE" "$PRE_RELEASE_TYPE"
+hooks:do begin "${BASH_SOURCE[0]##*/}"
+hooks:flow:apply
 
 
 # Get current version details
