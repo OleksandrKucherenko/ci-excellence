@@ -1,0 +1,332 @@
+name: Release Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      release-scope:
+        description: 'Release scope'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+          - premajor
+          - preminor
+          - prepatch
+          - prerelease
+      pre-release-type:
+        description: 'Pre-release identifier (for pre-* scopes)'
+        required: false
+        default: 'alpha'
+        type: choice
+        options:
+          - alpha
+          - beta
+          - rc
+          - hotfix
+          - canary
+          - nightly
+      dry-run:
+        description: 'Dry run (calculate version only)'
+        required: false
+        type: boolean
+        default: false
+
+  push:
+    tags:
+      - '**/v*' # Matches v1.0.0, packages/app/v1.0.0
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # CI Feature Flags
+  ENABLE_COMPILE: ${{ vars.ENABLE_COMPILE || 'false' }}
+  ENABLE_TESTS: ${{ vars.ENABLE_TESTS || 'false' }}
+  ENABLE_NPM_PUBLISH: ${{ vars.ENABLE_NPM_PUBLISH || 'false' }}
+  ENABLE_GITHUB_RELEASE: ${{ vars.ENABLE_GITHUB_RELEASE || 'false' }}
+  ENABLE_DOCKER_PUBLISH: ${{ vars.ENABLE_DOCKER_PUBLISH || 'false' }}
+  ENABLE_DOCUMENTATION: ${{ vars.ENABLE_DOCUMENTATION || 'false' }}
+
+jobs:
+  # Job 1: Manual Trigger -> Create Tag
+  tag-version:
+    if: github.event_name == 'workflow_dispatch'
+    name: Tag New Version
+    runs-on: ubuntu-latest
+    env:
+      CI_RELEASE_SCOPE: ${{ github.event.inputs.release-scope }}
+      CI_PRE_RELEASE_TYPE: ${{ github.event.inputs.pre-release-type }}
+      CI_DRY_RUN: ${{ github.event.inputs.dry-run }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup environment
+        run: ./scripts/ci/setup/ci-10-install-tools.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Determine version
+        id: version
+        run: ./scripts/ci/release/ci-12-set-version-outputs.sh
+
+      - name: Create and Push Tag
+        if: ${{ github.event.inputs.dry-run != 'true' }}
+        env:
+          CI_VERSION: ${{ steps.version.outputs.version }}
+        run: ./scripts/ci/release/ci-08-create-tag.sh
+
+  # Job 2: Tag Trigger -> Build & Publish
+  prepare:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    env:
+      CI_GIT_REF: ${{ github.ref }}
+    outputs:
+      version: ${{ steps.parse.outputs.version }}
+      is-prerelease: ${{ steps.parse.outputs.is-prerelease }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Parse Tag
+        id: parse
+        run: ./scripts/ci/release/ci-09-parse-tag.sh
+
+      - name: Generate changelog
+        env:
+          CI_VERSION: ${{ steps.parse.outputs.version }}
+        run: ./scripts/ci/release/ci-20-generate-changelog.sh
+
+  build:
+    name: Build Release Artifacts
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: ${{ vars.ENABLE_COMPILE == 'true' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        run: ./scripts/ci/setup/ci-10-install-tools.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install dependencies
+        run: ./scripts/ci/setup/ci-20-install-dependencies.sh
+      - name: Build
+        run: ./scripts/ci/build/ci-10-compile.sh
+      - name: Bundle
+        run: ./scripts/ci/build/ci-40-bundle.sh
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: |
+            dist/
+            build/
+            *.tgz
+            *.tar.gz
+          retention-days: 90
+
+  test:
+    name: Test Release Build
+    runs-on: ubuntu-latest
+    needs: build
+    if: ${{ vars.ENABLE_TESTS == 'true' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        run: ./scripts/ci/setup/ci-10-install-tools.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install dependencies
+        run: ./scripts/ci/setup/ci-20-install-dependencies.sh
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+      - name: Run unit tests
+        run: ./scripts/ci/test/ci-10-unit-tests.sh
+      - name: Run integration tests
+        run: ./scripts/ci/test/ci-20-integration-tests.sh
+
+  publish-npm:
+    name: Publish to NPM
+    runs-on: ubuntu-latest
+    needs: [prepare, build, test]
+    if: |
+      always() &&
+      needs.prepare.result == 'success' &&
+      (needs.build.result == 'success' || needs.build.result == 'skipped') &&
+      (needs.test.result == 'success' || needs.test.result == 'skipped') &&
+      vars.ENABLE_NPM_PUBLISH == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          registry-url: 'https://registry.npmjs.org'
+      - name: Download build artifacts
+        if: ${{ vars.ENABLE_COMPILE == 'true' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+      - name: Publish to NPM
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          CI_IS_PRERELEASE: ${{ needs.prepare.outputs.is-prerelease }}
+        run: ./scripts/ci/release/ci-66-publish-npm-release.sh
+
+  publish-github:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [prepare, build, test]
+    if: |
+      always() &&
+      needs.prepare.result == 'success' &&
+      (needs.build.result == 'success' || needs.build.result == 'skipped') &&
+      (needs.test.result == 'success' || needs.test.result == 'skipped') &&
+      vars.ENABLE_GITHUB_RELEASE == 'true'
+    permissions:
+      contents: write
+    env:
+      CI_VERSION: ${{ needs.prepare.outputs.version }}
+      CI_IS_PRERELEASE: ${{ needs.prepare.outputs.is-prerelease }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download build artifacts
+        if: ${{ vars.ENABLE_COMPILE == 'true' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+      - name: Generate release notes
+        id: notes
+        run: ./scripts/ci/release/ci-27-write-release-notes-output.sh
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.prepare.outputs.version }}
+          name: Release v${{ needs.prepare.outputs.version }}
+          body: ${{ steps.notes.outputs.notes }}
+          draft: false
+          prerelease: ${{ needs.prepare.outputs.is-prerelease }}
+      - name: Upload Release Assets
+        if: ${{ vars.ENABLE_COMPILE == 'true' }}
+        run: ./scripts/ci/release/ci-30-upload-assets.sh
+
+  publish-docker:
+    name: Publish Docker Image
+    runs-on: ubuntu-latest
+    needs: [prepare, build, test]
+    if: |
+      always() &&
+      needs.prepare.result == 'success' &&
+      (needs.build.result == 'success' || needs.build.result == 'skipped') &&
+      (needs.test.result == 'success' || needs.test.result == 'skipped') &&
+      vars.ENABLE_DOCKER_PUBLISH == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push Docker image
+        env:
+          CI_VERSION: ${{ needs.prepare.outputs.version }}
+          CI_IS_PRERELEASE: ${{ needs.prepare.outputs.is-prerelease }}
+        run: ./scripts/ci/release/ci-80-publish-docker.sh
+
+  publish-documentation:
+    name: Publish Documentation
+    runs-on: ubuntu-latest
+    needs: [prepare, publish-github]
+    if: |
+      always() &&
+      needs.prepare.result == 'success' &&
+      (needs.publish-github.result == 'success' || needs.publish-github.result == 'skipped') &&
+      vars.ENABLE_DOCUMENTATION == 'true'
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        run: ./scripts/ci/setup/ci-10-install-tools.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build documentation
+        env:
+          CI_VERSION: ${{ needs.prepare.outputs.version }}
+        run: ./scripts/ci/release/ci-50-build-docs.sh
+      - name: Publish documentation
+        run: ./scripts/ci/release/ci-55-publish-docs.sh
+
+  notify:
+    name: Notify Release
+    runs-on: ubuntu-latest
+    needs: [prepare, publish-npm, publish-github, publish-docker, publish-documentation]
+    if: always()
+    env:
+      CI_VERSION: ${{ needs.prepare.outputs.version }}
+      CI_IS_PRERELEASE: ${{ needs.prepare.outputs.is-prerelease }}
+      RESULT_PUBLISH_NPM: ${{ needs['publish-npm'].result }}
+      RESULT_PUBLISH_GITHUB: ${{ needs['publish-github'].result }}
+      RESULT_PUBLISH_DOCKER: ${{ needs['publish-docker'].result }}
+      RESULT_PUBLISH_DOCS: ${{ needs['publish-documentation'].result }}
+      RESULT_PREPARE: ${{ needs.prepare.result }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate summary
+        run: ./scripts/ci/reports/ci-95-summary-release.sh
+
+      - name: Check if notifications enabled
+        id: check_notify
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          APPRISE_URLS: ${{ secrets.APPRISE_URLS }}
+          ENABLE_NOTIFICATIONS: ${{ vars.ENABLE_NOTIFICATIONS }}
+        run: ./scripts/ci/notification/ci-10-check-notifications-enabled.sh
+
+      - name: Determine release status
+        if: steps.check_notify.outputs.enabled == 'true'
+        id: status
+        run: ./scripts/ci/notification/ci-60-release-status.sh
+
+      - name: Send notification
+        if: steps.check_notify.outputs.enabled == 'true'
+        env:
+          APPRISE_URLS: ${{ steps.check_notify.outputs.apprise_urls }}
+          NOTIFY_TITLE: Release Pipeline
+          NOTIFY_MESSAGE: ${{ steps.status.outputs.message }}
+          NOTIFY_STATUS: ${{ steps.status.outputs.status }}
+        run: ./scripts/ci/notification/ci-30-send-notification.sh

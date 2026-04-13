@@ -1,0 +1,21 @@
+[tools]
+# Shell development and testing
+shellspec = "latest"
+# Local CI testing
+act = "latest"
+
+[tasks."test:local-ci"]
+description = "Run workflows locally with act in DRY_RUN mode"
+run = ["act --dry-run"]
+
+[tasks.test]
+description = "Run all tests with ShellSpec"
+run = ["shellspec"]
+
+[tasks."test:watch"]
+description = "Run tests in watch mode"
+run = ["shellspec --watch"]
+
+[tasks."test:coverage"]
+description = "Run tests with coverage"
+run = ["shellspec --format documentation --coverage"]

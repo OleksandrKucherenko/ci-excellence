@@ -1,0 +1,73 @@
+name: Ops Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - promote-release
+          - deploy-staging
+          - deploy-production
+          - mark-stable
+          - mark-deprecated
+      version:
+        description: 'Target Version (e.g. 1.2.3)'
+        required: true
+        type: string
+      confirm:
+        description: 'Type "yes" to confirm critical actions'
+        required: false
+        default: 'no'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ops-${{ github.event.inputs.action }}
+  cancel-in-progress: false
+
+jobs:
+  ops-handler:
+    name: Handle Ops Action
+    runs-on: ubuntu-latest
+    env:
+      OPS_ACTION: ${{ github.event.inputs.action }}
+      OPS_VERSION: ${{ github.event.inputs.version }}
+      OPS_CONFIRM: ${{ github.event.inputs.confirm }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate Inputs
+        run: ./scripts/ci/ops/ci-10-validate-inputs.sh
+
+      - name: Promote Release
+        if: github.event.inputs.action == 'promote-release'
+        run: ./scripts/ci/ops/ci-20-promote-release.sh
+
+      - name: Deploy Staging
+        if: github.event.inputs.action == 'deploy-staging'
+        env:
+          OPS_ENVIRONMENT: staging
+        run: ./scripts/ci/ops/ci-30-deploy.sh
+
+      - name: Deploy Production
+        if: github.event.inputs.action == 'deploy-production'
+        env:
+          OPS_ENVIRONMENT: production
+        run: ./scripts/ci/ops/ci-30-deploy.sh
+
+      - name: Mark Stable
+        if: github.event.inputs.action == 'mark-stable'
+        env:
+          CI_STABILITY_TAG: stable
+        run: ./scripts/ci/ops/ci-40-mark-stability.sh
+
+      - name: Mark Deprecated
+        if: github.event.inputs.action == 'mark-deprecated'
+        env:
+          CI_STABILITY_TAG: deprecated
+        run: ./scripts/ci/ops/ci-40-mark-stability.sh

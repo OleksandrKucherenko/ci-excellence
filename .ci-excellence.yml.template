@@ -1,0 +1,23 @@
+# CI Excellence Integration Config
+# Copy this to .ci-excellence.yml in your project root and customize.
+remote: https://github.com/OleksandrKucherenko/ci-excellence.git
+branch: dist
+
+# Files to include during integration/upgrade
+include:
+  - .github/workflows/
+  - scripts/ci/
+  - scripts/lib/
+  - scripts/setup/ci-integrate.sh
+  - scripts/setup/ci-upgrade.sh
+  - scripts/setup/ci-rollback.sh
+  - scripts/setup/ci-status.sh
+  - .env
+  - .actrc
+  - .lefthook.toml
+  - .commitlintrc.yaml
+
+# Files to exclude (subset of include, for fine-grained control)
+# exclude:
+#   - .github/workflows/auto-fix-quality.yml
+#   - .github/workflows/maintenance.yml
