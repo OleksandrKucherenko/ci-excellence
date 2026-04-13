@@ -4,7 +4,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Verify Docker Deployment
 # Purpose: Verify that Docker image is available
-# Customize this script based on your verification needs
 
 VERSION="${CI_VERSION:?CI_VERSION is required}"
 
@@ -33,8 +32,5 @@ hooks:flow:apply
 # echo "Testing Docker image..."
 # docker run --rm "$IMAGE_NAME:$VERSION" --version
 
-# Add your Docker verification commands here
-echo:Success "✓ Docker deployment verification stub executed"
-echo:Release "  Customize this script in scripts/ci/release/ci-85-verify-docker-deployment.sh"
 
 echo:Success "Docker Deployment Verification Complete"

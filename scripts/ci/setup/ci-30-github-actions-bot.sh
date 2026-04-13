@@ -17,8 +17,5 @@ echo:Setup "  Name: $(git config user.name)"
 echo:Setup "  Email: $(git config user.email)"
 
 
-# Add your bot setup commands here
-echo:Success "✓ git bot setup stub executed"
-echo:Setup "  Customize this script in ${BASH_SOURCE[0]} as needed"
 
 echo:Success "GitHub Actions Bot Setup Completed"

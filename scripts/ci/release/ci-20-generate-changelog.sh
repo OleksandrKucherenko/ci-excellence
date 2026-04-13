@@ -4,7 +4,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Generate Changelog
 # Purpose: Generate or update changelog
-# Customize this script based on your changelog format
 
 VERSION="${CI_VERSION:?CI_VERSION is required}"
 
@@ -65,8 +64,5 @@ hooks:flow:apply
 #     mv "$TEMP_FILE" CHANGELOG.md
 # fi
 
-# Add your changelog generation commands here
-echo:Success "✓ Changelog generation stub executed"
-echo:Release "  Customize this script in scripts/ci/release/ci-20-generate-changelog.sh"
 
 echo:Success "Changelog Generated"

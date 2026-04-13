@@ -67,7 +67,7 @@ for path in "${DIST_FILES[@]}"; do
   src="$REPO_ROOT/$path"
   if [ -d "$src" ]; then
     mkdir -p "$WORK_DIR/$path"
-    cp -r "$src"* "$WORK_DIR/$path" 2>/dev/null || cp -r "$src". "$WORK_DIR/$path" 2>/dev/null || true
+    cp -a "$src"/. "$WORK_DIR/$path" 2>/dev/null || true
   elif [ -f "$src" ]; then
     mkdir -p "$(dirname "$WORK_DIR/$path")"
     cp "$src" "$WORK_DIR/$path"
@@ -109,7 +109,7 @@ git add -A
 if git diff --cached --quiet; then
   echo "No changes to distribute."
 else
-  git commit -m "dist: ci-excellence @ $SOURCE_SHORT
+  LEFTHOOK=0 git commit --no-verify -m "dist: ci-excellence @ $SOURCE_SHORT
 
 Source: $SOURCE_COMMIT
 Message: $SOURCE_MSG"

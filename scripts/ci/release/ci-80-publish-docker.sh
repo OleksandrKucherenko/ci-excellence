@@ -4,7 +4,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Publish Docker Image
 # Purpose: Build and publish Docker images
-# Customize this script based on your Docker publishing needs
 
 VERSION="${CI_VERSION:?CI_VERSION is required}"
 IS_PRERELEASE="${CI_IS_PRERELEASE:-false}"
@@ -50,8 +49,5 @@ hooks:flow:apply
 # docker push "$IMAGE_NAME:$VERSION"
 # docker push "$IMAGE_NAME:latest"
 
-# Add your Docker publishing commands here
-echo:Success "✓ Docker publish stub executed"
-echo:Release "  Customize this script in scripts/ci/release/ci-80-publish-docker.sh"
 
 echo:Success "Docker Publishing Complete"

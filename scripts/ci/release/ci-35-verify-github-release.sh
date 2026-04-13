@@ -4,7 +4,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Verify GitHub Release
 # Purpose: Verify that GitHub release exists and is published
-# Customize this script based on your verification needs
 
 VERSION="${CI_VERSION:?CI_VERSION is required}"
 TAG="v$VERSION"
@@ -35,8 +34,5 @@ hooks:flow:apply
 #     fi
 # fi
 
-# Add your GitHub verification commands here
-echo:Success "✓ GitHub release verification stub executed"
-echo:Release "  Customize this script in scripts/ci/release/ci-35-verify-github-release.sh"
 
 echo:Success "GitHub Release Verification Complete"

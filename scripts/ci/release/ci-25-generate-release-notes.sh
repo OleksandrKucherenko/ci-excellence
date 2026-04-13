@@ -4,7 +4,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Generate Release Notes
 # Purpose: Generate release notes for GitHub release
-# Customize this script based on your release notes format
 
 VERSION="${CI_VERSION:?CI_VERSION is required}"
 
@@ -38,14 +37,7 @@ cat <<EOF
 
 ### What's New
 
-- This is a stub release
-- Customize release notes in scripts/ci/release/ci-25-generate-release-notes.sh
-
-### Installation
-
-\`\`\`bash
-npm install mypackage@$VERSION
-\`\`\`
+- Release $VERSION
 
 ### Full Changelog
 

@@ -59,9 +59,6 @@ EXIT_CODE=0
 #     ./vendor/bin/phpunit || EXIT_CODE=$?
 # fi
 
-# Add your unit testing commands here
-echo:Success "✓ Unit test stub executed"
-echo:Test "  Customize this script in scripts/ci/test/ci-10-unit-tests.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
     echo:Error "⚠ Unit Tests Failed"

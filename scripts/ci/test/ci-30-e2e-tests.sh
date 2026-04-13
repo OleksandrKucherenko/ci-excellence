@@ -41,9 +41,6 @@ EXIT_CODE=0
 #     testcafe chrome tests/ || EXIT_CODE=$?
 # fi
 
-# Add your E2E testing commands here
-echo:Success "✓ E2E test stub executed"
-echo:Test "  Customize this script in scripts/ci/test/ci-30-e2e-tests.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
     echo:Error "⚠ E2E Tests Failed"

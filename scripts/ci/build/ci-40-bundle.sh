@@ -39,8 +39,5 @@ hooks:flow:apply
 # echo "Creating distribution tarball..."
 # tar -czf dist.tar.gz dist/
 
-# Add your bundling commands here
-echo:Success "✓ Bundle stub executed"
-echo:Build "  Customize this script in scripts/ci/build/ci-40-bundle.sh"
 
 echo:Success "Bundling Complete"

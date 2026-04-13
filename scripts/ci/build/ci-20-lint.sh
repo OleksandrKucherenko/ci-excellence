@@ -53,9 +53,6 @@ EXIT_CODE=0
 #     bundle exec rubocop || EXIT_CODE=$?
 # fi
 
-# Add your linting commands here
-echo:Success "✓ Lint stub executed"
-echo:Build "  Customize this script in scripts/ci/build/ci-20-lint.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
     echo:Error "⚠ Linting Failed"

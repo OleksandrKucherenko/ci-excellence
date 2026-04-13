@@ -20,6 +20,5 @@ if [ "$ENVIRONMENT" == "production" ] && [ "$CONFIRM" != "yes" ]; then
 fi
 
 echo:Ops "Deploying ${VERSION} to ${ENVIRONMENT}..."
-echo:Ops "Stub: deploy-${ENVIRONMENT} is awaiting project-specific implementation."
 
 echo:Success "Deploy Done"

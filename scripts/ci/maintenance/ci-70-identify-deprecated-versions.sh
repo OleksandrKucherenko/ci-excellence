@@ -4,7 +4,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Identify Deprecated Versions
 # Purpose: Identify versions that should be deprecated
-# Customize this script based on your deprecation policy
 
 echo:Maint "Identifying Deprecated Versions"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
@@ -25,8 +24,5 @@ hooks:flow:apply
 # npm view "$PACKAGE_NAME" versions --json | \
 #     jq -r '.[] | select(test("-alpha|-beta|-rc"))'
 
-# Add your version identification commands here
-echo:Success "✓ Deprecated versions identification stub executed"
-echo:Maint "  Customize this script in scripts/maintenance/identify-deprecated-versions.sh"
 
 echo:Success "Deprecated Versions Identification Complete"

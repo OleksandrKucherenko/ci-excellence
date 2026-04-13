@@ -4,7 +4,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Build Documentation
 # Purpose: Build project documentation
-# Customize this script based on your documentation tool
 
 VERSION="${CI_VERSION:?CI_VERSION is required}"
 
@@ -52,8 +51,5 @@ hooks:flow:apply
 #     cargo doc --no-deps
 # fi
 
-# Add your documentation build commands here
-echo:Success "✓ Documentation build stub executed"
-echo:Release "  Customize this script in scripts/ci/release/ci-50-build-docs.sh"
 
 echo:Success "Documentation Build Complete"

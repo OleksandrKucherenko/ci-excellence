@@ -4,7 +4,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Smoke Tests
 # Purpose: Run basic smoke tests to verify deployment
-# Customize this script based on your project's smoke testing needs
 
 VERSION="${CI_VERSION:-latest}"
 
@@ -43,9 +42,6 @@ EXIT_CODE=0
 #     docker pull myorg/myapp:$VERSION || EXIT_CODE=$?
 # fi
 
-# Add your smoke testing commands here
-echo:Success "✓ Smoke test stub executed"
-echo:Test "  Customize this script in scripts/ci/test/ci-40-smoke-tests.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
     echo:Error "⚠ Smoke Tests Failed"

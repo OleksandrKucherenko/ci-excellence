@@ -4,7 +4,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Upload Release Assets
 # Purpose: Upload build artifacts to GitHub release
-# Customize this script based on your release assets
 
 VERSION="${CI_VERSION:?CI_VERSION is required}"
 TAG="v${VERSION}"
@@ -28,8 +27,5 @@ hooks:flow:apply
 #     dist/myapp-windows-amd64.exe \
 #     --clobber
 
-# Add your asset upload commands here
-echo:Success "✓ Asset upload stub executed"
-echo:Release "  Customize this script in scripts/ci/release/ci-30-upload-assets.sh"
 
 echo:Success "Release Assets Uploaded"

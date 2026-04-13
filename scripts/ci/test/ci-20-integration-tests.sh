@@ -44,9 +44,6 @@ EXIT_CODE=0
 #     docker-compose -f docker-compose.test.yml down
 # fi
 
-# Add your integration testing commands here
-echo:Success "✓ Integration test stub executed"
-echo:Test "  Customize this script in scripts/ci/test/ci-20-integration-tests.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
     echo:Error "⚠ Integration Tests Failed"

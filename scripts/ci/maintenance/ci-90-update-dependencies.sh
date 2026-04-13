@@ -4,7 +4,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Update Dependencies
 # Purpose: Update project dependencies to latest versions
-# Customize this script based on your package manager
 
 echo:Maint "Updating Dependencies"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
@@ -50,8 +49,5 @@ hooks:flow:apply
 #     cargo update
 # fi
 
-# Add your dependency update commands here
-echo:Success "✓ Dependency update stub executed"
-echo:Maint "  Customize this script in scripts/maintenance/update-dependencies.sh"
 
 echo:Success "Dependency Update Complete"

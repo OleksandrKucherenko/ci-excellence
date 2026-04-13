@@ -4,7 +4,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Deprecate GitHub Releases
 # Purpose: Mark old GitHub releases as pre-release or update their descriptions
-# Customize this script based on your deprecation policy
 
 echo:Maint "Deprecating GitHub Releases"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
@@ -29,8 +28,5 @@ hooks:flow:apply
 #     done
 # fi
 
-# Add your GitHub deprecation commands here
-echo:Success "✓ GitHub deprecation stub executed"
-echo:Maint "  Customize this script in scripts/maintenance/deprecate-github-releases.sh"
 
 echo:Success "GitHub Deprecation Complete"

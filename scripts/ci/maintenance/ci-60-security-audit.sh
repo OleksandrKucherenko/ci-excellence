@@ -4,7 +4,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Security Audit
 # Purpose: Run security audits on dependencies
-# Customize this script based on your security tools
 
 echo:Maint "Running Security Audit"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
@@ -36,9 +35,6 @@ EXIT_CODE=0
 #     cargo audit || EXIT_CODE=$?
 # fi
 
-# Add your security audit commands here
-echo:Success "✓ Security audit stub executed"
-echo:Maint "  Customize this script in scripts/maintenance/security-audit.sh"
 
 if [ $EXIT_CODE -ne 0 ]; then
     echo:Error "⚠ Security vulnerabilities found"

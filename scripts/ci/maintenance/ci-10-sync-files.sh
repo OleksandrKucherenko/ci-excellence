@@ -37,8 +37,5 @@ hooks:flow:apply
 # EOF
 # fi
 
-# Add your sync commands here
-echo:Success "✓ Version files sync stub executed"
-echo:Maint "  Customize this script in ${BASH_SOURCE[0]} to fit your project's needs."
 
 echo:Success "Version Files Synchronization Complete"

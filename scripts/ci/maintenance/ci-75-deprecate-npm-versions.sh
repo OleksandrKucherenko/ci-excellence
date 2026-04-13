@@ -4,7 +4,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Deprecate NPM Versions
 # Purpose: Deprecate old NPM package versions
-# Customize this script based on your deprecation policy
 
 echo:Maint "Deprecating NPM Versions"
 ci:secret maint "NODE_AUTH_TOKEN" "${NODE_AUTH_TOKEN:-}"
@@ -33,8 +32,5 @@ fi
 #     done
 # fi
 
-# Add your NPM deprecation commands here
-echo:Success "✓ NPM deprecation stub executed"
-echo:Maint "  Customize this script in scripts/maintenance/deprecate-npm-versions.sh"
 
 echo:Success "NPM Deprecation Complete"

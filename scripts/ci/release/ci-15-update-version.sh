@@ -41,8 +41,5 @@ hooks:flow:apply
 # Example: Update version.txt or VERSION file
 # echo "$VERSION" > VERSION
 
-# Add your version update commands here
-echo:Success "✓ Version update stub executed"
-echo:Release "  Customize this script in scripts/ci/release/ci-15-update-version.sh"
 
 echo:Success "Version Files Updated"

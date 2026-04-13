@@ -69,9 +69,6 @@ echo:Security ""
 #     dependency-check --project \"MyProject\" --scan . || EXIT_CODE=$?
 # fi
 
-# Add your security scanning commands here
-echo:Success "✓ Security scan stub executed"
-echo:Security "  Customize this script in scripts/ci/build/ci-30-security-scan.sh"
 
 # Create SARIF output for GitHub Security
 mkdir -p .

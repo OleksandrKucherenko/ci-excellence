@@ -4,7 +4,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Cleanup Old Workflow Runs
 # Purpose: Delete old GitHub Actions workflow runs
-# Customize this script based on your retention policy
 
 echo:Maint "Cleaning Up Old Workflow Runs"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
@@ -25,8 +24,5 @@ hooks:flow:apply
 #     done
 # fi
 
-# Add your cleanup commands here
-echo:Success "✓ Workflow runs cleanup stub executed"
-echo:Maint "  Customize this script in ${BASH_SOURCE[0]}"
 
 echo:Success "Workflow Runs Cleanup Complete"

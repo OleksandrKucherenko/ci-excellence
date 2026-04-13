@@ -4,7 +4,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Publish Documentation
 # Purpose: Publish documentation to hosting platform
-# Customize this script based on your documentation hosting
 
 echo:Release "Publishing Documentation"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
@@ -41,8 +40,5 @@ hooks:flow:apply
 # Example: Read the Docs (automatic on push)
 # echo "Documentation will be automatically built by Read the Docs"
 
-# Add your documentation publishing commands here
-echo:Success "✓ Documentation publish stub executed"
-echo:Release "  Customize this script in scripts/ci/release/ci-55-publish-docs.sh"
 
 echo:Success "Documentation Publishing Complete"

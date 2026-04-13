@@ -4,7 +4,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Publish to NPM
 # Purpose: Publish package to NPM registry
-# Customize this script based on your NPM publishing needs
 
 TAG="${CI_NPM_TAG:---tag latest}"
 
@@ -34,8 +33,5 @@ fi
 #     npm publish --registry=https://npm.pkg.github.com
 # fi
 
-# Add your NPM publishing commands here
-echo:Success "✓ NPM publish stub executed"
-echo:Release "  Customize this script in scripts/ci/release/ci-65-publish-npm.sh"
 
 echo:Success "NPM Publishing Complete"

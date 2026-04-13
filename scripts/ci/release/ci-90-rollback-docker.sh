@@ -4,7 +4,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Rollback Docker Release
 # Purpose: Tag Docker images as deprecated
-# Customize this script based on your rollback strategy
 
 VERSION="${CI_VERSION:?CI_VERSION is required}"
 
@@ -28,9 +27,6 @@ hooks:flow:apply
 # Example: Update image description to warn users
 # This typically requires using Docker Hub API or web interface
 
-# Add your Docker rollback commands here
-echo:Success "✓ Docker rollback stub executed"
-echo:Release "  Customize this script in scripts/ci/release/ci-90-rollback-docker.sh"
 echo:Release "  Note: Docker tags cannot be deleted from registries"
 echo:Release "  Consider updating image description or documentation"
 

@@ -4,7 +4,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Verify NPM Deployment
 # Purpose: Verify that package is available on NPM
-# Customize this script based on your verification needs
 
 VERSION="${CI_VERSION:?CI_VERSION is required}"
 
@@ -36,8 +35,5 @@ hooks:flow:apply
 #     fi
 # fi
 
-# Add your NPM verification commands here
-echo:Success "✓ NPM deployment verification stub executed"
-echo:Release "  Customize this script in scripts/ci/release/ci-70-verify-npm-deployment.sh"
 
 echo:Success "NPM Deployment Verification Complete"

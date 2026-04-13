@@ -45,8 +45,5 @@ hooks:flow:apply
 #     ./gradlew build
 # fi
 
-# Add your build commands here
-echo:Success "✓ Build stub executed"
-echo:Build "  Customize this script in scripts/ci/build/ci-10-compile.sh"
 
 echo:Success "Build Complete"

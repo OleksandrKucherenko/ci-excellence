@@ -4,7 +4,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Pipeline Stub: Rollback NPM Release
 # Purpose: Deprecate NPM package version
-# Customize this script based on your rollback strategy
 
 VERSION="${CI_VERSION:?CI_VERSION is required}"
 
@@ -33,8 +32,5 @@ fi
 # and requires special permissions
 # npm unpublish "$PACKAGE_NAME@$VERSION"
 
-# Add your NPM rollback commands here
-echo:Success "✓ NPM rollback stub executed"
-echo:Release "  Customize this script in scripts/ci/release/ci-75-rollback-npm.sh"
 
 echo:Success "NPM Rollback Complete"
