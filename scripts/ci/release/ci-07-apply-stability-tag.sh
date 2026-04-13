@@ -44,8 +44,21 @@ else
 
   STABILITY_TAG="v${VERSION}-${TAG_NAME}"
   echo:Release "Tagging ${TARGET_COMMIT:0:7} as ${STABILITY_TAG}"
-  git tag -f "$STABILITY_TAG" "$TARGET_COMMIT"
-  git push -f origin "$STABILITY_TAG"
+
+  # Use GitHub API to create/update tag ref (avoids workflows permission issue with git push)
+  if command -v gh &>/dev/null && [ -n "${GITHUB_REPOSITORY:-}" ]; then
+    # Delete existing tag ref if present
+    gh api "repos/${GITHUB_REPOSITORY}/git/refs/tags/${STABILITY_TAG}" -X DELETE 2>/dev/null || true
+    # Create lightweight tag ref via API
+    gh api "repos/${GITHUB_REPOSITORY}/git/refs" \
+      -f ref="refs/tags/${STABILITY_TAG}" \
+      -f sha="${TARGET_COMMIT}" 2>/dev/null \
+      && echo:Release "Tag created via API" \
+      || { echo:Error "API tag creation failed, trying git push"; git tag -f "$STABILITY_TAG" "$TARGET_COMMIT" && git push -f origin "$STABILITY_TAG"; }
+  else
+    git tag -f "$STABILITY_TAG" "$TARGET_COMMIT"
+    git push -f origin "$STABILITY_TAG"
+  fi
 
   echo:Release "Tagged: ${STABILITY_TAG}"
 fi
