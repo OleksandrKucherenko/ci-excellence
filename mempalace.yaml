@@ -1,0 +1,30 @@
+wing: ci_excellence
+rooms:
+- name: versions
+  description: Files from versions/
+  keywords:
+  - versions
+  - versions
+- name: configuration
+  description: Files from config/
+  keywords:
+  - configuration
+  - config
+- name: environments
+  description: Files from environments/
+  keywords:
+  - environments
+  - environments
+- name: documentation
+  description: Files from docs/
+  keywords:
+  - documentation
+  - docs
+- name: scripts
+  description: Files from scripts/
+  keywords:
+  - scripts
+  - scripts
+- name: general
+  description: Files that don't fit other rooms
+  keywords: []

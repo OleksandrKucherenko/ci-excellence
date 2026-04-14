@@ -209,6 +209,106 @@ ci:skip_if_no_hooks() {
 }
 
 # ---------------------------------------------------------------------------
+# Default version determination (semver)
+# ---------------------------------------------------------------------------
+# Calculate next version based on release scope using e-bash _semver.sh.
+# Finds the latest v* tag via git describe and applies the requested increment.
+# Writes result to GITHUB_OUTPUT as "version=<new_version>".
+#
+#   ci:determine_version <release_type> <pre_release_type>
+#
+# Supported release types: major, minor, patch, premajor, preminor, prepatch, prerelease
+ci:determine_version() {
+  local release_type="${1:-patch}" pre_release_type="${2:-alpha}"
+
+  # Source semver library (guarded — no-op if already loaded)
+  # shellcheck disable=SC1090
+  source "${E_BASH}/_semver.sh"
+
+  # Find the latest semver tag reachable from HEAD
+  local current_tag
+  if ! current_tag=$(git describe --tags --match "v*" --abbrev=0 2>/dev/null); then
+    echo:Release "Warning: No existing tags found. Defaulting to v0.0.1-alpha"
+    current_tag="v0.0.1-alpha"
+  fi
+
+  local current_version="${current_tag#v}"
+  echo:Release "Current Version: $current_version"
+  echo:Release "Release Type: $release_type"
+
+  semver:parse "$current_version" "PARSED"
+
+  _ci_base_version() {
+    echo "${PARSED["major"]}.${PARSED["minor"]}.${PARSED["patch"]}"
+  }
+
+  local new_version=""
+
+  case "$release_type" in
+    major)
+      new_version=$(semver:increase:major "$current_version")
+      ;;
+    minor)
+      new_version=$(semver:increase:minor "$current_version")
+      ;;
+    patch)
+      new_version=$(semver:increase:patch "$current_version")
+      ;;
+    premajor)
+      local next_major
+      next_major=$(semver:increase:major "$current_version")
+      new_version="${next_major}-${pre_release_type}"
+      ;;
+    preminor)
+      local next_minor
+      next_minor=$(semver:increase:minor "$current_version")
+      new_version="${next_minor}-${pre_release_type}"
+      ;;
+    prepatch)
+      local next_patch
+      next_patch=$(semver:increase:patch "$current_version")
+      new_version="${next_patch}-${pre_release_type}"
+      ;;
+    prerelease)
+      local current_pre="${PARSED["pre-release"]}"
+
+      if [ -z "$current_pre" ]; then
+        local next_patch
+        next_patch=$(semver:increase:patch "$current_version")
+        new_version="${next_patch}-${pre_release_type}"
+      else
+        local clean_pre="${current_pre#-}"
+
+        if [[ "$clean_pre" == "${pre_release_type}" || "$clean_pre" == "${pre_release_type}."* ]]; then
+          local prefix="${pre_release_type}."
+          if [[ "$clean_pre" == "$pre_release_type" ]]; then
+            new_version="$(_ci_base_version)-${pre_release_type}.1"
+          else
+            local number="${clean_pre#"$prefix"}"
+            if [[ "$number" =~ ^[0-9]+$ ]]; then
+              local new_number=$((number + 1))
+              new_version="$(_ci_base_version)-${pre_release_type}.${new_number}"
+            else
+              echo:Error "Error: Cannot auto-increment complex pre-release identifier: $clean_pre"
+              return 1
+            fi
+          fi
+        else
+          new_version="$(_ci_base_version)-${pre_release_type}"
+        fi
+      fi
+      ;;
+    *)
+      echo:Error "Error: Unknown release type '$release_type'"
+      return 1
+      ;;
+  esac
+
+  echo:Release "Calculated Version: $new_version"
+  ci:output release "version" "$new_version"
+}
+
+# ---------------------------------------------------------------------------
 # Environment variable helpers
 # ---------------------------------------------------------------------------
 # Verify a required env var is set, log it, and exit 1 if missing.
