@@ -35,3 +35,4 @@
 - fix: use GitHub API for stability tags to avoid workflows permission issue (e6badf3)
 - fix: exclude stability tags from release pipeline trigger (69e74ab)
 - chore(release): bump version to 1.0.0 (aba80ef)
+- chore(release): bump version to 1.0.0 (3d46ac0)
