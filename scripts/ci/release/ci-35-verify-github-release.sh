@@ -2,37 +2,23 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
-# CI Pipeline Stub: Verify GitHub Release
+# CI Script: Verify GitHub Release
 # Purpose: Verify that GitHub release exists and is published
-
-VERSION="${CI_VERSION:?CI_VERSION is required}"
-TAG="v$VERSION"
+# Hooks: begin, verify, end (automatic)
+#   ci-cd/ci-35-verify-github-release/begin_*.sh  - pre-verify setup
+#   ci-cd/ci-35-verify-github-release/verify_*.sh - verification commands
+#   ci-cd/ci-35-verify-github-release/end_*.sh    - post-verify reporting
 
 echo:Release "Verifying GitHub Release"
-ci:param release "CI_VERSION" "$VERSION"
+ci:param release "CI_VERSION" "${CI_VERSION:?CI_VERSION is required}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+ci:skip_if_no_hooks verify
 
-# Example: Verify GitHub release using gh CLI
-# if command -v gh &> /dev/null; then
-#     echo "Checking for GitHub release $TAG..."
-#     if gh release view "$TAG" &> /dev/null; then
-#         echo "✓ Release found on GitHub"
-#
-#         # Check if release is draft
-#         IS_DRAFT=$(gh release view "$TAG" --json isDraft --jq '.isDraft')
-#         if [ "$IS_DRAFT" == "false" ]; then
-#             echo "✓ Release is published"
-#         else
-#             echo "⚠ Release is still in draft"
-#             exit 1
-#         fi
-#     else
-#         echo "⚠ Release not found on GitHub"
-#         exit 1
-#     fi
-# fi
-
+set +eu
+hooks:declare verify
+hooks:do verify
+set -eu
 
 echo:Success "GitHub Release Verification Complete"

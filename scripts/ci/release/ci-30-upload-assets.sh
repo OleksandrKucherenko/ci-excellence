@@ -2,30 +2,23 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
-# CI Pipeline Stub: Upload Release Assets
+# CI Script: Upload Release Assets
 # Purpose: Upload build artifacts to GitHub release
-
-VERSION="${CI_VERSION:?CI_VERSION is required}"
-TAG="v${VERSION}"
+# Hooks: begin, upload, end (automatic)
+#   ci-cd/ci-30-upload-assets/begin_*.sh  - pre-upload setup
+#   ci-cd/ci-30-upload-assets/upload_*.sh - asset upload commands
+#   ci-cd/ci-30-upload-assets/end_*.sh    - post-upload verification
 
 echo:Release "Uploading Release Assets"
-ci:param release "CI_VERSION" "$VERSION"
+ci:param release "CI_VERSION" "${CI_VERSION:?CI_VERSION is required}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+ci:skip_if_no_hooks upload
 
-# Example: Upload assets using gh CLI
-# if command -v gh &> /dev/null; then
-#     echo "Uploading assets to GitHub release..."
-#     gh release upload "$TAG" dist/*.tar.gz dist/*.zip --clobber
-# fi
-
-# Example: Upload specific files
-# gh release upload "$TAG" \
-#     dist/myapp-linux-amd64 \
-#     dist/myapp-darwin-amd64 \
-#     dist/myapp-windows-amd64.exe \
-#     --clobber
-
+set +eu
+hooks:declare upload
+hooks:do upload
+set -eu
 
 echo:Success "Release Assets Uploaded"

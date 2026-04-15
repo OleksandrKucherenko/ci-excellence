@@ -2,54 +2,23 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
-# CI Pipeline Stub: Build Documentation
+# CI Script: Build Documentation
 # Purpose: Build project documentation
-
-VERSION="${CI_VERSION:?CI_VERSION is required}"
+# Hooks: begin, build, end (automatic)
+#   ci-cd/ci-50-build-docs/begin_*.sh - pre-build setup
+#   ci-cd/ci-50-build-docs/build_*.sh - documentation build commands
+#   ci-cd/ci-50-build-docs/end_*.sh   - post-build verification
 
 echo:Release "Building Documentation"
-ci:param release "CI_VERSION" "$VERSION"
+ci:param release "CI_VERSION" "${CI_VERSION:?CI_VERSION is required}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+ci:skip_if_no_hooks build
 
-# Example: Sphinx for Python
-# if [ -f "docs/conf.py" ]; then
-#     echo "Building Sphinx documentation..."
-#     cd docs
-#     make html
-#     cd ..
-# fi
-
-# Example: JSDoc for JavaScript
-# if [ -f "jsdoc.json" ]; then
-#     echo "Building JSDoc documentation..."
-#     npx jsdoc -c jsdoc.json
-# fi
-
-# Example: TypeDoc for TypeScript
-# if [ -f "typedoc.json" ]; then
-#     echo "Building TypeDoc documentation..."
-#     npx typedoc
-# fi
-
-# Example: Docusaurus
-# if [ -f "docusaurus.config.js" ]; then
-#     echo "Building Docusaurus site..."
-#     npm run build
-# fi
-
-# Example: MkDocs
-# if [ -f "mkdocs.yml" ]; then
-#     echo "Building MkDocs site..."
-#     mkdocs build
-# fi
-
-# Example: Rustdoc
-# if [ -f "Cargo.toml" ]; then
-#     echo "Building Rustdoc documentation..."
-#     cargo doc --no-deps
-# fi
-
+set +eu
+hooks:declare build
+hooks:do build
+set -eu
 
 echo:Success "Documentation Build Complete"

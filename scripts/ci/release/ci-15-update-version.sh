@@ -4,42 +4,21 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Script: Update Version
 # Purpose: Update version in project files
-
-VERSION="${CI_VERSION:?CI_VERSION is required}"
+# Hooks: begin, update, end (automatic)
+#   ci-cd/ci-15-update-version/begin_*.sh  - pre-update setup
+#   ci-cd/ci-15-update-version/update_*.sh - version update commands
+#   ci-cd/ci-15-update-version/end_*.sh    - post-update verification
 
 echo:Release "Updating Version Files"
-ci:param release "CI_VERSION" "$VERSION"
+ci:param release "CI_VERSION" "${CI_VERSION:?CI_VERSION is required}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+ci:skip_if_no_hooks update
 
-# Example: Update package.json
-# if [ -f "package.json" ]; then
-#     echo "Updating package.json..."
-#     jq --arg v "$VERSION" '.version = $v' package.json > package.json.tmp
-#     mv package.json.tmp package.json
-# fi
-
-# Example: Update setup.py
-# if [ -f "setup.py" ]; then
-#     echo "Updating setup.py..."
-#     sed -i "s/version=\".*\"/version=\"$VERSION\"/" setup.py
-# fi
-
-# Example: Update Cargo.toml
-# if [ -f "Cargo.toml" ]; then
-#     echo "Updating Cargo.toml..."
-#     sed -i "s/^version = \".*\"/version = \"$VERSION\"/" Cargo.toml
-# fi
-
-# Example: Update pyproject.toml
-# if [ -f "pyproject.toml" ]; then
-#     echo "Updating pyproject.toml..."
-#     sed -i "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
-# fi
-
-# Example: Update version.txt or VERSION file
-# echo "$VERSION" > VERSION
-
+set +eu
+hooks:declare update
+hooks:do update
+set -eu
 
 echo:Success "Version Files Updated"

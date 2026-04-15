@@ -2,32 +2,23 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
-# CI Pipeline Stub: Rollback Docker Release
+# CI Script: Rollback Docker Release
 # Purpose: Tag Docker images as deprecated
-
-VERSION="${CI_VERSION:?CI_VERSION is required}"
+# Hooks: begin, rollback, end (automatic)
+#   ci-cd/ci-90-rollback-docker/begin_*.sh    - pre-rollback setup
+#   ci-cd/ci-90-rollback-docker/rollback_*.sh - docker rollback commands
+#   ci-cd/ci-90-rollback-docker/end_*.sh      - post-rollback verification
 
 echo:Release "Rolling Back Docker Release"
-ci:param release "CI_VERSION" "$VERSION"
+ci:param release "CI_VERSION" "${CI_VERSION:?CI_VERSION is required}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+ci:skip_if_no_hooks rollback
 
-# Example: Tag image as deprecated
-# IMAGE_NAME="myorg/myapp"
-#
-# echo "Tagging image as deprecated..."
-# docker pull "$IMAGE_NAME:$VERSION"
-# docker tag "$IMAGE_NAME:$VERSION" "$IMAGE_NAME:deprecated-$VERSION"
-# docker push "$IMAGE_NAME:deprecated-$VERSION"
-#
-# # Note: You cannot delete tags from Docker Hub directly,
-# # but you can create a deprecated tag and update the README
-
-# Example: Update image description to warn users
-# This typically requires using Docker Hub API or web interface
-
-echo:Release "  Note: Docker tags cannot be deleted from registries"
-echo:Release "  Consider updating image description or documentation"
+set +eu
+hooks:declare rollback
+hooks:do rollback
+set -eu
 
 echo:Success "Docker Rollback Complete"

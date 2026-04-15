@@ -28,6 +28,11 @@ on:
           - hotfix
           - canary
           - nightly
+      package-path:
+        description: 'Package path for monorepo (e.g., packages/core). Leave empty for unified release.'
+        required: false
+        type: string
+        default: ''
       dry-run:
         description: 'Dry run (calculate version only)'
         required: false
@@ -36,7 +41,10 @@ on:
 
   push:
     tags:
-      - '**/v*' # Matches v1.0.0, packages/app/v1.0.0
+      - 'v[0-9]*'           # v1.0.0, v1.0.0-rc.1
+      - '**/v[0-9]*'        # packages/core/v1.0.0
+      - '!**-stable'        # exclude stability tags
+      - '!**-unstable'
 
 concurrency:
   group: release-${{ github.ref }}
@@ -57,9 +65,11 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     name: Tag New Version
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       CI_RELEASE_SCOPE: ${{ github.event.inputs.release-scope }}
       CI_PRE_RELEASE_TYPE: ${{ github.event.inputs.pre-release-type }}
+      CI_PACKAGE_PATH: ${{ github.event.inputs.package-path }}
       CI_DRY_RUN: ${{ github.event.inputs.dry-run }}
     steps:
       - name: Checkout code
@@ -88,11 +98,14 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     name: Prepare Release
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       CI_GIT_REF: ${{ github.ref }}
     outputs:
       version: ${{ steps.parse.outputs.version }}
       is-prerelease: ${{ steps.parse.outputs.is-prerelease }}
+      package-path: ${{ steps.parse.outputs.package-path }}
+      package-name: ${{ steps.parse.outputs.package-name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -106,11 +119,13 @@ jobs:
       - name: Generate changelog
         env:
           CI_VERSION: ${{ steps.parse.outputs.version }}
+          CI_PACKAGE_PATH: ${{ steps.parse.outputs.package-path }}
         run: ./scripts/ci/release/ci-20-generate-changelog.sh
 
   build:
     name: Build Release Artifacts
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: prepare
     if: ${{ vars.ENABLE_COMPILE == 'true' }}
     steps:
@@ -140,6 +155,7 @@ jobs:
   test:
     name: Test Release Build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: build
     if: ${{ vars.ENABLE_TESTS == 'true' }}
     steps:
@@ -163,6 +179,7 @@ jobs:
   publish-npm:
     name: Publish to NPM
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [prepare, build, test]
     if: |
       always() &&
@@ -170,6 +187,8 @@ jobs:
       (needs.build.result == 'success' || needs.build.result == 'skipped') &&
       (needs.test.result == 'success' || needs.test.result == 'skipped') &&
       vars.ENABLE_NPM_PUBLISH == 'true'
+    permissions:
+      packages: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -177,21 +196,23 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@${{ github.repository_owner }}'
       - name: Download build artifacts
         if: ${{ vars.ENABLE_COMPILE == 'true' }}
         uses: actions/download-artifact@v4
         with:
           name: release-artifacts
-      - name: Publish to NPM
+      - name: Publish to GitHub Packages
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CI_IS_PRERELEASE: ${{ needs.prepare.outputs.is-prerelease }}
         run: ./scripts/ci/release/ci-66-publish-npm-release.sh
 
   publish-github:
     name: Create GitHub Release
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [prepare, build, test]
     if: |
       always() &&
@@ -203,6 +224,7 @@ jobs:
       contents: write
     env:
       CI_VERSION: ${{ needs.prepare.outputs.version }}
+      CI_PACKAGE_PATH: ${{ needs.prepare.outputs.package-path }}
       CI_IS_PRERELEASE: ${{ needs.prepare.outputs.is-prerelease }}
     steps:
       - name: Checkout code
@@ -232,6 +254,7 @@ jobs:
   publish-docker:
     name: Publish Docker Image
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [prepare, build, test]
     if: |
       always() &&
@@ -239,16 +262,13 @@ jobs:
       (needs.build.result == 'success' || needs.build.result == 'skipped') &&
       (needs.test.result == 'success' || needs.test.result == 'skipped') &&
       vars.ENABLE_DOCKER_PUBLISH == 'true'
+    permissions:
+      packages: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -258,12 +278,14 @@ jobs:
       - name: Build and push Docker image
         env:
           CI_VERSION: ${{ needs.prepare.outputs.version }}
+          CI_PACKAGE_PATH: ${{ needs.prepare.outputs.package-path }}
           CI_IS_PRERELEASE: ${{ needs.prepare.outputs.is-prerelease }}
         run: ./scripts/ci/release/ci-80-publish-docker.sh
 
   publish-documentation:
     name: Publish Documentation
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [prepare, publish-github]
     if: |
       always() &&
@@ -284,6 +306,7 @@ jobs:
       - name: Build documentation
         env:
           CI_VERSION: ${{ needs.prepare.outputs.version }}
+          CI_PACKAGE_PATH: ${{ needs.prepare.outputs.package-path }}
         run: ./scripts/ci/release/ci-50-build-docs.sh
       - name: Publish documentation
         run: ./scripts/ci/release/ci-55-publish-docs.sh
@@ -291,10 +314,12 @@ jobs:
   notify:
     name: Notify Release
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [prepare, publish-npm, publish-github, publish-docker, publish-documentation]
     if: always()
     env:
       CI_VERSION: ${{ needs.prepare.outputs.version }}
+      CI_PACKAGE_PATH: ${{ needs.prepare.outputs.package-path }}
       CI_IS_PRERELEASE: ${{ needs.prepare.outputs.is-prerelease }}
       RESULT_PUBLISH_NPM: ${{ needs['publish-npm'].result }}
       RESULT_PUBLISH_GITHUB: ${{ needs['publish-github'].result }}

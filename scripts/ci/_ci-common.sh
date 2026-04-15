@@ -79,6 +79,45 @@ hooks:middleware begin _hooks:middleware:modes
 set -eu
 
 # ---------------------------------------------------------------------------
+# Feature flag loading (.env.ci)
+# ---------------------------------------------------------------------------
+# Load ENABLE_* flags from .env.ci files with CWD-scoped resolution.
+# Priority (highest wins): GitHub Variables > package .env.ci > root .env.ci
+#
+# GitHub Variables are set by workflow env: blocks before the script runs,
+# so they're already in the environment. We snapshot them first, then load
+# .env.ci files freely, then restore the GitHub-set values on top.
+_ci_load_env() {
+  local root_env="${_REPO_ROOT}/.env.ci"
+  local pkg_env="${_REPO_ROOT}/${CI_PACKAGE_PATH:+${CI_PACKAGE_PATH}/}.env.ci"
+
+  # Snapshot: remember which ENABLE_* vars were set before .env.ci loading
+  local -A _pre_set=()
+  local varname
+  for varname in $(compgen -v ENABLE_ 2>/dev/null || true); do
+    _pre_set[$varname]="${!varname}"
+  done
+
+  # Load root .env.ci (lowest priority defaults)
+  if [ -f "$root_env" ]; then
+    echo:Ci "Loading flags from .env.ci"
+    set -a; source "$root_env"; set +a
+  fi
+
+  # Load package .env.ci (overrides root)
+  if [ -f "$pkg_env" ] && [ "$pkg_env" != "$root_env" ]; then
+    echo:Ci "Loading package flags from ${CI_PACKAGE_PATH}/.env.ci"
+    set -a; source "$pkg_env"; set +a
+  fi
+
+  # Restore GitHub Variables (highest priority — override .env.ci)
+  for varname in "${!_pre_set[@]}"; do
+    export "$varname=${_pre_set[$varname]}"
+  done
+}
+_ci_load_env
+
+# ---------------------------------------------------------------------------
 # Parameter logging helpers
 # ---------------------------------------------------------------------------
 # Print a safe (non-secret) parameter value to the CI log.
@@ -132,6 +171,41 @@ ci:output:multiline() {
   } >> "$GITHUB_OUTPUT"
   local preview="${value%%$'\n'*}"
   printf:${tag^} "  ${cl_green}output${cl_reset} %-18s = %s... (%d lines)\n" "$name" "${preview:0:60}" "$(echo "$value" | wc -l)"
+}
+
+# ---------------------------------------------------------------------------
+# Hook detection helpers
+# ---------------------------------------------------------------------------
+# Check if any hook implementations exist for a given hook name.
+# Returns 0 if at least one implementation is found, 1 otherwise.
+# Checks: hook:<name> function, registered functions, and scripts in HOOKS_DIR.
+#   ci:has_hooks <hook_name>
+ci:has_hooks() {
+  local hook_name="${1}"
+  # Check for hook:<name> function
+  if declare -f "${HOOKS_PREFIX:-hook:}${hook_name}" &>/dev/null; then
+    return 0
+  fi
+  # Check for scripts in HOOKS_DIR
+  if [ -d "${HOOKS_DIR:-}" ]; then
+    local count
+    count=$(find "${HOOKS_DIR}" -maxdepth 1 \( -name "${hook_name}-*.sh" -o -name "${hook_name}_*.sh" \) -type f 2>/dev/null | wc -l)
+    if [ "$count" -gt 0 ]; then
+      return 0
+    fi
+  fi
+  return 1
+}
+
+# Skip the current script if no hook implementations exist for the given hook.
+# Logs a skip message and exits 0 — the step succeeds without doing work.
+#   ci:skip_if_no_hooks <hook_name>
+ci:skip_if_no_hooks() {
+  local hook_name="${1}"
+  if ! ci:has_hooks "$hook_name"; then
+    echo:Ci "No hooks for '${hook_name}' in ${HOOKS_DIR:-<unset>}, skipping"
+    exit 0
+  fi
 }
 
 # ---------------------------------------------------------------------------

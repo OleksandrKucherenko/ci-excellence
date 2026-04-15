@@ -2,27 +2,22 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
-# CI Pipeline Stub: Cleanup Old Artifacts
+# CI Script: Cleanup Old Artifacts
 # Purpose: Delete old GitHub Actions artifacts
+# Hooks: begin, cleanup, end (automatic)
+#   ci-cd/ci-40-cleanup-artifacts/begin_*.sh   - pre-cleanup setup
+#   ci-cd/ci-40-cleanup-artifacts/cleanup_*.sh - artifact cleanup commands
+#   ci-cd/ci-40-cleanup-artifacts/end_*.sh     - post-cleanup reporting
 
 echo:Maint "Cleaning Up Old Artifacts"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
-# Example: Delete artifacts older than 7 days using gh CLI
-# if command -v gh &> /dev/null; then
-#     RETENTION_DAYS=${RETENTION_DAYS:-7}  # Default to 7 days if not set
-#
-#     echo "Deleting artifacts older than $RETENTION_DAYS days..."
-#
-#     gh api repos/:owner/:repo/actions/artifacts \
-#         --paginate \
-#         --jq ".artifacts[] | select(.created_at < (now - ($RETENTION_DAYS * 86400))) | .id" | \
-#     while read -r artifact_id; do
-#         echo "Deleting artifact $artifact_id..."
-#         gh api -X DELETE "repos/:owner/:repo/actions/artifacts/$artifact_id" || true
-#     done
-# fi
+ci:skip_if_no_hooks cleanup
 
+set +eu
+hooks:declare cleanup
+hooks:do cleanup
+set -eu
 
 echo:Success "Artifacts Cleanup Complete"

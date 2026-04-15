@@ -33,6 +33,7 @@ jobs:
   ops-handler:
     name: Handle Ops Action
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       OPS_ACTION: ${{ github.event.inputs.action }}
       OPS_VERSION: ${{ github.event.inputs.version }}

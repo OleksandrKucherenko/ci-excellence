@@ -2,36 +2,24 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
-# CI Pipeline Stub: Publish to NPM
+# CI Script: Publish to NPM
 # Purpose: Publish package to NPM registry
-
-TAG="${CI_NPM_TAG:---tag latest}"
+# Hooks: begin, publish, end (automatic)
+#   ci-cd/ci-65-publish-npm/begin_*.sh   - pre-publish setup
+#   ci-cd/ci-65-publish-npm/publish_*.sh - npm publish commands
+#   ci-cd/ci-65-publish-npm/end_*.sh     - post-publish verification
 
 echo:Release "Publishing to NPM"
-ci:param release "CI_NPM_TAG" "${TAG}"
+ci:param release "CI_NPM_TAG" "${CI_NPM_TAG:---tag latest}"
 ci:secret release "NODE_AUTH_TOKEN" "${NODE_AUTH_TOKEN:-}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+ci:skip_if_no_hooks publish
 
-# Check if NODE_AUTH_TOKEN is set
-if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
-    echo:Error "⚠ NODE_AUTH_TOKEN is not set"
-    echo:Release "  Set this secret in GitHub to enable NPM publishing"
-    exit 1
-fi
-
-# Example: Publish to NPM
-# if [ -f "package.json" ]; then
-#     echo "Publishing package to NPM..."
-#     npm publish $TAG
-# fi
-
-# Example: Publish to GitHub Packages
-# if [ -f "package.json" ]; then
-#     echo "Publishing package to GitHub Packages..."
-#     npm publish --registry=https://npm.pkg.github.com
-# fi
-
+set +eu
+hooks:declare publish
+hooks:do publish
+set -eu
 
 echo:Success "NPM Publishing Complete"

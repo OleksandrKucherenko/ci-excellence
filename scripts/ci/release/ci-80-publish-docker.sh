@@ -2,52 +2,24 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
-# CI Pipeline Stub: Publish Docker Image
+# CI Script: Publish Docker Image
 # Purpose: Build and publish Docker images
-
-VERSION="${CI_VERSION:?CI_VERSION is required}"
-IS_PRERELEASE="${CI_IS_PRERELEASE:-false}"
+# Hooks: begin, publish, end (automatic)
+#   ci-cd/ci-80-publish-docker/begin_*.sh   - pre-publish setup
+#   ci-cd/ci-80-publish-docker/publish_*.sh - docker publish commands
+#   ci-cd/ci-80-publish-docker/end_*.sh     - post-publish verification
 
 echo:Release "Publishing Docker Image"
-ci:param release "CI_VERSION" "$VERSION"
-ci:param release "CI_IS_PRERELEASE" "$IS_PRERELEASE"
+ci:param release "CI_VERSION" "${CI_VERSION:?CI_VERSION is required}"
+ci:param release "CI_IS_PRERELEASE" "${CI_IS_PRERELEASE:-false}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+ci:skip_if_no_hooks publish
 
-# Example: Build and push to Docker Hub
-# IMAGE_NAME="myorg/myapp"
-#
-# echo "Building Docker image..."
-# docker build -t "$IMAGE_NAME:$VERSION" .
-#
-# echo "Tagging Docker image..."
-# docker tag "$IMAGE_NAME:$VERSION" "$IMAGE_NAME:latest"
-#
-# if [ "$IS_PRERELEASE" == "true" ]; then
-#     docker tag "$IMAGE_NAME:$VERSION" "$IMAGE_NAME:next"
-# fi
-#
-# echo "Pushing to Docker Hub..."
-# docker push "$IMAGE_NAME:$VERSION"
-# docker push "$IMAGE_NAME:latest"
-#
-# if [ "$IS_PRERELEASE" == "true" ]; then
-#     docker push "$IMAGE_NAME:next"
-# fi
-
-# Example: Build and push to GitHub Container Registry
-# IMAGE_NAME="ghcr.io/myorg/myapp"
-#
-# echo "Building Docker image..."
-# docker build -t "$IMAGE_NAME:$VERSION" .
-#
-# echo "Tagging Docker image..."
-# docker tag "$IMAGE_NAME:$VERSION" "$IMAGE_NAME:latest"
-#
-# echo "Pushing to GitHub Container Registry..."
-# docker push "$IMAGE_NAME:$VERSION"
-# docker push "$IMAGE_NAME:latest"
-
+set +eu
+hooks:declare publish
+hooks:do publish
+set -eu
 
 echo:Success "Docker Publishing Complete"

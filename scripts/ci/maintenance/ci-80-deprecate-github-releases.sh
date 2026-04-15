@@ -2,31 +2,22 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
-# CI Pipeline Stub: Deprecate GitHub Releases
+# CI Script: Deprecate GitHub Releases
 # Purpose: Mark old GitHub releases as pre-release or update their descriptions
+# Hooks: begin, deprecate, end (automatic)
+#   ci-cd/ci-80-deprecate-github-releases/begin_*.sh     - pre-deprecate setup
+#   ci-cd/ci-80-deprecate-github-releases/deprecate_*.sh - github deprecation commands
+#   ci-cd/ci-80-deprecate-github-releases/end_*.sh       - post-deprecate reporting
 
 echo:Maint "Deprecating GitHub Releases"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
-# Example: Mark old pre-releases as deprecated
-# if command -v gh &> /dev/null; then
-#     # Get all pre-releases
-#     gh release list --limit 100 --json tagName,isPrerelease \
-#         --jq '.[] | select(.isPrerelease == true) | .tagName' | \
-#     while read -r tag; do
-#         echo "Updating release notes for $tag..."
-#         CURRENT_NOTES=$(gh release view "$tag" --json body --jq '.body')
-#
-#         # Add deprecation notice if not already present
-#         if ! echo "$CURRENT_NOTES" | grep -q "DEPRECATED"; then
-#             NEW_NOTES="⚠️ **DEPRECATED**: This pre-release is no longer supported. Please use a stable release.
-#
-# $CURRENT_NOTES"
-#             gh release edit "$tag" --notes "$NEW_NOTES"
-#         fi
-#     done
-# fi
+ci:skip_if_no_hooks deprecate
 
+set +eu
+hooks:declare deprecate
+hooks:do deprecate
+set -eu
 
 echo:Success "GitHub Deprecation Complete"

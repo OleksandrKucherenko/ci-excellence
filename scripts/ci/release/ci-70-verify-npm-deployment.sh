@@ -2,38 +2,23 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
-# CI Pipeline Stub: Verify NPM Deployment
+# CI Script: Verify NPM Deployment
 # Purpose: Verify that package is available on NPM
-
-VERSION="${CI_VERSION:?CI_VERSION is required}"
+# Hooks: begin, verify, end (automatic)
+#   ci-cd/ci-70-verify-npm-deployment/begin_*.sh  - pre-verify setup
+#   ci-cd/ci-70-verify-npm-deployment/verify_*.sh - npm verification commands
+#   ci-cd/ci-70-verify-npm-deployment/end_*.sh    - post-verify reporting
 
 echo:Release "Verifying NPM Deployment"
-ci:param release "CI_VERSION" "$VERSION"
+ci:param release "CI_VERSION" "${CI_VERSION:?CI_VERSION is required}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
+ci:skip_if_no_hooks verify
 
-# Example: Verify NPM package availability
-# if [ -f "package.json" ]; then
-#     PACKAGE_NAME=$(jq -r '.name' package.json)
-#
-#     echo "Checking NPM registry for $PACKAGE_NAME@$VERSION..."
-#     if npm view "$PACKAGE_NAME@$VERSION" version &> /dev/null; then
-#         echo "✓ Package found on NPM"
-#
-#         # Verify package integrity
-#         PUBLISHED_VERSION=$(npm view "$PACKAGE_NAME@$VERSION" version)
-#         if [ "$PUBLISHED_VERSION" == "$VERSION" ]; then
-#             echo "✓ Version matches"
-#         else
-#             echo "⚠ Version mismatch: expected $VERSION, got $PUBLISHED_VERSION"
-#             exit 1
-#         fi
-#     else
-#         echo "⚠ Package not found on NPM"
-#         exit 1
-#     fi
-# fi
-
+set +eu
+hooks:declare verify
+hooks:do verify
+set -eu
 
 echo:Success "NPM Deployment Verification Complete"

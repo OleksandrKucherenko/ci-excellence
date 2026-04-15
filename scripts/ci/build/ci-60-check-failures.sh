@@ -4,39 +4,42 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/_ci-common.sh"
 
 # CI Script: Check for Failures
 # Purpose: Check if any pipeline job failed
-
-SETUP_RESULT="${RESULT_SETUP:-success}"
-COMPILE_RESULT="${RESULT_COMPILE:-success}"
-LINT_RESULT="${RESULT_LINT:-success}"
-UNIT_RESULT="${RESULT_UNIT_TESTS:-success}"
-INTEGRATION_RESULT="${RESULT_INTEGRATION_TESTS:-success}"
-E2E_RESULT="${RESULT_E2E_TESTS:-success}"
-SECURITY_RESULT="${RESULT_SECURITY_SCAN:-success}"
-BUNDLE_RESULT="${RESULT_BUNDLE:-success}"
+# Hooks: begin, check, end (automatic)
+#   ci-cd/ci-60-check-failures/check_*.sh - override failure check strategy
+#
+# Default strategy: fail if any RESULT_* env var equals "failure".
 
 echo:Build "Checking Pipeline Results"
-ci:param build "RESULT_SETUP" "$SETUP_RESULT"
-ci:param build "RESULT_COMPILE" "$COMPILE_RESULT"
-ci:param build "RESULT_LINT" "$LINT_RESULT"
-ci:param build "RESULT_UNIT_TESTS" "$UNIT_RESULT"
-ci:param build "RESULT_INTEGRATION_TESTS" "$INTEGRATION_RESULT"
-ci:param build "RESULT_E2E_TESTS" "$E2E_RESULT"
-ci:param build "RESULT_SECURITY_SCAN" "$SECURITY_RESULT"
-ci:param build "RESULT_BUNDLE" "$BUNDLE_RESULT"
+ci:param build "RESULT_SETUP" "${RESULT_SETUP:-success}"
+ci:param build "RESULT_COMPILE" "${RESULT_COMPILE:-success}"
+ci:param build "RESULT_LINT" "${RESULT_LINT:-success}"
+ci:param build "RESULT_UNIT_TESTS" "${RESULT_UNIT_TESTS:-success}"
+ci:param build "RESULT_INTEGRATION_TESTS" "${RESULT_INTEGRATION_TESTS:-success}"
+ci:param build "RESULT_E2E_TESTS" "${RESULT_E2E_TESTS:-success}"
+ci:param build "RESULT_SECURITY_SCAN" "${RESULT_SECURITY_SCAN:-success}"
+ci:param build "RESULT_BUNDLE" "${RESULT_BUNDLE:-success}"
 hooks:do begin "${BASH_SOURCE[0]##*/}"
 hooks:flow:apply
 
-if [ "$SETUP_RESULT" == "failure" ] || \
-   [ "$COMPILE_RESULT" == "failure" ] || \
-   [ "$LINT_RESULT" == "failure" ] || \
-   [ "$UNIT_RESULT" == "failure" ] || \
-   [ "$INTEGRATION_RESULT" == "failure" ] || \
-   [ "$E2E_RESULT" == "failure" ] || \
-   [ "$SECURITY_RESULT" == "failure" ] || \
-   [ "$BUNDLE_RESULT" == "failure" ]; then
-  echo:Error "One or more pipeline jobs failed"
-  echo "::error::One or more pipeline jobs failed"
-  exit 1
+if ci:has_hooks check; then
+  set +eu
+  hooks:declare check
+  hooks:do check
+  set -eu
+else
+  # Default: check all RESULT_* variables for "failure"
+  if [ "${RESULT_SETUP:-success}" == "failure" ] || \
+     [ "${RESULT_COMPILE:-success}" == "failure" ] || \
+     [ "${RESULT_LINT:-success}" == "failure" ] || \
+     [ "${RESULT_UNIT_TESTS:-success}" == "failure" ] || \
+     [ "${RESULT_INTEGRATION_TESTS:-success}" == "failure" ] || \
+     [ "${RESULT_E2E_TESTS:-success}" == "failure" ] || \
+     [ "${RESULT_SECURITY_SCAN:-success}" == "failure" ] || \
+     [ "${RESULT_BUNDLE:-success}" == "failure" ]; then
+    echo:Error "One or more pipeline jobs failed"
+    echo "::error::One or more pipeline jobs failed"
+    exit 1
+  fi
 fi
 
 echo:Success "Pipeline Check Complete"
