@@ -286,3 +286,4 @@ MIT License - feel free to customize and use in your projects.
 **Happy Building! 🚀**
 
 Start simple with basic CI, then progressively enable features as your project grows.
+
