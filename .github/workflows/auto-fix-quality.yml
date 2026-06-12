@@ -19,6 +19,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  # CI Feature Flag - set ENABLE_AUTO_FIX=true in GitHub Variables to activate
+  ENABLE_AUTO_FIX: ${{ vars.ENABLE_AUTO_FIX || 'false' }}
   GIT_AUTHOR_NAME: github-actions[bot]
   GIT_AUTHOR_EMAIL: github-actions[bot]@users.noreply.github.com
   GIT_COMMITTER_NAME: github-actions[bot]
@@ -34,7 +36,10 @@ jobs:
     name: Security and Quality Scan
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Gated at job level so the scan (full-history clone + gitleaks/trufflehog
+    # on every push) costs nothing until explicitly enabled.
     if: |
+      vars.ENABLE_AUTO_FIX == 'true' &&
       !contains(github.event.head_commit.message, '[skip ci]') &&
       !contains(github.event.head_commit.message, '[ci skip]')
     permissions:

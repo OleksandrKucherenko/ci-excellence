@@ -33,11 +33,11 @@ All workflows are **variable-driven** - they skip gracefully when not enabled (n
 ### Triggers
 
 - Pull requests to `main` or `develop` branches
-- Push to `develop`, `feature/*`, `fix/*` branches
+- Push to `develop` (feature/fix branches are covered by their pull request runs)
 
 ### Jobs
 
-1. **Setup** - Install tools and dependencies (always runs)
+1. **Setup** - Install tools and dependencies (runs when at least one feature flag is enabled)
 2. **Compile** - Build the project
 3. **Lint** - Run code linters
 4. **Unit Tests** - Run unit tests with coverage
@@ -45,7 +45,9 @@ All workflows are **variable-driven** - they skip gracefully when not enabled (n
 6. **E2E Tests** - Run end-to-end tests
 7. **Security Scan** - Run vulnerability scans
 8. **Bundle** - Create distribution packages
-9. **Summary** - Display pipeline results
+9. **Summary** - Display pipeline results and send notifications (runs only when setup ran)
+
+With every feature flag disabled the pipeline completes without booting a single runner.
 
 ### Activation Variables
 
@@ -185,6 +187,8 @@ ENABLE_STABILITY_TAGGING=true
 4. **Security Audit** - Run security audits
 5. **Dependency Update** - Update dependencies automatically
 
+Each job is gated at job level by its flag; disabled jobs never boot a runner, and the summary/notification job runs only when at least one maintenance job ran.
+
 ### Activation Variables
 
 ```bash
@@ -209,7 +213,7 @@ ENABLE_DEPENDENCY_UPDATE=true
 
 ### Triggers
 
-- Push to `develop`, `feature/*`, `fix/*`, `claude/*` branches
+- Push to `develop`, `feature/*`, `fix/*`, `claude/*` branches (requires `ENABLE_AUTO_FIX=true`)
 
 ### Purpose
 
@@ -231,6 +235,7 @@ Automatically scans for and optionally fixes security vulnerabilities and code q
 ### Configuration Variables
 
 ```bash
+ENABLE_AUTO_FIX=false         # Master switch: enable the per-push scan job (default: false)
 AUTO_COMMIT=true              # Enable auto-commit of fixes (default: true)
 AUTO_APPLY_FIXES=true         # Auto-apply fixes when found (default: true)
 PUSH_CHANGES=false            # Auto-push fixes (default: false, use with caution)

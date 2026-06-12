@@ -11,12 +11,12 @@ on:
       - 'LICENSE'
       - '.gitignore'
       - 'environments/**'
+  # Feature/fix/claude branches get their CI from the pull_request trigger;
+  # listing them under push as well ran the whole pipeline twice per push
+  # (the push and PR events have different concurrency groups).
   push:
     branches:
       - develop
-      - 'feature/**'
-      - 'fix/**'
-      - 'claude/**'
     paths-ignore:
       - 'docs/**'
       - '*.md'
@@ -49,10 +49,20 @@ jobs:
     name: Setup and Install Dependencies
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Skipped when no feature flag is enabled: installing tools and caching
+    # dependencies is pointless when no downstream job will consume them.
+    # Every downstream job needs this one, so they all skip with it.
     if: |
       (github.event_name != 'pull_request' || github.event.pull_request.draft == false) &&
       !contains(github.event.head_commit.message, '[skip ci]') &&
-      !contains(github.event.head_commit.message, '[ci skip]')
+      !contains(github.event.head_commit.message, '[ci skip]') &&
+      (vars.ENABLE_COMPILE == 'true' ||
+       vars.ENABLE_LINT == 'true' ||
+       vars.ENABLE_UNIT_TESTS == 'true' ||
+       vars.ENABLE_INTEGRATION_TESTS == 'true' ||
+       vars.ENABLE_E2E_TESTS == 'true' ||
+       vars.ENABLE_SECURITY_SCAN == 'true' ||
+       vars.ENABLE_BUNDLE == 'true')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -321,7 +331,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [setup, compile, lint, unit-tests, integration-tests, e2e-tests, security-scan, bundle]
-    if: always()
+    # Summary and notification share one job (one runner boot instead of two),
+    # and neither runs when setup was skipped (no feature flags enabled, draft
+    # PR, or [skip ci]) — an empty pipeline boots zero runners.
+    if: always() && needs.setup.result != 'skipped'
     env:
       RESULT_SETUP: ${{ needs.setup.result }}
       RESULT_COMPILE: ${{ needs.compile.result }}
@@ -346,18 +359,12 @@ jobs:
           ENABLE_BUNDLE: ${{ vars.ENABLE_BUNDLE || 'false' }}
         run: ./scripts/ci/reports/ci-10-summary-pre-release.sh
 
+      # continue-on-error so the notification steps below still run on
+      # failure; the last step turns a failed check into a red job.
       - name: Check for failures
+        id: check
+        continue-on-error: true
         run: ./scripts/ci/build/ci-60-check-failures.sh
-
-  notify:
-    name: Send Notifications
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: [summary]
-    if: always()
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
 
       - name: Check if notifications enabled
         id: check_notify
@@ -379,7 +386,7 @@ jobs:
           GITHUB_SERVER_URL: ${{ github.server_url }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_RUN_ID: ${{ github.run_id }}
-          RESULT_SUMMARY: ${{ needs.summary.result }}
+          RESULT_SUMMARY: ${{ steps.check.outcome }}
         run: ./scripts/ci/notification/ci-20-determine-status.sh
 
       - name: Send notification
@@ -390,3 +397,9 @@ jobs:
           NOTIFY_MESSAGE: ${{ steps.status.outputs.message }}
           NOTIFY_STATUS: ${{ steps.status.outputs.status }}
         run: ./scripts/ci/notification/ci-30-send-notification.sh
+
+      - name: Fail if pipeline failed
+        if: steps.check.outcome == 'failure'
+        run: |
+          echo "::error::One or more pipeline jobs failed"
+          exit 1
