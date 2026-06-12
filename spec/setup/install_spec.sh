@@ -8,12 +8,25 @@ Describe 'install.sh'
     The output should include 'ci-excellence installer'
     The output should include '--dry-run'
     The output should include '--mode'
+    The output should include 'rollback'
+    The status should be success
+  End
+
+  It 'prints usage for the help command'
+    When run bash "$SCRIPT" help
+    The output should include 'ci-excellence installer'
     The status should be success
   End
 
   It 'rejects unknown options'
     When run bash "$SCRIPT" --bogus
     The stderr should include 'unknown option'
+    The status should be failure
+  End
+
+  It 'rejects unknown commands'
+    When run bash "$SCRIPT" frobnicate
+    The stderr should include 'unknown command'
     The status should be failure
   End
 

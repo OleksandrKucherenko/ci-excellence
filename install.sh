@@ -31,9 +31,11 @@ USER_AGENT="ci-excellence-installer"
 
 TARGET_DIR="."
 MODE="auto"
+COMMAND="auto"
 DRY_RUN=false
 FORCE=false
 ASSUME_YES=false
+DIST_VERSION=""
 
 # --- Colors (honor NO_COLOR and non-TTY output) ---
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
@@ -60,8 +62,18 @@ ci-excellence installer - apply the CI/CD framework on top of an existing projec
 
 Usage:
   curl -fsSL https://raw.githubusercontent.com/OleksandrKucherenko/ci-excellence/main/install.sh | bash
-  curl -fsSL https://raw.githubusercontent.com/OleksandrKucherenko/ci-excellence/main/install.sh | bash -s -- [options]
-  ./install.sh [options]
+  curl -fsSL https://raw.githubusercontent.com/OleksandrKucherenko/ci-excellence/main/install.sh | bash -s -- [options] [command]
+  ./install.sh [options] [command]
+
+Commands:
+  install    Apply ci-excellence to this project (default when not integrated)
+  upgrade    Upgrade an integrated project (default when already integrated)
+  rollback   Revert the last integration/upgrade (delegates to ci-rollback.sh)
+  status     Show installed/available versions (delegates to ci-status.sh)
+  help       Show this help
+
+  Without a command the installer auto-detects: it installs on first run and
+  upgrades when .ci-excellence.yml is already present.
 
 Options:
   --dir PATH      Target project directory (default: current directory)
@@ -69,19 +81,26 @@ Options:
                     git  - merge the dist branch with upgrade/rollback lineage
                     copy - plain file copy, never overwrites without --force
   --remote URL    Source repository (default: ci-excellence on GitHub)
-  --branch NAME   Source branch (default: dist)
+  --branch NAME   Source branch, also the version pin (default: dist)
   --name NAME     Git remote name to register in git mode (default: ci)
   --dry-run       Show what would happen without changing anything
-  --force         git mode:  bypass the clean-worktree guard
+  --force         git mode:  bypass the clean-worktree guard; auto-commit upgrades
                   copy mode: overwrite existing files
   --yes, -y       Skip the confirmation prompt
   --help, -h      Show this help
 
+Examples:
+  curl -fsSL .../install.sh | bash                      # install or upgrade (auto)
+  curl -fsSL .../install.sh | bash -s -- --dry-run      # preview only
+  curl -fsSL .../install.sh | bash -s -- upgrade --force
+  curl -fsSL .../install.sh | bash -s -- status
+  curl -fsSL .../install.sh | bash -s -- rollback
+
 Behavior:
-  * In git mode, re-running the installer on an already integrated project
-    performs an upgrade (delegates to scripts/setup/ci-upgrade.sh).
   * The set of managed files is controlled by .ci-excellence.yml; edit it and
-    re-run ./scripts/setup/ci-upgrade.sh to include or exclude paths.
+    re-run the upgrade to include or exclude paths.
+  * rollback/status prefer the project's own scripts/setup/ci-*.sh copies and
+    fall back to the distribution branch when missing.
 
 Environment overrides: CI_REMOTE_URL, CI_REMOTE_NAME, CI_BRANCH
 USAGE
@@ -187,6 +206,36 @@ check_mise() {
   warn "  details:  docs/INSTALLATION.md in the ci-excellence repository"
 }
 
+# Register/refresh the ci remote and fetch the distribution branch.
+# Sets DIST_VERSION to the short hash of the fetched payload.
+ensure_ci_remote() {
+  if git remote get-url "$CI_REMOTE_NAME" > /dev/null 2>&1; then
+    git remote set-url "$CI_REMOTE_NAME" "$CI_REMOTE_URL"
+  else
+    git remote add "$CI_REMOTE_NAME" "$CI_REMOTE_URL"
+  fi
+  git fetch --quiet "$CI_REMOTE_NAME" "$CI_BRANCH" ||
+    die "failed to fetch '$CI_BRANCH' from $CI_REMOTE_URL"
+  DIST_VERSION="$(git rev-parse --short "$CI_REMOTE_NAME/$CI_BRANCH")"
+  ok "fetched $CI_REMOTE_NAME/$CI_BRANCH ${D}@ $DIST_VERSION${N}"
+}
+
+# Run a scripts/setup/ tool: prefer the project's own integrated copy,
+# fall back to the copy shipped in the distribution branch.
+run_setup_script() {
+  local name="$1"
+  shift
+  have git || die "git is required for '$name'"
+  git rev-parse --is-inside-work-tree > /dev/null 2>&1 ||
+    die "not a git repository: $PWD (run from your integrated project root)"
+  if [ -f "scripts/setup/$name" ]; then
+    bash "scripts/setup/$name" "$@"
+  else
+    ensure_ci_remote
+    git show "$CI_REMOTE_NAME/$CI_BRANCH:scripts/setup/$name" | bash -s -- "$@"
+  fi
+}
+
 # --- git mode -------------------------------------------------------------------
 
 preflight_git_mode() {
@@ -239,19 +288,7 @@ dry_run_git_integrate() {
 
 install_git_mode() {
   preflight_git_mode
-
-  # Register the remote and fetch the distribution branch
-  if git remote get-url "$CI_REMOTE_NAME" > /dev/null 2>&1; then
-    git remote set-url "$CI_REMOTE_NAME" "$CI_REMOTE_URL"
-  else
-    git remote add "$CI_REMOTE_NAME" "$CI_REMOTE_URL"
-  fi
-  git fetch --quiet "$CI_REMOTE_NAME" "$CI_BRANCH" ||
-    die "failed to fetch '$CI_BRANCH' from $CI_REMOTE_URL"
-
-  local version
-  version="$(git rev-parse --short "$CI_REMOTE_NAME/$CI_BRANCH")"
-  ok "fetched $CI_REMOTE_NAME/$CI_BRANCH ${D}@ $version${N}"
+  ensure_ci_remote
 
   git cat-file -e "$CI_REMOTE_NAME/$CI_BRANCH:scripts/setup/ci-integrate.sh" 2> /dev/null ||
     die "branch '$CI_BRANCH' of $CI_REMOTE_URL is not a ci-excellence distribution (scripts/setup/ci-integrate.sh missing)"
@@ -273,7 +310,7 @@ install_git_mode() {
     return 0
   fi
 
-  confirm "integrate ci-excellence @ $version into $PWD (creates a merge commit)?"
+  confirm "integrate ci-excellence @ $DIST_VERSION into $PWD (creates a merge commit)?"
 
   # Run the canonical integration script from the fetched branch itself,
   # so the executed logic always matches the version being installed.
@@ -452,8 +489,24 @@ main() {
         usage
         exit 0
         ;;
-      *)
+      -*)
         die "unknown option: $1 (see --help)"
+        ;;
+      *)
+        [ "$COMMAND" = "auto" ] || die "unexpected argument: $1 (see --help)"
+        case "$1" in
+          install | upgrade | rollback | status)
+            COMMAND="$1"
+            ;;
+          help)
+            usage
+            exit 0
+            ;;
+          *)
+            die "unknown command: $1 (see --help)"
+            ;;
+        esac
+        shift
         ;;
     esac
   done
@@ -463,6 +516,31 @@ main() {
 
   check_platform
   cd "$TARGET_DIR"
+
+  # Management commands delegate to the canonical setup scripts and print
+  # their own headers - no installer banner needed.
+  case "$COMMAND" in
+    status)
+      run_setup_script ci-status.sh
+      return 0
+      ;;
+    rollback)
+      local rollback_args=()
+      [ "$DRY_RUN" = true ] && rollback_args+=(--dry-run)
+      run_setup_script ci-rollback.sh ${rollback_args[@]+"${rollback_args[@]}"}
+      return 0
+      ;;
+    install)
+      [ -f "$CONFIG_FILE" ] &&
+        die "already integrated ($CONFIG_FILE exists) - use 'upgrade' instead"
+      ;;
+    upgrade)
+      [ "$MODE" = "copy" ] && die "upgrade requires git mode (got --mode copy)"
+      MODE="git"
+      [ -f "$CONFIG_FILE" ] ||
+        die "project is not integrated yet ($CONFIG_FILE missing) - run the installer without a command first"
+      ;;
+  esac
 
   if [ "$MODE" = "auto" ]; then
     if have git && git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
@@ -480,6 +558,7 @@ main() {
   say ""
   kv "target" "$PWD"
   kv "source" "$CI_REMOTE_URL ${D}($CI_BRANCH)${N}"
+  [ "$COMMAND" != "auto" ] && kv "command" "$COMMAND"
   kv "mode" "$MODE$dry_label"
   say ""
 

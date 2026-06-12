@@ -32,11 +32,16 @@ The installer applies the framework according to the [Quick Start](docs/QUICKSTA
 # Preview without changing anything
 curl -fsSL https://raw.githubusercontent.com/OleksandrKucherenko/ci-excellence/main/install.sh | bash -s -- --dry-run
 
+# Manage the integration later with the same one-liner
+curl -fsSL https://raw.githubusercontent.com/OleksandrKucherenko/ci-excellence/main/install.sh | bash -s -- status
+curl -fsSL https://raw.githubusercontent.com/OleksandrKucherenko/ci-excellence/main/install.sh | bash -s -- upgrade
+curl -fsSL https://raw.githubusercontent.com/OleksandrKucherenko/ci-excellence/main/install.sh | bash -s -- rollback
+
 # All options (--mode, --branch, --force, ...)
 curl -fsSL https://raw.githubusercontent.com/OleksandrKucherenko/ci-excellence/main/install.sh | bash -s -- --help
 ```
 
-Manage the integration afterwards with `./scripts/setup/ci-status.sh`, `ci-upgrade.sh` and `ci-rollback.sh`.
+The same management tools are installed into the project: `./scripts/setup/ci-status.sh`, `ci-upgrade.sh` and `ci-rollback.sh`.
 
 ### Starting From Scratch
 
