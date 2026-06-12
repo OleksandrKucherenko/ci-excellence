@@ -229,7 +229,9 @@ jobs:
           key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/bun.lock') }}
 
       - name: Download build artifacts
-        if: ${{ vars.ENABLE_COMPILE == 'true' }}
+        # Only when the compile job actually ran: with change-detection gates
+        # a test-only diff skips compile, so there is no artifact to download.
+        if: ${{ needs.compile.result == 'success' }}
         uses: actions/download-artifact@v4
         with:
           name: build-output
@@ -271,7 +273,9 @@ jobs:
           key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/bun.lock') }}
 
       - name: Download build artifacts
-        if: ${{ vars.ENABLE_COMPILE == 'true' }}
+        # Only when the compile job actually ran: with change-detection gates
+        # a test-only diff skips compile, so there is no artifact to download.
+        if: ${{ needs.compile.result == 'success' }}
         uses: actions/download-artifact@v4
         with:
           name: build-output
@@ -349,7 +353,9 @@ jobs:
           key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/bun.lock') }}
 
       - name: Download build artifacts
-        if: ${{ vars.ENABLE_COMPILE == 'true' }}
+        # Only when the compile job actually ran: with change-detection gates
+        # a test-only diff skips compile, so there is no artifact to download.
+        if: ${{ needs.compile.result == 'success' }}
         uses: actions/download-artifact@v4
         with:
           name: build-output

@@ -19,7 +19,7 @@ Set flags in: **Repository Settings > Secrets and variables > Actions > Variable
 | `ENABLE_SECURITY_SCAN` | security-scan | `false` | Run vulnerability scans |
 | `ENABLE_BUNDLE` | bundle | `false` | Create distribution packages |
 
-Note: `ENABLE_COMPILE` is also checked by integration-tests, e2e-tests, and bundle jobs to determine whether to restore build artifacts.
+Note: the integration-tests, e2e-tests, and bundle jobs download build artifacts only when the compile job actually ran (`needs.compile.result == 'success'`) — compile may be skipped either by `ENABLE_COMPILE` or by the `code` change gate.
 
 Note: when `ENABLE_DETECT_CHANGES=true`, compile/lint/bundle additionally require the `code` change gate and the test jobs the `tests` gate. Gates are defined in `config/detect-changes.rules` and computed by `scripts/ci/setup/ci-40-detect-changes.sh`. Gate conditions are fail-open (`!= 'false'`): if detection is disabled or fails, every job runs as before. See [CUSTOMIZATION.md](CUSTOMIZATION.md#change-detection-gates) for the rules format and monorepo workspace discovery.
 
