@@ -15,6 +15,36 @@ A customizable, stub-based CI/CD pipeline that follows the philosophy of "reserv
 
 ## 🚀 Quick Start
 
+### Apply to an Existing Project (One Command)
+
+Run from your project root:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/OleksandrKucherenko/ci-excellence/main/install.sh | bash
+```
+
+The installer applies the framework according to the [Quick Start](docs/QUICKSTART.md) guide:
+
+- **Inside a git repository** — integrates the `dist` branch with full upgrade/rollback lineage. Re-running the same command later upgrades the integration (`./scripts/setup/ci-upgrade.sh`).
+- **Outside git** — downloads the distribution and copies files into place; existing files are never overwritten without `--force`.
+
+```bash
+# Preview without changing anything
+curl -fsSL https://raw.githubusercontent.com/OleksandrKucherenko/ci-excellence/main/install.sh | bash -s -- --dry-run
+
+# Manage the integration later with the same one-liner
+curl -fsSL https://raw.githubusercontent.com/OleksandrKucherenko/ci-excellence/main/install.sh | bash -s -- status
+curl -fsSL https://raw.githubusercontent.com/OleksandrKucherenko/ci-excellence/main/install.sh | bash -s -- upgrade
+curl -fsSL https://raw.githubusercontent.com/OleksandrKucherenko/ci-excellence/main/install.sh | bash -s -- rollback
+
+# All options (--mode, --branch, --force, ...)
+curl -fsSL https://raw.githubusercontent.com/OleksandrKucherenko/ci-excellence/main/install.sh | bash -s -- --help
+```
+
+The same management tools are installed into the project: `./scripts/setup/ci-status.sh`, `ci-upgrade.sh` and `ci-rollback.sh`.
+
+### Starting From Scratch
+
 ### 1. Install Mise (macOS)
 
 ```bash

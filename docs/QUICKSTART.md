@@ -4,7 +4,19 @@ Get your CI/CD pipeline running in 5 minutes!
 
 ## Step 1: Copy Files (1 minute)
 
-Copy these directories to your project root:
+**Option A — one-liner installer (recommended).** Run from your project root:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/OleksandrKucherenko/ci-excellence/main/install.sh | bash
+```
+
+Inside a git repository the installer integrates the `dist` branch with
+upgrade/rollback support (`./scripts/setup/ci-upgrade.sh`, `ci-rollback.sh`,
+`ci-status.sh`); outside git it falls back to copying files. Preview first
+with `bash -s -- --dry-run`. The installer also makes the scripts executable,
+so you can skip Step 2.
+
+**Option B — manual copy.** Copy these directories to your project root:
 
 ```bash
 cp -r .github scripts config /path/to/your/project/
