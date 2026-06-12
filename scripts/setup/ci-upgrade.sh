@@ -125,7 +125,10 @@ echo "Merging ci-excellence @ $NEW_VERSION..."
 # Record merge lineage but keep local files.
 # A clean index is required: with staged changes `git merge -s ours` fails,
 # and without the merge parent the up-to-date check above stops working.
-if ! git merge -s ours --no-commit "$CI_REMOTE_NAME/$CI_BRANCH"; then
+# --allow-unrelated-histories covers integrations that lost the merge parent
+# (older script versions): for those the dist history is still unrelated, and
+# this merge is what repairs the lineage.
+if ! git merge -s ours --no-commit --allow-unrelated-histories "$CI_REMOTE_NAME/$CI_BRANCH"; then
   echo "Error: merge failed. Commit or stash staged changes and retry." >&2
   exit 1
 fi
