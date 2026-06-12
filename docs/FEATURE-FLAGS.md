@@ -10,6 +10,7 @@ Set flags in: **Repository Settings > Secrets and variables > Actions > Variable
 
 | Flag | Job(s) Controlled | Default | Purpose |
 |------|-------------------|---------|---------|
+| `ENABLE_DETECT_CHANGES` | detect-changes | `false` | Compute change gates so jobs whose inputs did not change are skipped |
 | `ENABLE_COMPILE` | compile | `false` | Build/compile the project |
 | `ENABLE_LINT` | lint | `false` | Run code linters |
 | `ENABLE_UNIT_TESTS` | unit-tests | `false` | Run unit tests with coverage |
@@ -19,6 +20,8 @@ Set flags in: **Repository Settings > Secrets and variables > Actions > Variable
 | `ENABLE_BUNDLE` | bundle | `false` | Create distribution packages |
 
 Note: `ENABLE_COMPILE` is also checked by integration-tests, e2e-tests, and bundle jobs to determine whether to restore build artifacts.
+
+Note: when `ENABLE_DETECT_CHANGES=true`, compile/lint/bundle additionally require the `code` change gate and the test jobs the `tests` gate. Gates are defined in `config/detect-changes.rules` and computed by `scripts/ci/setup/ci-40-detect-changes.sh`. Gate conditions are fail-open (`!= 'false'`): if detection is disabled or fails, every job runs as before. See [CUSTOMIZATION.md](CUSTOMIZATION.md#change-detection-gates) for the rules format and monorepo workspace discovery.
 
 ### Release Pipeline (`release.yml`)
 
