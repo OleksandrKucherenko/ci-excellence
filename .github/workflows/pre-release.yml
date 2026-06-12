@@ -31,6 +31,7 @@ concurrency:
 env:
   # CI Feature Flags - Set these in GitHub Variables to activate jobs
   # Leave unset to skip jobs without failure
+  ENABLE_DETECT_CHANGES: ${{ vars.ENABLE_DETECT_CHANGES || 'false' }}
   ENABLE_COMPILE: ${{ vars.ENABLE_COMPILE || 'false' }}
   ENABLE_LINT: ${{ vars.ENABLE_LINT || 'false' }}
   ENABLE_UNIT_TESTS: ${{ vars.ENABLE_UNIT_TESTS || 'false' }}
@@ -76,12 +77,48 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-deps-
 
+  # Compute change gates (config/detect-changes.rules + workspace discovery)
+  # so jobs whose inputs did not change are skipped. Gate conditions below
+  # use `!= 'false'` (fail-open): when this job is disabled or fails, its
+  # outputs are empty and every job runs as if gating were off.
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: |
+      vars.ENABLE_DETECT_CHANGES == 'true' &&
+      (github.event_name != 'pull_request' || github.event.pull_request.draft == false) &&
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[ci skip]')
+    outputs:
+      workflows: ${{ steps.detect.outputs.workflows }}
+      code: ${{ steps.detect.outputs.code }}
+      tests: ${{ steps.detect.outputs.tests }}
+      docs: ${{ steps.detect.outputs.docs }}
+      any: ${{ steps.detect.outputs.any }}
+      gates: ${{ steps.detect.outputs.gates }}
+      gates_json: ${{ steps.detect.outputs.gates_json }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history so the diff base (merge-base) is reachable
+
+      - name: Detect changed gates
+        id: detect
+        env:
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: ./scripts/ci/setup/ci-40-detect-changes.sh
+
   compile:
     name: Compile/Build
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: setup
-    if: ${{ vars.ENABLE_COMPILE == 'true' }}
+    needs: [setup, detect-changes]
+    if: |
+      always() && vars.ENABLE_COMPILE == 'true' &&
+      needs.setup.result == 'success' &&
+      needs.detect-changes.outputs.code != 'false'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -112,8 +149,11 @@ jobs:
     name: Lint Code
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: setup
-    if: ${{ vars.ENABLE_LINT == 'true' }}
+    needs: [setup, detect-changes]
+    if: |
+      always() && vars.ENABLE_LINT == 'true' &&
+      needs.setup.result == 'success' &&
+      needs.detect-changes.outputs.code != 'false'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -134,8 +174,11 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: setup
-    if: ${{ vars.ENABLE_UNIT_TESTS == 'true' }}
+    needs: [setup, detect-changes]
+    if: |
+      always() && vars.ENABLE_UNIT_TESTS == 'true' &&
+      needs.setup.result == 'success' &&
+      needs.detect-changes.outputs.tests != 'false'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -166,8 +209,12 @@ jobs:
     name: Integration Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [setup, compile]
-    if: ${{ vars.ENABLE_INTEGRATION_TESTS == 'true' }}
+    needs: [setup, compile, detect-changes]
+    if: |
+      always() && vars.ENABLE_INTEGRATION_TESTS == 'true' &&
+      needs.setup.result == 'success' &&
+      (needs.compile.result == 'success' || needs.compile.result == 'skipped') &&
+      needs.detect-changes.outputs.tests != 'false'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -182,7 +229,9 @@ jobs:
           key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/bun.lock') }}
 
       - name: Download build artifacts
-        if: ${{ vars.ENABLE_COMPILE == 'true' }}
+        # Only when the compile job actually ran: with change-detection gates
+        # a test-only diff skips compile, so there is no artifact to download.
+        if: ${{ needs.compile.result == 'success' }}
         uses: actions/download-artifact@v4
         with:
           name: build-output
@@ -204,8 +253,12 @@ jobs:
     name: End-to-End Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [setup, compile]
-    if: ${{ vars.ENABLE_E2E_TESTS == 'true' }}
+    needs: [setup, compile, detect-changes]
+    if: |
+      always() && vars.ENABLE_E2E_TESTS == 'true' &&
+      needs.setup.result == 'success' &&
+      (needs.compile.result == 'success' || needs.compile.result == 'skipped') &&
+      needs.detect-changes.outputs.tests != 'false'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -220,7 +273,9 @@ jobs:
           key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/bun.lock') }}
 
       - name: Download build artifacts
-        if: ${{ vars.ENABLE_COMPILE == 'true' }}
+        # Only when the compile job actually ran: with change-detection gates
+        # a test-only diff skips compile, so there is no artifact to download.
+        if: ${{ needs.compile.result == 'success' }}
         uses: actions/download-artifact@v4
         with:
           name: build-output
@@ -276,12 +331,13 @@ jobs:
     name: Bundle and Package
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [compile, lint, unit-tests]
+    needs: [compile, lint, unit-tests, detect-changes]
     if: |
       always() &&
       (needs.compile.result == 'success' || needs.compile.result == 'skipped') &&
       (needs.lint.result == 'success' || needs.lint.result == 'skipped') &&
       (needs.unit-tests.result == 'success' || needs.unit-tests.result == 'skipped') &&
+      needs.detect-changes.outputs.code != 'false' &&
       vars.ENABLE_BUNDLE == 'true'
     steps:
       - name: Checkout code
@@ -297,7 +353,9 @@ jobs:
           key: ${{ runner.os }}-deps-${{ hashFiles('**/package*.json', '**/bun.lock') }}
 
       - name: Download build artifacts
-        if: ${{ vars.ENABLE_COMPILE == 'true' }}
+        # Only when the compile job actually ran: with change-detection gates
+        # a test-only diff skips compile, so there is no artifact to download.
+        if: ${{ needs.compile.result == 'success' }}
         uses: actions/download-artifact@v4
         with:
           name: build-output
@@ -320,10 +378,12 @@ jobs:
     name: Pipeline Summary
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [setup, compile, lint, unit-tests, integration-tests, e2e-tests, security-scan, bundle]
+    needs: [setup, detect-changes, compile, lint, unit-tests, integration-tests, e2e-tests, security-scan, bundle]
     if: always()
     env:
       RESULT_SETUP: ${{ needs.setup.result }}
+      RESULT_DETECT_CHANGES: ${{ needs.detect-changes.result }}
+      DETECTED_GATES: ${{ needs.detect-changes.outputs.gates }}
       RESULT_COMPILE: ${{ needs.compile.result }}
       RESULT_LINT: ${{ needs.lint.result }}
       RESULT_UNIT_TESTS: ${{ needs.unit-tests.result }}
@@ -337,6 +397,7 @@ jobs:
 
       - name: Generate summary
         env:
+          ENABLE_DETECT_CHANGES: ${{ vars.ENABLE_DETECT_CHANGES || 'false' }}
           ENABLE_COMPILE: ${{ vars.ENABLE_COMPILE || 'false' }}
           ENABLE_LINT: ${{ vars.ENABLE_LINT || 'false' }}
           ENABLE_UNIT_TESTS: ${{ vars.ENABLE_UNIT_TESTS || 'false' }}
