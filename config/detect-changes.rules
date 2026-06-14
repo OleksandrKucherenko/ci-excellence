@@ -1,0 +1,55 @@
+# Change detection gates — consumed by scripts/ci/setup/ci-40-detect-changes.sh
+#
+# The script builds gates from TWO layers:
+#
+#   1. Auto-discovery (monorepo folder structure). Workspace roots are
+#      scanned one level deep; every directory containing a metadata file
+#      (graph-metadata.json, falling back to package.json) becomes a gate.
+#      Dependencies between workspaces become graph edges automatically:
+#        - graph-metadata.json: all keys of "dependencies"/"devDependencies"
+#          plus the "runtimeDependencies" array (workspace names called over
+#          HTTP/RPC at runtime — invisible to bundlers). The file is a
+#          subset of package.json, so package.json can always be converted.
+#        - package.json: only "workspace:*", "file:" and "link:" entries
+#          plus the top-level "runtimeDependencies" array.
+#   2. This rules file (user hardcoded values). Gates declared here are
+#      merged on top of discovered ones: same name extends a discovered
+#      gate with extra patterns/edges, new names add manual gates.
+#
+# Directives (reserved names, not gates):
+#   discover: <root>/ [<root>/ ...]   workspace roots to scan
+#                                     (default: packages/ apps/ services/ libs/ www/)
+#                                     use "discover: none" to disable scanning
+#   metadata: <file> [<file> ...]     metadata file priority per workspace
+#                                     (default: graph-metadata.json package.json)
+#
+# Gate format (one per line):
+#   <gate>: <pattern> [<pattern> ...] [@<ref> ...]
+#
+# - <gate> is the output name written to GITHUB_OUTPUT as <gate>=true|false.
+#   Use letters, digits, underscores or dashes (prefer underscores: dashed
+#   names need the outputs['my-gate'] syntax in workflow expressions).
+#   Discovered gates are named after the workspace directory basename
+#   (services/auth -> auth); on basename collisions the full path is used
+#   (services_auth).
+# - Patterns ending with "/" match every file under that directory prefix.
+# - Other patterns are bash globs matched against the full repo-relative
+#   path, where "*" crosses directory boundaries ("*.md" matches docs/a/b.md).
+# - "@ref" adds a dependency edge (transitive closure): the gate fires when
+#   any gate in its closure matches. A ref is resolved as a workspace
+#   package name first ("@acme/auth"), then as a gate key ("@auth").
+# - Lines starting with "#" and blank lines are ignored.
+#
+# Example for a monorepo where services depend on shared workspaces and on
+# each other at runtime:
+#   shared: packages/shared/
+#   auth:   services/auth/ @shared
+#   bff:    services/bff/ @auth @shared
+#
+# Gates below are for the CI Excellence repository itself (not a monorepo,
+# so discovery finds nothing and these manual gates are the whole graph).
+
+workflows: .github/
+code: scripts/ config/ mise.toml .lefthook.toml @workflows
+tests: spec/ @code
+docs: docs/ *.md LICENSE

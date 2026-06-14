@@ -48,6 +48,8 @@ echo "[2/5] Fetching $CI_REMOTE_NAME/$CI_BRANCH..."
 git fetch "$CI_REMOTE_NAME" "$CI_BRANCH"
 
 # --- Step 3: Create config ---
+# Note: the config stays untracked until step 5 - staging it here would make
+# the `git merge -s ours` in step 4 fail (merge requires a clean index).
 if [ ! -f "$CONFIG_FILE" ]; then
   echo "[3/5] Creating $CONFIG_FILE..."
   cat > "$CONFIG_FILE" << YAML
@@ -74,7 +76,6 @@ include:
 #   - .github/workflows/auto-fix-quality.yml
 #   - .github/workflows/maintenance.yml
 YAML
-  git add "$CONFIG_FILE"
 else
   echo "[3/5] $CONFIG_FILE already exists, skipping."
 fi
@@ -82,8 +83,14 @@ fi
 # --- Step 4: Selective merge ---
 echo "[4/5] Merging ci-excellence (selective)..."
 
-# Record merge but keep all local files unchanged
-git merge -s ours --no-commit --allow-unrelated-histories "$CI_REMOTE_NAME/$CI_BRANCH" 2>/dev/null || true
+# Record merge lineage but keep all local files unchanged.
+# A clean index is required: with staged changes `git merge -s ours` fails,
+# and without the merge parent ci-upgrade/ci-rollback/ci-status cannot track
+# the integrated version.
+if ! git merge -s ours --no-commit --allow-unrelated-histories "$CI_REMOTE_NAME/$CI_BRANCH"; then
+  echo "Error: merge failed. Commit or stash staged changes and retry." >&2
+  exit 1
+fi
 
 # Read include paths from config (simple grep, no yaml parser needed)
 INCLUDES=()

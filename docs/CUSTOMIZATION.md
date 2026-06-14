@@ -7,6 +7,7 @@ How to customize the CI/CD pipeline for your specific project needs.
 - [Overview](#overview)
 - [Script Implementation Status](#script-implementation-status)
 - [Choosing Your Stack](#choosing-your-stack)
+- [Change Detection Gates](#change-detection-gates)
 - [Version Management](#version-management)
 - [Publishing Customization](#publishing-customization)
 - [Documentation Setup](#documentation-setup)
@@ -30,6 +31,7 @@ Of the 69 CI step scripts, **19 are real implementations** that work without mod
 | `ci-10-install-tools.sh` | Real | No -- installs mise and verifies tools |
 | `ci-20-install-dependencies.sh` | Stub | Yes -- uncomment your package manager (npm, pip, go mod, cargo) |
 | `ci-30-github-actions-bot.sh` | Real | No -- configures git bot identity |
+| `ci-40-detect-changes.sh` | Real | Optional -- adjust gates in `config/detect-changes.rules` (see [Change Detection Gates](#change-detection-gates)) |
 
 ### Build (`scripts/ci/build/`)
 
@@ -313,6 +315,54 @@ set -euo pipefail
 # Run tests with coverage (using tarpaulin)
 cargo tarpaulin --out Xml --output-dir coverage
 ```
+
+## Change Detection Gates
+
+`scripts/ci/setup/ci-40-detect-changes.sh` computes which parts of the repository changed between a base ref and `HEAD`, and exposes the result as workflow outputs ("gates") so jobs can skip when their inputs did not change. Enable it with the `ENABLE_DETECT_CHANGES` variable.
+
+A gate fires when any file matches any pattern of any gate in its **transitive dependency closure** — if `bff` depends on `auth` which depends on `shared`, a change in `shared/` fires all three gates.
+
+### Two configuration layers
+
+**1. Workspace discovery (monorepos, zero config).** Workspace roots (`packages/`, `apps/`, `services/`, `libs/`, `www/` by default) are scanned one level deep. Every directory containing a metadata file becomes a gate, named after the directory basename. Dependency edges come from the metadata:
+
+- `graph-metadata.json` (preferred, package-manager agnostic): a subset of package.json declaring only inter-project dependencies, so any `package.json` can be converted to it. All `dependencies`/`devDependencies` keys plus the `runtimeDependencies` array count as edges:
+
+  ```json
+  {
+    "name": "@acme/service-bff",
+    "dependencies": { "@acme/service-auth": "*" },
+    "runtimeDependencies": ["@acme/service-email"]
+  }
+  ```
+
+  `runtimeDependencies` declares workspaces called over HTTP/RPC at runtime — edges invisible to bundlers and lockfiles. A change in `service-email` then also fires the `bff` gate.
+
+- `package.json` (fallback): only `workspace:*`, `file:` and `link:` dependency entries count as internal edges (registry packages are ignored), plus the top-level `runtimeDependencies` array.
+
+**2. Rules file (`config/detect-changes.rules`).** Manual gates merged on top of discovery — path patterns for non-workspace gates (docs, infra, workflows) and extra `@gate` edges. The file header documents the format, the `discover:`/`metadata:` directives, and pattern semantics. Reusing a discovered gate name extends that gate.
+
+### Workflow wiring
+
+The `detect-changes` job in `pre-release.yml` exposes one output per gate. Downstream jobs consume them fail-open, so a disabled or failed detection never skips work:
+
+```yaml
+compile:
+  needs: [setup, detect-changes]
+  if: |
+    always() && vars.ENABLE_COMPILE == 'true' &&
+    needs.setup.result == 'success' &&
+    needs.detect-changes.outputs.code != 'false'
+```
+
+For per-service deploy jobs in a monorepo, declare one output per discovered gate (`auth: ${{ steps.detect.outputs.auth }}`) and gate each deploy job on it, or build a dynamic matrix from the aggregate output: `strategy: matrix: gate: ${{ fromJSON(needs.detect-changes.outputs.gates_json) }}`. The aggregate outputs are `any` (true when something fired), `gates` (space-separated fired gates) and `gates_json`.
+
+### Behavior details
+
+- **Base resolution:** `CI_BASE_SHA` (the workflow passes the PR base or push `before` SHA), then `origin/$GITHUB_BASE_REF`, then `HEAD~1`. The diff is three-dot (`base...HEAD`), i.e. the branch's own changes since the merge-base.
+- **Fail-open:** tag builds, `CI_FORCE_ALL_GATES=true`, unresolvable bases (first commit, forced push, shallow clone), git failures, and a missing rules file all turn every gate ON. Running too much is safe; silently skipping work is not.
+- **Hooks:** `ci-cd/ci-40-detect-changes/begin_*.sh` hooks can override any `CI_*` input via the `contract:env:NAME=VALUE` protocol.
+- **Local debugging:** `CI_BASE_SHA=origin/main ./scripts/ci/setup/ci-40-detect-changes.sh` prints the changed files, each gate's closure size and verdict to stderr (no `GITHUB_OUTPUT` needed).
 
 ## Version Management
 
