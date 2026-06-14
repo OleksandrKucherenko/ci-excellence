@@ -23,6 +23,14 @@ Note: the integration-tests, e2e-tests, and bundle jobs download build artifacts
 
 Note: when `ENABLE_DETECT_CHANGES=true`, compile/lint/bundle additionally require the `code` change gate and the test jobs the `tests` gate. Gates are defined in `config/detect-changes.rules` and computed by `scripts/ci/setup/ci-40-detect-changes.sh`. Gate conditions are fail-open (`!= 'false'`): if detection is disabled or fails, every job runs as before. See [CUSTOMIZATION.md](CUSTOMIZATION.md#change-detection-gates) for the rules format and monorepo workspace discovery.
 
+Note: the setup job runs only when at least one of the flags above is enabled, and the summary/notification job runs only when setup ran. With every flag disabled the pipeline completes without booting a single runner.
+
+### Auto-Fix Quality Pipeline (`auto-fix-quality.yml`)
+
+| Flag | Job(s) Controlled | Default | Purpose |
+|------|-------------------|---------|---------|
+| `ENABLE_AUTO_FIX` | security-scan | `false` | Scan every push for secrets/quality issues (gitleaks, trufflehog) |
+
 ### Release Pipeline (`release.yml`)
 
 | Flag | Job(s) Controlled | Default | Purpose |
@@ -48,13 +56,15 @@ The verify-deployment and rollback jobs also check `ENABLE_NPM_PUBLISH`, `ENABLE
 
 | Flag | Job(s) Controlled | Default | Purpose |
 |------|-------------------|---------|---------|
-| `ENABLE_CLEANUP` | cleanup steps | `false` | Remove old workflows, artifacts, caches |
-| `ENABLE_FILE_SYNC` | sync-and-update steps | `false` | Keep package.json and CHANGELOG in sync |
-| `ENABLE_DEPRECATION` | deprecate-old-versions steps | `false` | Mark old versions as deprecated |
-| `ENABLE_SECURITY_AUDIT` | security-audit steps | `false` | Run periodic security audits |
-| `ENABLE_DEPENDENCY_UPDATE` | dependency-update steps | `false` | Update dependencies automatically |
+| `ENABLE_CLEANUP` | cleanup | `false` | Remove old workflows, artifacts, caches |
+| `ENABLE_FILE_SYNC` | sync-files | `false` | Keep package.json and CHANGELOG in sync |
+| `ENABLE_DEPRECATION` | deprecate-old-versions | `false` | Mark old versions as deprecated |
+| `ENABLE_SECURITY_AUDIT` | security-audit | `false` | Run periodic security audits |
+| `ENABLE_DEPENDENCY_UPDATE` | dependency-update | `false` | Update dependencies automatically |
 
 Deprecation also checks `ENABLE_NPM_PUBLISH` and `ENABLE_GITHUB_RELEASE` to determine which registries to deprecate in.
+
+Note: each flag gates its job at job level, and the summary job runs only when at least one maintenance job ran — the daily scheduled run boots no runners while everything is disabled.
 
 ### Cross-Cutting
 

@@ -31,14 +31,18 @@ env:
   ENABLE_DEPENDENCY_UPDATE: ${{ vars.ENABLE_DEPENDENCY_UPDATE || 'false' }}
 
 jobs:
+  # Every job gates its ENABLE_* flag at job level (not step level) so a
+  # disabled feature never boots a runner — the daily scheduled run on an
+  # unconfigured repository costs nothing.
   cleanup:
     name: Cleanup Old Artifacts
     runs-on: ubuntu-latest
     timeout-minutes: 10
     if: |
-      github.event_name == 'schedule' ||
-      github.event.inputs.action == 'cleanup' ||
-      github.event.inputs.action == 'all'
+      vars.ENABLE_CLEANUP == 'true' &&
+      (github.event_name == 'schedule' ||
+       github.event.inputs.action == 'cleanup' ||
+       github.event.inputs.action == 'all')
     permissions:
       actions: write
       contents: read
@@ -52,15 +56,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Cleanup old workflow runs
-        if: ${{ vars.ENABLE_CLEANUP == 'true' }}
         run: ./scripts/ci/maintenance/ci-30-cleanup-workflow-runs.sh
 
       - name: Cleanup old artifacts
-        if: ${{ vars.ENABLE_CLEANUP == 'true' }}
         run: ./scripts/ci/maintenance/ci-40-cleanup-artifacts.sh
 
       - name: Cleanup resources
-        if: ${{ vars.ENABLE_CLEANUP == 'true' }}
         run: ./scripts/ci/maintenance/ci-50-cleanup-caches.sh
 
       - name: Report cleanup results
@@ -72,9 +73,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     if: |
-      github.event_name == 'schedule' ||
-      github.event.inputs.action == 'sync-files' ||
-      github.event.inputs.action == 'all'
+      vars.ENABLE_FILE_SYNC == 'true' &&
+      (github.event_name == 'schedule' ||
+       github.event.inputs.action == 'sync-files' ||
+       github.event.inputs.action == 'all')
     permissions:
       contents: write
       pull-requests: write
@@ -91,7 +93,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Sync package.json and changelog
-        if: ${{ vars.ENABLE_FILE_SYNC == 'true' }}
         run: ./scripts/ci/maintenance/ci-10-sync-files.sh
 
       - name: Check for changes
@@ -122,9 +123,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     if: |
-      github.event_name == 'schedule' ||
-      github.event.inputs.action == 'deprecate-old-versions' ||
-      github.event.inputs.action == 'all'
+      vars.ENABLE_DEPRECATION == 'true' &&
+      (github.event_name == 'schedule' ||
+       github.event.inputs.action == 'deprecate-old-versions' ||
+       github.event.inputs.action == 'all')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -135,21 +137,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Identify versions to deprecate
-        if: ${{ vars.ENABLE_DEPRECATION == 'true' }}
         run: ./scripts/ci/maintenance/ci-70-identify-deprecated-versions.sh
 
       - name: Deprecate NPM versions
-        if: |
-          vars.ENABLE_DEPRECATION == 'true' &&
-          vars.ENABLE_NPM_PUBLISH == 'true'
+        if: ${{ vars.ENABLE_NPM_PUBLISH == 'true' }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: ./scripts/ci/maintenance/ci-75-deprecate-npm-versions.sh
 
       - name: Update GitHub releases
-        if: |
-          vars.ENABLE_DEPRECATION == 'true' &&
-          vars.ENABLE_GITHUB_RELEASE == 'true'
+        if: ${{ vars.ENABLE_GITHUB_RELEASE == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./scripts/ci/maintenance/ci-80-deprecate-github-releases.sh
@@ -162,9 +159,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     if: |
-      github.event_name == 'schedule' ||
-      github.event.inputs.action == 'security-audit' ||
-      github.event.inputs.action == 'all'
+      vars.ENABLE_SECURITY_AUDIT == 'true' &&
+      (github.event_name == 'schedule' ||
+       github.event.inputs.action == 'security-audit' ||
+       github.event.inputs.action == 'all')
     permissions:
       security-events: write
       contents: read
@@ -181,15 +179,13 @@ jobs:
         run: ./scripts/ci/setup/ci-20-install-dependencies.sh
 
       - name: Run dependency audit
-        if: ${{ vars.ENABLE_SECURITY_AUDIT == 'true' }}
         run: ./scripts/ci/maintenance/ci-60-security-audit.sh
 
       - name: Run vulnerability scan
-        if: ${{ vars.ENABLE_SECURITY_AUDIT == 'true' }}
         run: ./scripts/ci/build/ci-30-security-scan.sh
 
       - name: Upload SARIF results
-        if: ${{ always() && vars.ENABLE_SECURITY_AUDIT == 'true' }}
+        if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: security-results.sarif
@@ -204,9 +200,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     if: |
-      github.event_name == 'schedule' ||
-      github.event.inputs.action == 'dependency-update' ||
-      github.event.inputs.action == 'all'
+      vars.ENABLE_DEPENDENCY_UPDATE == 'true' &&
+      (github.event_name == 'schedule' ||
+       github.event.inputs.action == 'dependency-update' ||
+       github.event.inputs.action == 'all')
     permissions:
       contents: write
       pull-requests: write
@@ -223,11 +220,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update dependencies
-        if: ${{ vars.ENABLE_DEPENDENCY_UPDATE == 'true' }}
         run: ./scripts/ci/maintenance/ci-90-update-dependencies.sh
 
       - name: Run tests
-        if: ${{ vars.ENABLE_DEPENDENCY_UPDATE == 'true' }}
         run: ./scripts/ci/maintenance/ci-91-test-after-update.sh
 
       - name: Check for changes
@@ -261,7 +256,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [cleanup, sync-files, deprecate-old-versions, security-audit, dependency-update]
-    if: always()
+    # Only when at least one maintenance job actually ran — no daily summary
+    # (and no runner boot) when every feature is disabled.
+    if: |
+      always() &&
+      (needs.cleanup.result != 'skipped' ||
+       needs['sync-files'].result != 'skipped' ||
+       needs['deprecate-old-versions'].result != 'skipped' ||
+       needs['security-audit'].result != 'skipped' ||
+       needs['dependency-update'].result != 'skipped')
     env:
       RESULT_CLEANUP: ${{ needs.cleanup.result }}
       RESULT_SYNC: ${{ needs['sync-files'].result }}
