@@ -341,9 +341,15 @@ jobs:
     name: Bundle and Package
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [compile, lint, unit-tests, detect-changes]
+    # Depends on setup (it restores setup's dependency cache) so that when
+    # setup is skipped — draft PR, [skip ci], or no feature flags enabled —
+    # bundle skips too. Without this, always() would let bundle run on its
+    # own, leaving the summary guard (needs.setup.result != 'skipped') to
+    # suppress the failure report/notification for a job that actually ran.
+    needs: [setup, compile, lint, unit-tests, detect-changes]
     if: |
       always() &&
+      needs.setup.result == 'success' &&
       (needs.compile.result == 'success' || needs.compile.result == 'skipped') &&
       (needs.lint.result == 'success' || needs.lint.result == 'skipped') &&
       (needs.unit-tests.result == 'success' || needs.unit-tests.result == 'skipped') &&
